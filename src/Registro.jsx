@@ -2,13 +2,13 @@ import React, { useState } from "react";
 import "./App.css";
 
 export default function Registro() {
-  const [tipo, setTipo] = useState("natural");
   const [formData, setFormData] = useState({
     nickname: "",
     password: "",
     confirmPassword: "",
     email: "",
-    codigo: "",
+    tipo: "natural",
+    codigo: ""
   });
 
   const handleChange = (e) => {
@@ -18,9 +18,38 @@ export default function Registro() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Datos enviados:", formData);
+
+    if (formData.password !== formData.confirmPassword) {
+      alert("❌ Las contraseñas no coinciden");
+      return;
+    }
+
+    const usuario = {
+      nickname: formData.nickname,
+      password: formData.password,
+      email: formData.email,
+      tipo: formData.tipo,
+      codigo: formData.tipo !== "natural" ? formData.codigo : null,
+    };
+
+    try {
+      const response = await fetch("http://localhost:4000/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(usuario),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        alert("✅ " + data.message);
+      } else {
+        alert("❌ " + data.error);
+      }
+    } catch (error) {
+      alert("⚠️ Error de conexión con el servidor");
+    }
   };
 
   return (
@@ -32,9 +61,9 @@ export default function Registro() {
           type="text"
           name="nickname"
           placeholder="Tu usuario"
-          required
           value={formData.nickname}
           onChange={handleChange}
+          required
         />
 
         <label>Contraseña:</label>
@@ -42,9 +71,9 @@ export default function Registro() {
           type="password"
           name="password"
           placeholder="••••••••"
-          required
           value={formData.password}
           onChange={handleChange}
+          required
         />
 
         <label>Confirmar Contraseña:</label>
@@ -52,9 +81,9 @@ export default function Registro() {
           type="password"
           name="confirmPassword"
           placeholder="••••••••"
-          required
           value={formData.confirmPassword}
           onChange={handleChange}
+          required
         />
 
         <label>Correo electrónico:</label>
@@ -62,16 +91,16 @@ export default function Registro() {
           type="email"
           name="email"
           placeholder="ejemplo@correo.com"
-          required
           value={formData.email}
           onChange={handleChange}
+          required
         />
 
         <label>Selecciona tu perfil:</label>
         <select
           name="tipo"
-          value={tipo}
-          onChange={(e) => setTipo(e.target.value)}
+          value={formData.tipo}
+          onChange={handleChange}
           required
         >
           <option value="natural">Persona natural</option>
@@ -81,7 +110,7 @@ export default function Registro() {
           <option value="biomedico">Biomédico</option>
         </select>
 
-        {tipo !== "natural" && (
+        {formData.tipo !== "natural" && (
           <>
             <label>Código de profesión:</label>
             <input
