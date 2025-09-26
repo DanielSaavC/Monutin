@@ -20,7 +20,7 @@ const handleLogin = async (e) => {
     const data = await response.json();
     if (response.ok) {
       alert("✅ Bienvenido " + data.user.nickname);
-
+        localStorage.setItem("usuario", JSON.stringify(data.user));
       // redirección según el tipo de usuario
       switch (data.user.tipo) {
         case "natural":
