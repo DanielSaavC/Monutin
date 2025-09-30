@@ -18,39 +18,40 @@ export default function Registro() {
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (formData.password !== formData.confirmPassword) {
-      alert("❌ Las contraseñas no coinciden");
-      return;
-    }
+  if (formData.password !== formData.confirmPassword) {
+    alert("❌ Las contraseñas no coinciden");
+    return;
+  }
 
-    const usuario = {
-      nickname: formData.nickname,
-      password: formData.password,
-      email: formData.email,
-      tipo: formData.tipo,
-      codigo: formData.tipo !== "natural" ? formData.codigo : null,
-    };
-
-    try {
-      const response = await fetch("http://localhost:4000/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(usuario),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        alert("✅ " + data.message);
-      } else {
-        alert("❌ " + data.error);
-      }
-    } catch (error) {
-      alert("⚠️ Error de conexión con el servidor");
-    }
+  const usuario = {
+    nickname: formData.nickname,
+    password: formData.password,
+    email: formData.email,
+    tipo: formData.tipo,
+    codigo: formData.tipo !== "natural" ? formData.codigo : null,
   };
+
+  try {
+    const response = await fetch("https://monutinbackend.onrender.com/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(usuario),
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      alert("✅ " + data.message);
+    } else {
+      alert("❌ " + data.error);
+    }
+  } catch (error) {
+    alert("⚠️ Error de conexión con el servidor");
+  }
+};
+
 
   return (
     <div className="register-container">
