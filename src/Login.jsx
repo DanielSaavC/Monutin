@@ -80,7 +80,7 @@ const handleLogin = async (e) => {
       <button
         type="button"
         className="secondary-btn"
-        onClick={() => (window.location.href = "/registro")}
+        onClick={() => navigate("/registro")} 
       >
         Registrar
       </button>
