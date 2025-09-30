@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 export default function Registro() {
   const [nickname, setNickname] = useState("");
   const [password, setPassword] = useState("");
-  const [tipo, setTipo] = useState("natural"); // 👈 valor inicial
+  const [tipo, setTipo] = useState("natural"); 
   const navigate = useNavigate();
 
   const handleRegistro = async (e) => {
