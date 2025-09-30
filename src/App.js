@@ -19,9 +19,8 @@ import IncubadoraDetalle from "./pages/Biomedico/IncubadoraDetalle";
 
 function App() {
   return (
-    <Router basename="/Monutin">
+    <Router>
       <Routes>
-        {/* página inicial */}
         <Route path="/" element={<Presentacion />} />
 
         {/* login y registro */}
@@ -46,3 +45,4 @@ function App() {
 }
 
 export default App;
+
