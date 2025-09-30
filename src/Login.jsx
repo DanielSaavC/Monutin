@@ -74,7 +74,13 @@ const handleLogin = async (e) => {
           required
         />
 
-        <button type="submit">Entrar</button>
+        <button 
+         type="button"
+         className="secondary-btn"
+         onClick={() => navigate("/biomedico")}
+        >
+          Entrar
+        </button>
       </form>
 
       <button

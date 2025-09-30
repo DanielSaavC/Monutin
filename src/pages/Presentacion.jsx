@@ -16,8 +16,8 @@ export default function Presentacion() {
   return (
     <div className="presentacion-container">
       <div className="presentacion-card">
-        <h1>👶 Bienvenido al Sistema</h1>
-        <p>Conexión al simulador establecida en segundo plano.</p>
+        <h1>Bienvenido a Monutin</h1>
+        <p>Tu mejor herramienta para hacer seguimiento de equipos medicos.</p>
         <button
           className="btn-primary"
           onClick={() => navigate("/login")} // 👈 usar navigate()
