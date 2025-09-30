@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/mi-app/static/css/main.95814dd0.css",
-    "main.js": "/mi-app/static/js/main.72aec69f.js",
-    "static/js/453.2df8c44e.chunk.js": "/mi-app/static/js/453.2df8c44e.chunk.js",
-    "index.html": "/mi-app/index.html",
-    "main.95814dd0.css.map": "/mi-app/static/css/main.95814dd0.css.map",
-    "main.72aec69f.js.map": "/mi-app/static/js/main.72aec69f.js.map",
-    "453.2df8c44e.chunk.js.map": "/mi-app/static/js/453.2df8c44e.chunk.js.map"
+    "main.css": "/Monutin/static/css/main.95814dd0.css",
+    "main.js": "/Monutin/static/js/main.d4de3b24.js",
+    "static/js/453.2df8c44e.chunk.js": "/Monutin/static/js/453.2df8c44e.chunk.js",
+    "index.html": "/Monutin/index.html",
+    "main.95814dd0.css.map": "/Monutin/static/css/main.95814dd0.css.map",
+    "main.d4de3b24.js.map": "/Monutin/static/js/main.d4de3b24.js.map",
+    "453.2df8c44e.chunk.js.map": "/Monutin/static/js/453.2df8c44e.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.95814dd0.css",
-    "static/js/main.72aec69f.js"
+    "static/js/main.d4de3b24.js"
   ]
 }
