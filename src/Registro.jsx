@@ -130,7 +130,7 @@ const handleSubmit = async (e) => {
 
       <div className="extra-info">
         <p>
-          ¿Ya tienes cuenta? <a href="/">Inicia sesión</a>
+          ¿Ya tienes una cuenta maldito? <a href="/">Inicia sesión</a>
         </p>
       </div>
     </div>
