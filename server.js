@@ -30,14 +30,17 @@ db.run(`
     codigo TEXT
   )
 `);
+const bcrypt = require("bcrypt");
 
-// Ruta para registrar usuario
-app.post("/register", (req, res) => {
+// Registro con contraseña encriptada
+app.post("/register", async (req, res) => {
   const { nickname, password, email, tipo, codigo } = req.body;
+
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   db.run(
     `INSERT INTO usuarios (nickname, password, email, tipo, codigo) VALUES (?, ?, ?, ?, ?)`,
-    [nickname, password, email, tipo, codigo || null],
+    [nickname, hashedPassword, email, tipo, codigo || null],
     function (err) {
       if (err) {
         res.status(500).json({ error: "Error al registrar usuario" });
@@ -48,24 +51,21 @@ app.post("/register", (req, res) => {
   );
 });
 
-// Ruta para login
+// Login verificando hash
 app.post("/login", (req, res) => {
   const { nickname, password } = req.body;
 
-  db.get(
-    `SELECT * FROM usuarios WHERE nickname = ? AND password = ?`,
-    [nickname, password],
-    (err, row) => {
-      if (err) {
-        res.status(500).json({ error: "Error en login" });
-      } else if (row) {
-        res.json({ message: "Login correcto ✅", user: row });
-      } else {
-        res.status(401).json({ error: "Usuario o contraseña incorrectos" });
-      }
+  db.get(`SELECT * FROM usuarios WHERE nickname = ?`, [nickname], async (err, row) => {
+    if (err) {
+      res.status(500).json({ error: "Error en login" });
+    } else if (row && (await bcrypt.compare(password, row.password))) {
+      res.json({ message: "Login correcto ✅", user: row });
+    } else {
+      res.status(401).json({ error: "Usuario o contraseña incorrectos" });
     }
-  );
+  });
 });
+
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
