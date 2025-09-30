@@ -5,50 +5,50 @@ import { useNavigate } from "react-router-dom";
 export default function Login() {
   const [nickname, setNickname] = useState("");
   const [password, setPassword] = useState("");
-    const navigate = useNavigate();
-    
-const handleLogin = async (e) => {
-  e.preventDefault();
+  const navigate = useNavigate();
 
-  try {
-    const response = await fetch("https://monutinbackend.onrender.com/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nickname, password }),
-    });
+  const handleLogin = async (e) => {
+    e.preventDefault();
 
-    const data = await response.json();
-    if (response.ok) {
-      alert("✅ Bienvenido " + data.user.nickname);
-      localStorage.setItem("usuario", JSON.stringify(data.user));
-      // redirección según el tipo de usuario
-      switch (data.user.tipo) {
-        case "natural":
-          navigate("/natural");
-          break;
-        case "medico":
-          navigate("/medico");
-          break;
-        case "enfermera":
-          navigate("/enfermera");
-          break;
-        case "tecnico":
-          navigate("/tecnico");
-          break;
-        case "biomedico":
-          navigate("/biomedico");
-          break;
-        default:
-          navigate("/");
+    try {
+      const response = await fetch("https://monutinbackend.onrender.com/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nickname, password }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        alert("✅ Bienvenido " + data.user.nickname);
+        localStorage.setItem("usuario", JSON.stringify(data.user));
+
+        // redirección según el tipo de usuario
+        switch (data.user.tipo) {
+          case "natural":
+            navigate("/natural");
+            break;
+          case "medico":
+            navigate("/medico");
+            break;
+          case "enfermera":
+            navigate("/enfermera");
+            break;
+          case "tecnico":
+            navigate("/tecnico");
+            break;
+          case "biomedico":
+            navigate("/biomedico");
+            break;
+          default:
+            navigate("/");
+        }
+      } else {
+        alert("❌ " + data.error);
       }
-    } else {
-      alert("❌ " + data.error);
+    } catch (error) {
+      alert("⚠️ Error de conexión con el servidor");
     }
-  } catch (error) {
-    alert("⚠️ Error de conexión con el servidor");
-  }
-};
-
+  };
 
   return (
     <div className="login-container">
@@ -74,11 +74,7 @@ const handleLogin = async (e) => {
           required
         />
 
-        <button 
-         type="button"
-         className="secondary-btn"
-         onClick={() => navigate("/biomedico")}
-        >
+        <button type="submit" className="secondary-btn">
           Entrar
         </button>
       </form>
@@ -86,7 +82,7 @@ const handleLogin = async (e) => {
       <button
         type="button"
         className="secondary-btn"
-        onClick={() => navigate("/registro")} 
+        onClick={() => navigate("/registro")}
       >
         Registrar
       </button>
