@@ -1,10 +1,11 @@
-import { HashRouter as Router, Routes, Route } from "react-router-dom";
+import { HashRouter as Router, Routes, Route } from "react-router-dom"; 
 
 // páginas principales
 import Presentacion from "./pages/Presentacion";
 import Login from "./Login";
 import Registro from "./Registro";
 import Ajustes from "./pages/Ajustes";
+
 // roles
 import Natural from "./pages/Natural/Natural";
 import Medico from "./pages/Medico/Medico";
@@ -19,7 +20,7 @@ import IncubadoraDetalle from "./pages/Biomedico/IncubadoraDetalle";
 
 function App() {
   return (
-    <Router>
+    <Router basename="/Monutin">
       <Routes>
         <Route path="/" element={<Presentacion />} />
 
@@ -45,4 +46,3 @@ function App() {
 }
 
 export default App;
-
