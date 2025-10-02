@@ -1,5 +1,5 @@
 const express = require("express");
-const sqlite3 = require("sqlite3").verbose();
+const { Pool } = require("pg"); // Cliente Postgres
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const bcrypt = require("bcrypt");
@@ -12,41 +12,43 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // ------------------- CONEXIÓN BD -------------------
-const db = new sqlite3.Database("./database.db", (err) => {
-  if (err) {
-    console.error("❌ Error al conectar con SQLite:", err);
-  } else {
-    console.log("✅ Conectado a SQLite");
-  }
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL, // Render inyecta DATABASE_URL
+  ssl: { rejectUnauthorized: false }
 });
 
-// ------------------- TABLAS -------------------
+// ------------------- CREACIÓN DE TABLAS -------------------
+(async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS usuarios (
+        id SERIAL PRIMARY KEY,
+        nickname TEXT NOT NULL,
+        password TEXT NOT NULL,
+        email TEXT NOT NULL,  
+        tipo TEXT NOT NULL,
+        codigo TEXT
+      )
+    `);
 
-// Usuarios
-db.run(`
-  CREATE TABLE IF NOT EXISTS usuarios (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nickname TEXT NOT NULL,
-    password TEXT NOT NULL,
-    email TEXT NOT NULL,  
-    tipo TEXT NOT NULL,
-    codigo TEXT
-  )
-`);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS sensores (
+        id SERIAL PRIMARY KEY,
+        device TEXT,
+        temperatura REAL,
+        humedad REAL,
+        ambtemp REAL,
+        objtemp REAL,
+        peso REAL,
+        fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
-// Sensores
-db.run(`
-  CREATE TABLE IF NOT EXISTS sensores (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    device TEXT,
-    temperatura REAL,
-    humedad REAL,
-    ambtemp REAL,
-    objtemp REAL,
-    peso REAL,
-    fecha DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`);
+    console.log("✅ Tablas listas en PostgreSQL");
+  } catch (err) {
+    console.error("❌ Error creando tablas:", err);
+  }
+})();
 
 // ------------------- ENDPOINTS USUARIOS -------------------
 
@@ -56,78 +58,78 @@ app.post("/register", async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    db.run(
-      `INSERT INTO usuarios (nickname, password, email, tipo, codigo) VALUES (?, ?, ?, ?, ?)`,
-      [nickname, hashedPassword, email, tipo, codigo || null],
-      function (err) {
-        if (err) {
-          console.error("❌ Error al registrar usuario:", err);
-          res.status(500).json({ error: "Error al registrar usuario" });
-        } else {
-          res.json({ message: "Usuario registrado ✅", id: this.lastID });
-        }
-      }
+    const result = await pool.query(
+      `INSERT INTO usuarios (nickname, password, email, tipo, codigo)
+       VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      [nickname, hashedPassword, email, tipo, codigo || null]
     );
+
+    res.json({ message: "Usuario registrado ✅", id: result.rows[0].id });
   } catch (err) {
-    res.status(500).json({ error: "Error interno en registro" });
+    console.error("❌ Error al registrar usuario:", err);
+    res.status(500).json({ error: "Error al registrar usuario" });
   }
 });
 
 // Login
-app.post("/login", (req, res) => {
+app.post("/login", async (req, res) => {
   const { nickname, password } = req.body;
 
-  db.get(
-    `SELECT * FROM usuarios WHERE nickname = ?`,
-    [nickname],
-    async (err, row) => {
-      if (err) {
-        console.error("❌ Error en login:", err);
-        res.status(500).json({ error: "Error en login" });
-      } else if (row && (await bcrypt.compare(password, row.password))) {
-        res.json({ message: "Login correcto ✅", user: row });
+  try {
+    const result = await pool.query(
+      `SELECT * FROM usuarios WHERE nickname = $1`,
+      [nickname]
+    );
+
+    if (result.rows.length > 0) {
+      const user = result.rows[0];
+      const isMatch = await bcrypt.compare(password, user.password);
+
+      if (isMatch) {
+        res.json({ message: "Login correcto ✅", user });
       } else {
-        res.status(401).json({ error: "Usuario o contraseña incorrectos" });
+        res.status(401).json({ error: "Contraseña incorrecta" });
       }
+    } else {
+      res.status(401).json({ error: "Usuario no encontrado" });
     }
-  );
+  } catch (err) {
+    console.error("❌ Error en login:", err);
+    res.status(500).json({ error: "Error en login" });
+  }
 });
 
 // ------------------- ENDPOINTS SENSORES -------------------
 
 // Recibir datos del ESP32
-app.post("/api/sensores", (req, res) => {
+app.post("/api/sensores", async (req, res) => {
   const { device, temperatura, humedad, ambtemp, objtemp, peso } = req.body;
 
-  db.run(
-    `INSERT INTO sensores (device, temperatura, humedad, ambtemp, objtemp, peso) 
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [device, temperatura, humedad, ambtemp, objtemp, peso],
-    function (err) {
-      if (err) {
-        console.error("❌ Error al insertar sensor:", err);
-        res.status(500).json({ error: "Error al guardar datos de sensor" });
-      } else {
-        res.json({ message: "✅ Datos guardados", id: this.lastID });
-      }
-    }
-  );
+  try {
+    const result = await pool.query(
+      `INSERT INTO sensores (device, temperatura, humedad, ambtemp, objtemp, peso)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+      [device, temperatura, humedad, ambtemp, objtemp, peso]
+    );
+
+    res.json({ message: "✅ Datos guardados", id: result.rows[0].id });
+  } catch (err) {
+    console.error("❌ Error al insertar sensor:", err);
+    res.status(500).json({ error: "Error al guardar datos de sensor" });
+  }
 });
 
 // Consultar últimos datos de sensores
-app.get("/api/sensores", (req, res) => {
-  db.all(
-    `SELECT * FROM sensores ORDER BY fecha DESC LIMIT 20`,
-    [],
-    (err, rows) => {
-      if (err) {
-        console.error("❌ Error al consultar sensores:", err);
-        res.status(500).json({ error: "Error al consultar sensores" });
-      } else {
-        res.json(rows);
-      }
-    }
-  );
+app.get("/api/sensores", async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM sensores ORDER BY fecha DESC LIMIT 20`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("❌ Error al consultar sensores:", err);
+    res.status(500).json({ error: "Error al consultar sensores" });
+  }
 });
 
 // ------------------- INICIO SERVIDOR -------------------
