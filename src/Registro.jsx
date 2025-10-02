@@ -42,9 +42,11 @@ const handleSubmit = async (e) => {
     });
 
     const data = await response.json();
-    if (response.ok) {
-      alert("✅ " + data.message);
-    } else {
+   if (response.ok) {
+     alert("✅ " + data.message);
+     navigate("/login"); // 🔹 redirige al login
+    }
+   else {
       alert("❌ " + data.error);
     }
   } catch (error) {
@@ -130,8 +132,11 @@ const handleSubmit = async (e) => {
 
       <div className="extra-info">
         <p>
-          ¿Ya tienes una cuenta maldito? <a href="/">Inicia sesión</a>
-        </p>
+  ¿Ya tienes una cuenta?{" "}
+  <button onClick={() => navigate("/login")} className="link-btn">
+    Inicia sesión
+  </button>
+</p>
       </div>
     </div>
   );
