@@ -132,7 +132,7 @@ const handleSubmit = async (e) => {
 
       <div className="extra-info">
         <p>
-  ¿Ya tienes una cuenta?{" "}
+  ¿Ya tienes ?{" "}
   <button onClick={() => navigate("/login")} className="link-btn">
     Inicia sesión
   </button>
