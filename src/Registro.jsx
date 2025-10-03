@@ -1,7 +1,10 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import "./App.css";
 
 export default function Registro() {
+  const navigate = useNavigate(); 
   const [formData, setFormData] = useState({
     nickname: "",
     password: "",
@@ -131,8 +134,11 @@ const handleSubmit = async (e) => {
       </form>
 
       <div className="extra-info">
-<p>
-  ¿Ya tienes una cuenta? <Link to="/login">Inicia sesión</Link>
+        <p>
+  ¿Ya tienes una cuenta?{" "}
+  <button onClick={() => navigate("/login")} className="link-btn">
+    Inicia sesión
+  </button>
 </p>
 
       </div>
