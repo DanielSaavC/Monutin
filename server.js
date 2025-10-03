@@ -56,13 +56,17 @@ const pool = new Pool({
 app.post("/register", async (req, res) => {
   const { nickname, password, email, tipo, codigo } = req.body;
   try {
+    console.log("📥 Registro recibido:", req.body); // <-- LOG
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const result = await pool.query(
       `INSERT INTO usuarios (nickname, password, email, tipo, codigo)
        VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-      [nickname, hashedPassword, email, tipo, codigo || null]
+      [nickname.toLowerCase(), hashedPassword, email, tipo, codigo || null]
     );
+
+    console.log("✅ Usuario insertado ID:", result.rows[0].id); // <-- LOG
 
     res.json({ message: "Usuario registrado ✅", id: result.rows[0].id });
   } catch (err) {
@@ -74,11 +78,12 @@ app.post("/register", async (req, res) => {
 // Login
 app.post("/login", async (req, res) => {
   const { nickname, password } = req.body;
-
   try {
+    console.log("🔑 Intento de login:", nickname); // <-- LOG
+
     const result = await pool.query(
       `SELECT * FROM usuarios WHERE nickname = $1`,
-      [nickname]
+      [nickname.toLowerCase()]
     );
 
     if (result.rows.length > 0) {
@@ -86,11 +91,14 @@ app.post("/login", async (req, res) => {
       const isMatch = await bcrypt.compare(password, user.password);
 
       if (isMatch) {
+        console.log("✅ Login correcto:", user.nickname); // <-- LOG
         res.json({ message: "Login correcto ✅", user });
       } else {
+        console.warn("⚠️ Contraseña incorrecta para:", nickname); // <-- LOG
         res.status(401).json({ error: "Contraseña incorrecta" });
       }
     } else {
+      console.warn("❌ Usuario no encontrado:", nickname); // <-- LOG
       res.status(401).json({ error: "Usuario no encontrado" });
     }
   } catch (err) {
