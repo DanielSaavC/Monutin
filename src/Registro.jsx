@@ -1,7 +1,10 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import "./App.css";
 
 export default function Registro() {
+  const navigate = useNavigate(); 
   const [formData, setFormData] = useState({
     nickname: "",
     password: "",
