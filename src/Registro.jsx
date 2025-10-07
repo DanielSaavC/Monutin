@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link,useNavigate } from "react-router-dom";
 import { API_URL } from "../api";
 import "./App.css";
-
 export default function Registro() {
   const navigate = useNavigate(); 
   const [formData, setFormData] = useState({
