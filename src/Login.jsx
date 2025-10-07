@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import "./App.css";
 import { useNavigate } from "react-router-dom";
-
+ import { API_URL } from "../api";
 export default function Login() {
   const [nickname, setNickname] = useState("");
   const [password, setPassword] = useState("");
@@ -12,7 +12,8 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      const response = await fetch("https://monutinbackend.onrender.com/login", {
+  const response = await fetch(`${API_URL}/login`, {
+
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nickname, password }),

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
+import { API_URL } from "../api";
 import "./App.css";
 
 export default function Registro() {
@@ -38,7 +38,7 @@ const handleSubmit = async (e) => {
   };
 
   try {
-    const response = await fetch("https://monutinbackend.onrender.com/register", {
+    const response = await fetch(`${API_URL}/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(usuario),

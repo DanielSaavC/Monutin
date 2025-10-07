@@ -1,5 +1,5 @@
 // src/api.js
-const API_URL = "https://monutinbackend.onrender.com";
+export const API_URL = "http://localhost:4000";
 
 export async function login(nickname, password) {
   const res = await fetch(`${API_URL}/login`, {
