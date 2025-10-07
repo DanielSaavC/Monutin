@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import "./App.css";
 import { useNavigate } from "react-router-dom";
- import { API_URL } from "../api";
+ import { API_URL } from "./api";
+
+
 export default function Login() {
   const [nickname, setNickname] = useState("");
   const [password, setPassword] = useState("");
