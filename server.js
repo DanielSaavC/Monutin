@@ -1,146 +1,166 @@
+// ================== LIBRERÍAS ==================
 const express = require("express");
-const { Pool } = require("pg"); // Cliente Postgres
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const bcrypt = require("bcrypt");
+const sqlite3 = require("sqlite3").verbose();
+const path = require("path");
 
+// ================== CONFIGURACIÓN ==================
 const app = express();
-const PORT = process.env.PORT || 4000; // Render asigna el puerto
+const PORT = 4000;
+const DB_PATH = path.join(__dirname, "database.db");
 
-// ------------------- MIDDLEWARES -------------------
-app.use(cors());
+app.use(cors({ origin: "*" }));
 app.use(bodyParser.json());
 
-// ------------------- CONEXIÓN BD -------------------
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, // Render inyecta DATABASE_URL
-  ssl: { rejectUnauthorized: false }
+// ================== CONEXIÓN A SQLITE ==================
+const db = new sqlite3.Database(DB_PATH, (err) => {
+  if (err) {
+    console.error("❌ Error conectando a SQLite:", err.message);
+  } else {
+    console.log("✅ Conectado a SQLite local:", DB_PATH);
+  }
 });
 
-// ------------------- CREACIÓN DE TABLAS -------------------
-(async () => {
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS usuarios (
-        id SERIAL PRIMARY KEY,
-        nickname TEXT NOT NULL,
-        password TEXT NOT NULL,
-        email TEXT NOT NULL,  
-        tipo TEXT NOT NULL,
-        codigo TEXT
-      )
-    `);
+// ================== CREACIÓN DE TABLAS ==================
+db.serialize(() => {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS usuarios (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nickname TEXT NOT NULL,
+      password TEXT NOT NULL,
+      email TEXT NOT NULL,
+      tipo TEXT NOT NULL,
+      codigo TEXT
+    )
+  `);
 
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS sensores (
-        id SERIAL PRIMARY KEY,
-        device TEXT,
-        temperatura REAL,
-        humedad REAL,
-        ambtemp REAL,
-        objtemp REAL,
-        peso REAL,
-        fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
+  db.run(`
+    CREATE TABLE IF NOT EXISTS sensores (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      device TEXT,
+      temperatura REAL,
+      humedad REAL,
+      ambtemp REAL,
+      objtemp REAL,
+      peso REAL,
+      fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 
-    console.log("✅ Tablas listas en PostgreSQL");
-  } catch (err) {
-    console.error("❌ Error creando tablas:", err);
-  }
-})();
+  console.log("✅ Tablas listas en SQLite");
+});
 
-// ------------------- ENDPOINTS USUARIOS -------------------
+// ================== ENDPOINTS USUARIOS ==================
 
 // Registro
 app.post("/register", async (req, res) => {
   const { nickname, password, email, tipo, codigo } = req.body;
   try {
-    console.log("📥 Registro recibido:", req.body); // <-- LOG
+    console.log("📥 Registro recibido:", req.body);
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const result = await pool.query(
-      `INSERT INTO usuarios (nickname, password, email, tipo, codigo)
-       VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-      [nickname.toLowerCase(), hashedPassword, email, tipo, codigo || null]
+    const stmt = db.prepare(`
+      INSERT INTO usuarios (nickname, password, email, tipo, codigo)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+
+    stmt.run(
+      nickname.toLowerCase(),
+      hashedPassword,
+      email,
+      tipo,
+      codigo || null,
+      function (err) {
+        if (err) {
+          console.error("❌ Error al registrar usuario:", err);
+          res.status(500).json({ error: "Error al registrar usuario" });
+        } else {
+          console.log("✅ Usuario insertado ID:", this.lastID);
+          res.json({ message: "Usuario registrado ✅", id: this.lastID });
+        }
+      }
     );
-
-    console.log("✅ Usuario insertado ID:", result.rows[0].id); // <-- LOG
-
-    res.json({ message: "Usuario registrado ✅", id: result.rows[0].id });
+    stmt.finalize();
   } catch (err) {
-    console.error("❌ Error al registrar usuario:", err);
+    console.error("❌ Error general en registro:", err);
     res.status(500).json({ error: "Error al registrar usuario" });
   }
 });
 
 // Login
-app.post("/login", async (req, res) => {
+app.post("/login", (req, res) => {
   const { nickname, password } = req.body;
-  try {
-    console.log("🔑 Intento de login:", nickname); // <-- LOG
+  console.log("🔑 Intento de login:", nickname);
 
-    const result = await pool.query(
-      `SELECT * FROM usuarios WHERE nickname = $1`,
-      [nickname.toLowerCase()]
-    );
+  db.get(
+    `SELECT * FROM usuarios WHERE nickname = ?`,
+    [nickname.toLowerCase()],
+    async (err, user) => {
+      if (err) {
+        console.error("❌ Error al consultar usuario:", err);
+        res.status(500).json({ error: "Error en la base de datos" });
+        return;
+      }
 
-    if (result.rows.length > 0) {
-      const user = result.rows[0];
+      if (!user) {
+        console.warn("❌ Usuario no encontrado:", nickname);
+        res.status(401).json({ error: "Usuario no encontrado" });
+        return;
+      }
       const isMatch = await bcrypt.compare(password, user.password);
-
       if (isMatch) {
-        console.log("✅ Login correcto:", user.nickname); // <-- LOG
+        console.log("🔎 Comparación bcrypt:", { ingresada: password, hash: user.password, resultado: isMatch });
+
+        console.log("✅ Login correcto:", user.nickname);
         res.json({ message: "Login correcto ✅", user });
       } else {
-        console.warn("⚠️ Contraseña incorrecta para:", nickname); // <-- LOG
+        console.warn("⚠️ Contraseña incorrecta para:", nickname);
         res.status(401).json({ error: "Contraseña incorrecta" });
       }
-    } else {
-      console.warn("❌ Usuario no encontrado:", nickname); // <-- LOG
-      res.status(401).json({ error: "Usuario no encontrado" });
     }
-  } catch (err) {
-    console.error("❌ Error en login:", err);
-    res.status(500).json({ error: "Error en login" });
-  }
+  );
 });
 
-// ------------------- ENDPOINTS SENSORES -------------------
+// ================== ENDPOINTS SENSORES ==================
 
 // Recibir datos del ESP32
-app.post("/api/sensores", async (req, res) => {
+app.post("/api/sensores", (req, res) => {
   const { device, temperatura, humedad, ambtemp, objtemp, peso } = req.body;
 
-  try {
-    const result = await pool.query(
-      `INSERT INTO sensores (device, temperatura, humedad, ambtemp, objtemp, peso)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-      [device, temperatura, humedad, ambtemp, objtemp, peso]
-    );
+  const stmt = db.prepare(`
+    INSERT INTO sensores (device, temperatura, humedad, ambtemp, objtemp, peso)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
 
-    res.json({ message: "✅ Datos guardados", id: result.rows[0].id });
-  } catch (err) {
-    console.error("❌ Error al insertar sensor:", err);
-    res.status(500).json({ error: "Error al guardar datos de sensor" });
-  }
+  stmt.run(device, temperatura, humedad, ambtemp, objtemp, peso, function (err) {
+    if (err) {
+      console.error("❌ Error al insertar sensor:", err);
+      res.status(500).json({ error: "Error al guardar datos de sensor" });
+    } else {
+      res.json({ message: "✅ Datos guardados", id: this.lastID });
+    }
+  });
+
+  stmt.finalize();
 });
 
 // Consultar últimos datos de sensores
-app.get("/api/sensores", async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT * FROM sensores ORDER BY fecha DESC LIMIT 20`
-    );
-    res.json(result.rows);
-  } catch (err) {
-    console.error("❌ Error al consultar sensores:", err);
-    res.status(500).json({ error: "Error al consultar sensores" });
-  }
+app.get("/api/sensores", (req, res) => {
+  db.all(`SELECT * FROM sensores ORDER BY fecha DESC LIMIT 20`, [], (err, rows) => {
+    if (err) {
+      console.error("❌ Error al consultar sensores:", err);
+      res.status(500).json({ error: "Error al consultar sensores" });
+    } else {
+      res.json(rows);
+    }
+  });
 });
 
-// ------------------- INICIO SERVIDOR -------------------
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+// ================== INICIO DEL SERVIDOR ==================
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });
+
