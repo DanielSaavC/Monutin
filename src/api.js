@@ -1,5 +1,5 @@
 // src/api.js
-export const API_URL = "http://10.192.197.65:4000";
+export const API_URL = "http://192.168.92.142:4000";
 export async function login(nickname, password) {
   const res = await fetch(`${API_URL}/login`, {
     method: "POST",
