@@ -48,7 +48,7 @@ export default function Header() {
 
       {/* Título principal */}
       <h2 className="header-title" onClick={() => navigate("/biomedico")}>
-        Monutin
+        Monutinnnn
       </h2>
 
       {/* Usuario */}
