@@ -90,12 +90,6 @@ export default function Login() {
       >
         Registrar
       </button>
-
-      <div className="extra-info">
-        <p>
-          ¿Olvidaste tu contraseña? <Link to="/recuperar">Recuperar</Link>
-        </p>
-      </div>
     </div>
   );
 }

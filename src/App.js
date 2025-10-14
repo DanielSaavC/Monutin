@@ -13,10 +13,12 @@ import Enfermera from "./pages/Enfermera/Enfermera";
 import Tecnico from "./pages/Tecnico/Tecnico";
 
 // biomédico
-import Biomedico from "./pages/Biomedico/Biomedico";
-import Equipos from "./pages/Biomedico/Equipos";
-import Incubadoras from "./pages/Biomedico/Incubadoras";
-import IncubadoraDetalle from "./pages/Biomedico/IncubadoraDetalle";
+import Biomedico from './pages/Biomedico/Biomedico.jsx';
+import Incubadoras from './pages/Biomedico/Equipos/Incubadoras.jsx';
+import IncubadoraDetalle from './pages/Biomedico/Equipos/IncubadoraDetalle.jsx';
+import Equipos from './pages/Biomedico/Equipos/Equipos.jsx';
+import Ventilador from './pages/Biomedico/Equipos/ventiladores.jsx';
+import Servocuna from './pages/Biomedico/Equipos/Servocunas.jsx';
 
 function App() {
   return (
@@ -40,6 +42,10 @@ function App() {
         <Route path="/equipos" element={<Equipos />} />
         <Route path="/incubadoras" element={<Incubadoras />} />
         <Route path="/incubadoras/:id" element={<IncubadoraDetalle />} />
+        <Route path="/servocunas" element={<Servocuna/>} />
+        <Route path="/servocunas/:id" element={<IncubadoraDetalle />} />
+        <Route path="/ventiladores" element={<Ventilador />} />
+        <Route path="/ventiladores/:id" element={<IncubadoraDetalle />} />
       </Routes>
     </Router>
   );

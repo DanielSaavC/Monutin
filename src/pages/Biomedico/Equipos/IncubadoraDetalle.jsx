@@ -9,7 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import "./Biomedico.css";
+import "../Biomedico.css";
 export default function IncubadoraDetalle() {
   const { id } = useParams(); // Incuba 1, 2, 3, 4
 
