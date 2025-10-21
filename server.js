@@ -14,7 +14,7 @@ const DB_PATH = path.join(__dirname, "database.db");
 app.use(cors({
   origin: [
     "https://danielsaavc.github.io",  // tu dominio del frontend
-    "http://localhost:3000"           // para pruebas locales
+    "monutinbackend-production.up.railway.app"           // para pruebas locales
   ],
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type"]
