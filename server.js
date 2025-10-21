@@ -11,7 +11,15 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const DB_PATH = path.join(__dirname, "database.db");
 
-app.use(cors({ origin: "*" }));
+app.use(cors({
+  origin: [
+    "https://danielsaavc.github.io",  // tu frontend en GitHub Pages
+    "http://localhost:3000"           // para pruebas locales
+  ],
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"]
+}));
+
 app.use(bodyParser.json());
 
 // ================== CONEXIÓN A SQLITE ==================
