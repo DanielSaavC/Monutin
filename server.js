@@ -13,12 +13,13 @@ const DB_PATH = path.join(__dirname, "database.db");
 
 app.use(cors({
   origin: [
-    "https://danielsaavc.github.io",  // tu frontend en GitHub Pages
+    "https://danielsaavc.github.io",  // tu dominio del frontend
     "http://localhost:3000"           // para pruebas locales
   ],
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type"]
 }));
+
 
 app.use(bodyParser.json());
 
@@ -165,6 +166,9 @@ app.get("/api/sensores", (req, res) => {
       res.json(rows);
     }
   });
+});
+app.get("/", (req, res) => {
+  res.send("🚀 Backend de Monutin funcionando correctamente en Railway");
 });
 
 // ================== INICIO DEL SERVIDOR ==================
