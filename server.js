@@ -8,7 +8,7 @@ const path = require("path");
 
 // ================== CONFIGURACIÓN ==================
 const app = express();
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
 const DB_PATH = path.join(__dirname, "database.db");
 
 app.use(cors({ origin: "*" }));
@@ -161,6 +161,8 @@ app.get("/api/sensores", (req, res) => {
 
 // ================== INICIO DEL SERVIDOR ==================
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
 });
+
+
 

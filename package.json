@@ -1,13 +1,10 @@
 {
   "name": "monutin-backend",
   "version": "1.0.0",
-  "description": "API backend de Monutin con Express y SQLite",
+  "description": "Backend de Monutin con Express y SQLite",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
-    "postpush": "npm run render-deploy",
-    "render-deploy": "curl -X POST $RENDER_DEPLOY_HOOK"
+    "start": "node server.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
@@ -15,8 +12,5 @@
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "sqlite3": "^5.1.7"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.0"
   }
 }
