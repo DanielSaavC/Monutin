@@ -32,8 +32,6 @@ export default function Header() {
     case "biomedico":
       prefijo = "Ing.";
       break;
-    default:
-      prefijo = "";
   }
 
   return (
