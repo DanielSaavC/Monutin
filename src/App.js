@@ -38,7 +38,6 @@ function AppWrapper() {
 
 function App() {
   const location = useLocation();
-  const usuario = JSON.parse(localStorage.getItem("usuario"));
 
   // Rutas públicas (sin login)
   const publicPaths = ["/", "/login", "/registro"];
