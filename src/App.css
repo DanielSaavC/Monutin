@@ -1,4 +1,4 @@
-/* ===== ESTILO MÉDICO PROFESIONAL ===== */
+/* ===== ESTILO MÉDICO PROFESIONAL RESPONSIVE ===== */
 body {
   margin: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -7,6 +7,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 20px;
 }
 
 /* ===== CONTENEDORES ===== */
@@ -14,18 +15,19 @@ body {
 .register-container,
 .presentacion-card {
   background: #ffffff;
-  padding: 30px;
-  border-radius: 12px;
+  padding: 40px;
+  border-radius: 15px;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
   text-align: center;
-  width: 90%;
+  width: 100%;
   max-width: 400px;
   animation: fadeIn 0.8s ease-in-out;
+  box-sizing: border-box;
 }
 
 /* ===== TÍTULOS ===== */
 h1, h2 {
-  color: #00796B; /* tono médico turquesa */
+  color: #00796B;
   margin-bottom: 20px;
   font-weight: 600;
 }
@@ -39,6 +41,7 @@ input, select {
   border-radius: 8px;
   font-size: 1em;
   transition: all 0.3s;
+  box-sizing: border-box;
 }
 
 input:focus, select:focus {
@@ -96,4 +99,56 @@ button:hover, .btn-primary:hover {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-20px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* =============================== */
+/* 📱 DISEÑO RESPONSIVE */
+/* =============================== */
+
+/* 🔸 Tablets (pantallas medianas) */
+@media (max-width: 992px) {
+  body {
+    padding: 15px;
+  }
+
+  .login-container,
+  .register-container,
+  .presentacion-card {
+    max-width: 350px;
+    padding: 30px;
+  }
+
+  h1, h2 {
+    font-size: 1.4em;
+  }
+}
+
+/* 🔸 Celulares (pantallas pequeñas) */
+@media (max-width: 600px) {
+  body {
+    flex-direction: column;
+    padding: 10px;
+  }
+
+  .login-container,
+  .register-container,
+  .presentacion-card {
+    width: 100%;
+    max-width: 95%;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  }
+
+  h1, h2 {
+    font-size: 1.2em;
+  }
+
+  input, button {
+    font-size: 0.95em;
+    padding: 10px;
+  }
+
+  .extra-info {
+    font-size: 0.85em;
+  }
 }

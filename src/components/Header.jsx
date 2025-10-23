@@ -1,11 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./Header.css"; // tu archivo de estilos
+import "./Header.css";
 
 export default function Header() {
   const navigate = useNavigate();
   const usuario = JSON.parse(localStorage.getItem("usuario"));
+  const [menuOpen, setMenuOpen] = useState(false);
 
+  // Si no hay usuario, muestra solo el título
   if (!usuario) {
     return (
       <div className="header-container">
@@ -16,7 +18,7 @@ export default function Header() {
     );
   }
 
-  // === Prefijo según tipo de usuario ===
+  // Prefijo según tipo de usuario
   let prefijo = "";
   switch (usuario.tipo) {
     case "medico":
@@ -35,12 +37,18 @@ export default function Header() {
       prefijo = "";
   }
 
+  // Función para cerrar sesión
+  const cerrarSesion = () => {
+    localStorage.removeItem("usuario");
+    navigate("/");
+  };
+
   return (
-    <div className="header-container">
-      {/* Flecha para volver atrás */}
+    <header className="header-container">
+      {/* Flecha atrás */}
       <div
         className="header-back"
-        title="Regresar a la página anterior"
+        title="Regresar"
         onClick={() => navigate(-1)}
       >
         ←
@@ -48,13 +56,31 @@ export default function Header() {
 
       {/* Título principal */}
       <h2 className="header-title" onClick={() => navigate("/biomedico")}>
-        Monutinnnn
+        Monutin
       </h2>
 
-      {/* Usuario */}
-      <div className="header-user" onClick={() => navigate("/ajustes")}>
-        {prefijo} {usuario.nickname}
+      {/* Contenedor derecho */}
+      <div className="header-right">
+        {/* Nombre de usuario (solo visible en pantallas grandes) */}
+        <div className="header-user" onClick={() => navigate("/ajustes")}>
+          {prefijo} {usuario.nickname}
+        </div>
+
+        {/* Botón hamburguesa visible solo en móvil */}
+        <div
+          className="menu-toggle"
+          onClick={() => setMenuOpen(!menuOpen)}
+        >
+          {menuOpen ? "✕" : "☰"}
+        </div>
+
+        {/* Menú desplegable */}
+        <nav className={`menu ${menuOpen ? "active" : ""}`}>
+          <a onClick={() => navigate("/biomedico")}>Inicio</a>
+          <a onClick={() => navigate("/ajustes")}>Ajustes</a>
+          <a onClick={cerrarSesion}>Cerrar sesión</a>
+        </nav>
       </div>
-    </div>
+    </header>
   );
 }

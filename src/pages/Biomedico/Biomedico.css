@@ -1,16 +1,22 @@
-/* ===== MENÚ PRINCIPAL (ESTILO MÉDICO) ===== */
+/* ===== MENÚ PRINCIPAL (ESTILO MÉDICO RESPONSIVE) ===== */
 
 .menu-container {
-  padding: 30px;
+  padding: 40px 30px;
   text-align: center;
   background-color: #f5f9fa;
   min-height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
 }
 
 .menu-container h2 {
   color: #00796B;
   margin-bottom: 25px;
   font-weight: 600;
+  font-size: 1.8em;
 }
 
 /* ===== GRID ===== */
@@ -21,7 +27,10 @@
   justify-content: center;
   align-items: stretch;
   margin: 0 auto;
-  max-width: 900px;
+  width: 100%;
+  max-width: 1000px;
+  padding: 10px;
+  box-sizing: border-box;
 }
 
 /* ===== TARJETAS ===== */
@@ -37,6 +46,9 @@
   color: #333;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
   border: 2px solid transparent;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .card:hover {
@@ -55,4 +67,77 @@
   box-shadow: 0 6px 20px rgba(0,0,0,0.1);
   max-width: 900px;
   border-top: 4px solid #00BFA6;
+  box-sizing: border-box;
+}
+
+/* =================================================== */
+/* 📱 DISEÑO RESPONSIVE */
+/* =================================================== */
+
+/* 🔸 Tablets medianas */
+@media (max-width: 992px) {
+  .menu-container {
+    padding: 30px 20px;
+  }
+
+  .menu-container h2 {
+    font-size: 1.5em;
+  }
+
+  .grid-menu {
+    gap: 20px;
+  }
+
+  .card {
+    padding: 30px 20px;
+    font-size: 0.95em;
+  }
+
+  .chart-box {
+    padding: 20px;
+    max-width: 95%;
+  }
+}
+
+/* 🔸 Celulares pequeñas */
+@media (max-width: 600px) {
+  .menu-container {
+    padding: 20px 10px;
+  }
+
+  .menu-container h2 {
+    font-size: 1.3em;
+    margin-bottom: 15px;
+  }
+
+  .grid-menu {
+    grid-template-columns: 1fr; /* una sola columna */
+    gap: 15px;
+    width: 100%;
+  }
+
+  .card {
+    padding: 25px 15px;
+    font-size: 0.9em;
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  }
+
+  .chart-box {
+    margin: 20px auto;
+    padding: 15px;
+    max-width: 100%;
+  }
+}
+
+/* 🔸 Celulares muy pequeñas (<=400px) */
+@media (max-width: 400px) {
+  .menu-container h2 {
+    font-size: 1.1em;
+  }
+
+  .card {
+    font-size: 0.85em;
+    padding: 20px 12px;
+  }
 }

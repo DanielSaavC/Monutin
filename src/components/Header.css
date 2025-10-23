@@ -1,3 +1,4 @@
+/* ===== HEADER MÉDICO RESPONSIVE CON MENÚ ===== */
 .header-container {
   width: 100%;
   background: #ffffff;
@@ -12,27 +13,137 @@
   top: 0;
   left: 0;
   z-index: 1000;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  transition: all 0.3s ease;
 }
 
-.header-back,
-.header-title,
-.header-user {
+.header-left, .header-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* ===== TÍTULO ===== */
+.header-title {
+  font-size: 1.8em;
+  font-weight: 600;
+  color: #00796B;
+  text-align: center;
+  flex-grow: 1;
+}
+
+/* ===== BOTONES ===== */
+.header-back, .header-user {
   color: #00796B;
   font-weight: bold;
   cursor: pointer;
   transition: 0.3s;
+  text-decoration: none;
 }
 
-.header-back:hover,
-.header-title:hover,
-.header-user:hover {
+.header-back:hover, .header-user:hover {
   color: #00BFA6;
   transform: scale(1.05);
 }
 
+/* ===== MENÚ HAMBURGUESA ===== */
+.menu-toggle {
+  display: none;
+  font-size: 1.8em;
+  cursor: pointer;
+  color: #00796B;
+  transition: 0.3s;
+}
+
+.menu-toggle:hover {
+  color: #00BFA6;
+}
+
+/* ===== NAV MENÚ ===== */
+.menu {
+  display: flex;
+  gap: 15px;
+}
+
+.menu a {
+  color: #00796B;
+  text-decoration: none;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.menu a:hover {
+  color: #00BFA6;
+}
+
+/* ===== BODY GENERAL ===== */
 body {
   margin-top: 80px;
   background-color: #f5f9fa;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* ================================== */
+/* 📱 RESPONSIVE */
+/* ================================== */
+
+/* 🔹 Tablets medianas */
+@media (max-width: 992px) {
+  .header-title {
+    font-size: 1.4em;
+  }
+}
+
+/* 🔹 Celulares pequeñas */
+@media (max-width: 600px) {
+  .header-container {
+    flex-wrap: wrap;
+    padding: 10px 20px;
+  }
+
+  .menu-toggle {
+    display: block; /* Muestra el ícono ☰ */
+  }
+
+  /* Oculta el menú horizontal por defecto */
+  .menu {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    background: #ffffff;
+    border-top: 2px solid #00BFA6;
+    padding: 10px 0;
+    margin-top: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  }
+
+  /* Cuando se activa (click) */
+  .menu.active {
+    display: flex;
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .menu a {
+    padding: 10px 0;
+    border-bottom: 1px solid #e0f2f1;
+  }
+
+  .menu a:last-child {
+    border-bottom: none;
+  }
+
+  .header-title {
+    font-size: 1.2em;
+    width: 100%;
+    text-align: center;
+  }
+
+  body {
+    margin-top: 120px;
+  }
+}
+
+/* Animación */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
