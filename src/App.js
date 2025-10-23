@@ -1,4 +1,5 @@
-import { HashRouter as Router, Routes, Route } from "react-router-dom"; 
+import React from "react";
+import { HashRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 
 // ====== COMPONENTES ======
 import Header from "./components/Header";       // Header cuando el usuario está logueado
@@ -17,22 +18,38 @@ import Enfermera from "./pages/Enfermera/Enfermera";
 import Tecnico from "./pages/Tecnico/Tecnico";
 
 // ====== BIOMÉDICO ======
-import Biomedico from './pages/Biomedico/Biomedico.jsx';
-import Incubadoras from './pages/Biomedico/Equipos/Incubadoras.jsx';
-import IncubadoraDetalle from './pages/Biomedico/Equipos/IncubadoraDetalle.jsx';
-import Equipos from './pages/Biomedico/Equipos/Equipos.jsx';
-import Ventilador from './pages/Biomedico/Equipos/ventiladores.jsx';
-import Servocuna from './pages/Biomedico/Equipos/Servocunas.jsx';
+import Biomedico from "./pages/Biomedico/Biomedico.jsx";
+import Incubadoras from "./pages/Biomedico/Equipos/Incubadoras.jsx";
+import IncubadoraDetalle from "./pages/Biomedico/Equipos/IncubadoraDetalle.jsx";
+import Equipos from "./pages/Biomedico/Equipos/Equipos.jsx";
+import Ventilador from "./pages/Biomedico/Equipos/ventiladores.jsx";
+import Servocuna from "./pages/Biomedico/Equipos/Servocunas.jsx";
 
-function App() {
-  const usuario = JSON.parse(localStorage.getItem("usuario"));
-  const isLogged = !!usuario; // ✅ true si hay usuario logueado
-
+// =============================
+// COMPONENTE PRINCIPAL
+// =============================
+function AppWrapper() {
   return (
     <Router>
-      {/* === Header dinámico === */}
-      {isLogged ? <Header /> : <HeaderLog />}
+      <App />
+    </Router>
+  );
+}
 
+function App() {
+  const location = useLocation();
+  const usuario = JSON.parse(localStorage.getItem("usuario"));
+
+  // Rutas públicas (sin login)
+  const publicPaths = ["/", "/login", "/registro"];
+  const isPublic = publicPaths.includes(location.pathname.toLowerCase());
+
+  return (
+    <>
+      {/* === Header dinámico según ruta === */}
+      {isPublic ? <HeaderLog /> : <Header />}
+
+      {/* === RUTAS === */}
       <Routes>
         {/* === PÚBLICAS === */}
         <Route path="/" element={<Presentacion />} />
@@ -58,8 +75,8 @@ function App() {
         <Route path="/ventiladores" element={<Ventilador />} />
         <Route path="/ventiladores/:id" element={<IncubadoraDetalle />} />
       </Routes>
-    </Router>
+    </>
   );
 }
 
-export default App;
+export default AppWrapper;
