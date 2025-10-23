@@ -11,15 +11,16 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const DB_PATH = path.join(__dirname, "database.db");
 
-app.use(cors({
-  origin: [
-    "https://danielsaavc.github.io",  // tu dominio del frontend
-    "monutinbackend-production.up.railway.app"           // para pruebas locales
-  ],
-  methods: ["GET", "POST"],
-  allowedHeaders: ["Content-Type"]
-}));
-
+app.use(
+  cors({
+    origin: [
+      "https://danielsaavc.github.io",
+      "monutinbackend-production.up.railway.app",
+    ],
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"],
+  })
+);
 
 app.use(bodyParser.json());
 
@@ -37,7 +38,10 @@ db.serialize(() => {
   db.run(`
     CREATE TABLE IF NOT EXISTS usuarios (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nickname TEXT NOT NULL,
+      nombre TEXT,
+      apellidopaterno TEXT,
+      apellidomaterno TEXT,
+      usuario TEXT NOT NULL UNIQUE,
       password TEXT NOT NULL,
       email TEXT NOT NULL,
       tipo TEXT NOT NULL,
@@ -65,19 +69,31 @@ db.serialize(() => {
 
 // Registro
 app.post("/register", async (req, res) => {
-  const { nickname, password, email, tipo, codigo } = req.body;
+  const {
+    nombre,
+    apellidopaterno,
+    apellidomaterno,
+    usuario,
+    password,
+    email,
+    tipo,
+    codigo,
+  } = req.body;
+
   try {
     console.log("📥 Registro recibido:", req.body);
-
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const stmt = db.prepare(`
-      INSERT INTO usuarios (nickname, password, email, tipo, codigo)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO usuarios (nombre, apellidopaterno, apellidomaterno, usuario, password, email, tipo, codigo)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
-      nickname.toLowerCase(),
+      nombre,
+      apellidopaterno,
+      apellidomaterno,
+      usuario.toLowerCase(),
       hashedPassword,
       email,
       tipo,
@@ -101,12 +117,12 @@ app.post("/register", async (req, res) => {
 
 // Login
 app.post("/login", (req, res) => {
-  const { nickname, password } = req.body;
-  console.log("🔑 Intento de login:", nickname);
+  const { usuario, password } = req.body;
+  console.log("🔑 Intento de login:", usuario);
 
   db.get(
-    `SELECT * FROM usuarios WHERE nickname = ?`,
-    [nickname.toLowerCase()],
+    `SELECT * FROM usuarios WHERE usuario = ?`,
+    [usuario.toLowerCase()],
     async (err, user) => {
       if (err) {
         console.error("❌ Error al consultar usuario:", err);
@@ -115,18 +131,17 @@ app.post("/login", (req, res) => {
       }
 
       if (!user) {
-        console.warn("❌ Usuario no encontrado:", nickname);
+        console.warn("❌ Usuario no encontrado:", usuario);
         res.status(401).json({ error: "Usuario no encontrado" });
         return;
       }
+
       const isMatch = await bcrypt.compare(password, user.password);
       if (isMatch) {
-        console.log("🔎 Comparación bcrypt:", { ingresada: password, hash: user.password, resultado: isMatch });
-
-        console.log("✅ Login correcto:", user.nickname);
+        console.log("✅ Login correcto:", user.usuario);
         res.json({ message: "Login correcto ✅", user });
       } else {
-        console.warn("⚠️ Contraseña incorrecta para:", nickname);
+        console.warn("⚠️ Contraseña incorrecta para:", usuario);
         res.status(401).json({ error: "Contraseña incorrecta" });
       }
     }
@@ -134,8 +149,6 @@ app.post("/login", (req, res) => {
 });
 
 // ================== ENDPOINTS SENSORES ==================
-
-// Recibir datos del ESP32
 app.post("/api/sensores", (req, res) => {
   const { device, temperatura, humedad, ambtemp, objtemp, peso } = req.body;
 
@@ -156,7 +169,6 @@ app.post("/api/sensores", (req, res) => {
   stmt.finalize();
 });
 
-// Consultar últimos datos de sensores
 app.get("/api/sensores", (req, res) => {
   db.all(`SELECT * FROM sensores ORDER BY fecha DESC LIMIT 20`, [], (err, rows) => {
     if (err) {
@@ -167,14 +179,12 @@ app.get("/api/sensores", (req, res) => {
     }
   });
 });
+
 app.get("/", (req, res) => {
   res.send("🚀 Backend de Monutin funcionando correctamente en Railway");
 });
 
 // ================== INICIO DEL SERVIDOR ==================
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
 });
-
-
-
