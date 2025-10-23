@@ -7,6 +7,7 @@ import "../Biomedico.css";
 export default function Servocunas() {
   return (
     <div className="menu-container">
+      <Header /> 
       <h2>🍼 Servocunas</h2>
 
       <div className="grid-menu">

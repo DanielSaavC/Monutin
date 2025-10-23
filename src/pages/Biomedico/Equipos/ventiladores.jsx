@@ -7,6 +7,7 @@ import "../Biomedico.css";
 export default function Ventiladores() {
   return (
     <div className="menu-container">
+      <Header /> 
       <h2>🍼 Ventiladores</h2>
 
       <div className="grid-menu">

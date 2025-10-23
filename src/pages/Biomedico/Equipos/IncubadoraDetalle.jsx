@@ -1,6 +1,6 @@
 import React from "react";
 import { useParams } from "react-router-dom";
-import Header from "../../../components/Header";
+import Header from "../../components/Header";
 import {
   LineChart,
   Line,
@@ -24,7 +24,9 @@ export default function IncubadoraDetalle() {
   }));
 
   return (
+
     <div className="menu-container">
+      <Header /> 
       <h2>📊 Incubadora {id}</h2>
 
       {/* Primer gráfico */}

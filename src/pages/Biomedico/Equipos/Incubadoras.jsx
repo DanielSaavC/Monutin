@@ -7,6 +7,7 @@ import "../Biomedico.css";
 export default function Incubadoras() {
   return (
     <div className="menu-container">
+      <Header /> 
       <h2>🍼 Incubadoras</h2>
 
       <div className="grid-menu">

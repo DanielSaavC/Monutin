@@ -9,6 +9,7 @@ export default function Ajustes() {
 
   return (
     <div className="menu-container">
+      <Header /> 
       <h2>⚙️ Ajustes de Usuario</h2>
       <p><b>Nombre:</b> {usuario.nickname}</p>
       <p><b>Email:</b> {usuario.email}</p>
