@@ -1,11 +1,10 @@
 import React, { useState } from "react";
 import "./App.css";
 import { useNavigate } from "react-router-dom";
- import { API_URL } from "./api";
-
+import { API_URL } from "./api";
 
 export default function Login() {
-  const [nickname, setNickname] = useState("");
+  const [usuario, setUsuario] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
@@ -13,19 +12,18 @@ export default function Login() {
     e.preventDefault();
 
     try {
-  const response = await fetch(`${API_URL}/login`, {
-
+      const response = await fetch(`${API_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nickname, password }),
+        body: JSON.stringify({ usuario, password }), // 👈 backend espera "usuario"
       });
 
       const data = await response.json();
       if (response.ok) {
-        alert("✅ Bienvenido " + data.user.nickname);
+        alert("✅ Bienvenido " + data.user.nombre + " " + data.user.apellidopaterno);
         localStorage.setItem("usuario", JSON.stringify(data.user));
 
-        // redirección según el tipo de usuario
+        // Redirección según tipo
         switch (data.user.tipo) {
           case "natural":
             navigate("/natural");
@@ -57,13 +55,13 @@ export default function Login() {
     <div className="login-container">
       <h2>🔐 Iniciar sesión</h2>
       <form onSubmit={handleLogin}>
-        <label htmlFor="username">Usuario:</label>
+        <label htmlFor="usuario">Usuario:</label>
         <input
           type="text"
-          id="username"
+          id="usuario"
           placeholder="Ingresa tu usuario"
-          value={nickname}
-          onChange={(e) => setNickname(e.target.value)}
+          value={usuario}
+          onChange={(e) => setUsuario(e.target.value)}
           required
         />
 
