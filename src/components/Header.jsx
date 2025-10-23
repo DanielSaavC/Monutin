@@ -66,7 +66,7 @@ export default function Header() {
         <nav className={`menu ${menuOpen ? "active" : ""}`}>
         <button onClick={() => navigate("/biomedico")} className="menu-btn">Inicio</button>
         <button onClick={() => navigate("/ajustes")} className="menu-btn">Ajustes</button>
-        <button onClick={() => navigate("/")} className="menu-btn">Cerrar sesión</button>
+        <button onClick={cerrarSesion} className="menu-btn">Cerrar sesión</button>
       </nav>
       </div>
     </header>
