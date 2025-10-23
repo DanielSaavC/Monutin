@@ -31,15 +31,17 @@
   transform: scale(1.1);
 }
 
-/* Título */
-.header-title {
-  flex: 1;
-  text-align: center;
-  font-size: 1.5em;
-  font-weight: 700;
-  color: #00796B;
-  margin: 0;
+/* ===== LOGO ===== */
+.header-logo {
+  height: 48px;
   cursor: pointer;
+  flex: 1;
+  object-fit: contain;
+  transition: transform 0.25s ease;
+}
+
+.header-logo:hover {
+  transform: scale(1.08);
 }
 
 /* Usuario + botones derechos */
@@ -124,8 +126,9 @@ body {
     display: block;
   }
 
-  .header-title {
-    font-size: 1.2em;
+  /* Ajustes visuales en pantallas pequeñas */
+  .header-logo {
+    height: 40px;
   }
 
   .header-back {

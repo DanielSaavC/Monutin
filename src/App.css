@@ -1,154 +1,85 @@
-/* ===== ESTILO MÉDICO PROFESIONAL RESPONSIVE ===== */
-body {
-  margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f5f9fa;
-  min-height: 100vh;
+body{margin:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f5f9fa;min-height:100vh;display:flex;justify-content:center;align-items:center;padding:20px}
+.login-container,.register-container,.presentacion-card{background:#fff;padding:40px;border-radius:15px;box-shadow:0 8px 25px rgba(0,0,0,.1);text-align:center;width:100%;max-width:400px;animation:fadeIn .8s ease-in-out;box-sizing:border-box}
+h1,h2{color:#00796B;margin-bottom:20px;font-weight:600}
+input,select{width:100%;padding:12px;margin-bottom:15px;border:1px solid #ccc;border-radius:8px;font-size:1em;transition:all .3s;box-sizing:border-box}
+input:focus,select:focus{outline:none;border-color:#00BFA6;box-shadow:0 0 5px rgba(0,191,166,.3)}
+button,.btn-primary{width:100%;padding:12px;background:#00BFA6;color:#fff;border:none;border-radius:8px;font-size:1.1em;cursor:pointer;transition:background .3s;margin-top:10px}
+button:hover,.btn-primary:hover{background:#009e8e}
+.secondary-btn{background:#e0f2f1;color:#00796B;font-weight:700}
+.secondary-btn:hover{background:#b2dfdb}
+.extra-info{margin-top:15px;font-size:.9em;color:#555}
+.extra-info a{color:#00796B;text-decoration:none;font-weight:700}
+.extra-info a:hover{text-decoration:underline}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:992px){
+body{padding:15px}
+.login-container,.register-container,.presentacion-card{max-width:350px;padding:30px}
+h1,h2{font-size:1.4em}
+}
+@media(max-width:600px){
+body{flex-direction:column;padding:10px}
+.login-container,.register-container,.presentacion-card{width:100%;max-width:95%;padding:20px;box-shadow:0 4px 15px rgba(0,0,0,.1)}
+h1,h2{font-size:1.2em}
+input,button{font-size:.95em;padding:10px}
+.extra-info{font-size:.85em}
+}
+.menu-container{padding:40px 30px;text-align:center;background:#f5f9fa;min-height:100vh;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;align-items:center}
+.menu-container h2{color:#00796B;margin-bottom:25px;font-weight:600;font-size:1.8em}
+.grid-menu{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:25px;justify-content:center;align-items:stretch;margin:0 auto;width:100%;max-width:1000px;padding:10px;box-sizing:border-box}
+.card{background:#fff;border-radius:15px;padding:35px 25px;font-weight:600;text-align:center;cursor:pointer;transition:all .3s ease;text-decoration:none;color:#333;box-shadow:0 5px 15px rgba(0,0,0,.08);border:2px solid transparent;display:flex;justify-content:center;align-items:center}
+.card:hover{border-color:#00BFA6;background:#E0F7F4;transform:translateY(-5px);box-shadow:0 8px 25px rgba(0,191,166,.2)}
+.chart-box{margin:30px auto;padding:25px;border-radius:15px;background:#fff;box-shadow:0 6px 20px rgba(0,0,0,.1);max-width:900px;border-top:4px solid #00BFA6;box-sizing:border-box}
+@media(max-width:992px){
+.menu-container{padding:30px 20px}
+.menu-container h2{font-size:1.5em}
+.grid-menu{gap:20px}
+.card{padding:30px 20px;font-size:.95em}
+.chart-box{padding:20px;max-width:95%}
+}
+@media(max-width:600px){
+.menu-container{padding:20px 10px}
+.menu-container h2{font-size:1.3em;margin-bottom:15px}
+.grid-menu{grid-template-columns:1fr;gap:15px;width:100%}
+.card{padding:25px 15px;font-size:.9em;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.1)}
+.chart-box{margin:20px auto;padding:15px;max-width:100%}
+}
+@media(max-width:400px){
+.menu-container h2{font-size:1.1em}
+.card{font-size:.85em;padding:20px 12px}
+}
+.header-container {
   display: flex;
-  justify-content: center;
   align-items: center;
-  padding: 20px;
-}
-
-/* ===== CONTENEDORES ===== */
-.login-container,
-.register-container,
-.presentacion-card {
+  justify-content: space-between;
   background: #ffffff;
-  padding: 40px;
-  border-radius: 15px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-  text-align: center;
+  border-bottom: 3px solid #00bfa6;
+  padding: 10px 20px;
+  position: fixed;
+  top: 0;
   width: 100%;
-  max-width: 400px;
-  animation: fadeIn 0.8s ease-in-out;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  z-index: 1000;
   box-sizing: border-box;
 }
 
-/* ===== TÍTULOS ===== */
-h1, h2 {
-  color: #00796B;
-  margin-bottom: 20px;
-  font-weight: 600;
-}
-
-/* ===== INPUTS ===== */
-input, select {
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 15px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 1em;
-  transition: all 0.3s;
-  box-sizing: border-box;
-}
-
-input:focus, select:focus {
-  outline: none;
-  border-color: #00BFA6;
-  box-shadow: 0 0 5px rgba(0,191,166,0.3);
-}
-
-/* ===== BOTONES ===== */
-button, .btn-primary {
-  width: 100%;
-  padding: 12px;
-  background: #00BFA6;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-size: 1.1em;
+/* Logo principal */
+.header-logo {
+  height: 50px;
   cursor: pointer;
-  transition: background 0.3s;
-  margin-top: 10px;
+  transition: transform 0.2s ease;
 }
 
-button:hover, .btn-primary:hover {
-  background: #009e8e;
+.header-logo:hover {
+  transform: scale(1.05);
 }
 
-.secondary-btn {
-  background: #e0f2f1;
-  color: #00796B;
-  font-weight: bold;
+/* Segundo logo o variante biomédica */
+.header-logo-bio {
+  height: 45px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
 }
 
-.secondary-btn:hover {
-  background: #b2dfdb;
-}
-
-/* ===== TEXTOS Y ENLACES ===== */
-.extra-info {
-  margin-top: 15px;
-  font-size: 0.9em;
-  color: #555;
-}
-
-.extra-info a {
-  color: #00796B;
-  text-decoration: none;
-  font-weight: bold;
-}
-
-.extra-info a:hover {
-  text-decoration: underline;
-}
-
-/* ===== ANIMACIÓN ===== */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* =============================== */
-/* 📱 DISEÑO RESPONSIVE */
-/* =============================== */
-
-/* 🔸 Tablets (pantallas medianas) */
-@media (max-width: 992px) {
-  body {
-    padding: 15px;
-  }
-
-  .login-container,
-  .register-container,
-  .presentacion-card {
-    max-width: 350px;
-    padding: 30px;
-  }
-
-  h1, h2 {
-    font-size: 1.4em;
-  }
-}
-
-/* 🔸 Celulares (pantallas pequeñas) */
-@media (max-width: 600px) {
-  body {
-    flex-direction: column;
-    padding: 10px;
-  }
-
-  .login-container,
-  .register-container,
-  .presentacion-card {
-    width: 100%;
-    max-width: 95%;
-    padding: 20px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  }
-
-  h1, h2 {
-    font-size: 1.2em;
-  }
-
-  input, button {
-    font-size: 0.95em;
-    padding: 10px;
-  }
-
-  .extra-info {
-    font-size: 0.85em;
-  }
+.header-logo-bio:hover {
+  transform: scale(1.05);
 }

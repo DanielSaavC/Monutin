@@ -7,14 +7,16 @@ export default function Header() {
   const usuario = JSON.parse(localStorage.getItem("usuario"));
   const [menuOpen, setMenuOpen] = useState(false);
 
-
-  // Si no hay usuario, muestra solo el título
+  // Si no hay usuario, muestra solo el logo principal
   if (!usuario) {
     return (
       <div className="header-container">
-        <h2 className="header-title" onClick={() => navigate("/")}>
-          Monutin
-        </h2>
+        <img
+          src={`${process.env.PUBLIC_URL}/images/Monutin.png`}
+          alt="Logo Monutin"
+          className="header-logo"
+          onClick={() => navigate("/")}
+        />
       </div>
     );
   }
@@ -48,26 +50,31 @@ export default function Header() {
     <header className="header-container">
       {/* Flecha atrás */}
       <div className="header-back" onClick={() => navigate(-1)}>←</div>
-      {/* Título principal */}
-      <h2 className="header-title" onClick={() => navigate("/biomedico")}>
-        Monutin
-      </h2>
+
+      {/* Logo principal (clickeable) */}
+      <img
+        src={`${process.env.PUBLIC_URL}/images/Monutin.png`}
+        alt="Logo Monutin"
+        className="header-logo"
+        onClick={() => navigate("/biomedico")}
+      />
 
       {/* Contenedor derecho */}
       <div className="header-right">
-        {/* Nombre de usuario (solo visible en pantallas grandes) */}
+        {/* Nombre de usuario */}
         <div className="header-user" onClick={() => navigate("/ajustes")}>
           {prefijo} {usuario.nickname}
         </div>
 
         {/* Botón hamburguesa visible solo en móvil */}
         <div className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)}>☰</div>
+
         {/* Menú desplegable */}
         <nav className={`menu ${menuOpen ? "active" : ""}`}>
-        <button onClick={() => navigate("/biomedico")} className="menu-btn">Inicio</button>
-        <button onClick={() => navigate("/ajustes")} className="menu-btn">Ajustes</button>
-        <button onClick={cerrarSesion} className="menu-btn">Cerrar sesión</button>
-      </nav>
+          <button onClick={() => navigate("/biomedico")} className="menu-btn">Inicio</button>
+          <button onClick={() => navigate("/ajustes")} className="menu-btn">Ajustes</button>
+          <button onClick={cerrarSesion} className="menu-btn">Cerrar sesión</button>
+        </nav>
       </div>
     </header>
   );

@@ -17,16 +17,16 @@
   box-sizing: border-box;
 }
 
-.headerlog-title {
-  font-size: 1.8em;
-  font-weight: 700;
-  color: #00796B;
+/* ===== LOGO PRINCIPAL ===== */
+.headerlog-logo {
+  height: 55px;
   cursor: pointer;
-  transition: 0.3s;
+  object-fit: contain;
+  transition: transform 0.25s ease;
 }
 
-.headerlog-title:hover {
-  color: #00BFA6;
+.headerlog-logo:hover {
+  transform: scale(1.08);
 }
 
 /* ===== BOTONES ===== */
@@ -65,32 +65,32 @@
 /* ===== ESPACIADO DEL BODY ===== */
 body {
   margin: 0;
-  padding-top: 70px; /* espacio para el header fijo */
+  padding-top: 80px; /* espacio para el header fijo */
 }
 
 /* ===== 📱 RESPONSIVE ===== */
 @media (max-width: 768px) {
   .headerlog-container {
     flex-direction: column;
-    align-items: flex-start;
-    padding: 15px;
+    align-items: center;
+    padding: 12px 15px;
+    gap: 10px;
   }
 
-  .headerlog-title {
-    font-size: 1.5em;
-    margin-bottom: 10px;
+  .headerlog-logo {
+    height: 45px;
   }
 
   .headerlog-nav {
     width: 100%;
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
   }
 
   .headerlog-btn {
     flex: 1;
     text-align: center;
     padding: 10px;
-    margin: 5px;
+    margin: 4px;
   }
 }
