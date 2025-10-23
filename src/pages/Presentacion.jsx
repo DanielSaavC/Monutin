@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import mqtt from "mqtt";
-import { useNavigate } from "react-router-dom"; // 👈 importar React Router
+import { useNavigate } from "react-router-dom";
 import "../App.css";
 
 export default function Presentacion() {
