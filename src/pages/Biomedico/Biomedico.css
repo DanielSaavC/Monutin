@@ -1,37 +1,58 @@
+/* ===== MENÚ PRINCIPAL (ESTILO MÉDICO) ===== */
+
 .menu-container {
-  padding: 20px;
+  padding: 30px;
   text-align: center;
+  background-color: #f5f9fa;
+  min-height: 100vh;
 }
 
+.menu-container h2 {
+  color: #00796B;
+  margin-bottom: 25px;
+  font-weight: 600;
+}
+
+/* ===== GRID ===== */
 .grid-menu {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-  margin-top: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 25px;
+  justify-content: center;
+  align-items: stretch;
+  margin: 0 auto;
+  max-width: 900px;
 }
 
+/* ===== TARJETAS ===== */
 .card {
-  background: #f2f2f2;
-  border-radius: 12px;
-  padding: 40px 20px;
-  font-weight: bold;
+  background: #ffffff;
+  border-radius: 15px;
+  padding: 35px 25px;
+  font-weight: 600;
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
   text-decoration: none;
   color: #333;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  border: 2px solid transparent;
 }
 
 .card:hover {
-  background: #d4f1f9;
-  transform: scale(1.05);
+  border-color: #00BFA6;
+  background: #E0F7F4;
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 191, 166, 0.2);
 }
 
+/* ===== CUADRO DE GRÁFICOS ===== */
 .chart-box {
-  margin: 25px auto;
-  padding: 20px;
-  border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-  max-width: 800px;
+  margin: 30px auto;
+  padding: 25px;
+  border-radius: 15px;
+  background: #ffffff;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  max-width: 900px;
+  border-top: 4px solid #00BFA6;
 }
