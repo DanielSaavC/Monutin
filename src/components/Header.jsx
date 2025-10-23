@@ -76,9 +76,9 @@ export default function Header() {
 
         {/* Menú desplegable */}
         <nav className={`menu ${menuOpen ? "active" : ""}`}>
-          <a onClick={() => navigate("/biomedico")}>Inicio</a>
-          <a onClick={() => navigate("/ajustes")}>Ajustes</a>
-          <a onClick={cerrarSesion}>Cerrar sesión</a>
+          <button onClick={() => navigate("/biomedico")} className="menu-btn">Inicio</button>
+          <button onClick={() => navigate("/ajustes")} className="menu-btn">Ajustes</button>
+          <button onClick={cerrarSesion} className="menu-btn">Cerrar sesión</button>
         </nav>
       </div>
     </header>

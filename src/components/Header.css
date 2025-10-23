@@ -147,3 +147,20 @@ body {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+.menu-btn {
+  background: none;
+  border: none;
+  color: #00796B;
+  font-weight: 600;
+  font-size: 1em;
+  cursor: pointer;
+  padding: 10px 0;
+  width: 100%;
+  text-align: center;
+  transition: 0.3s;
+}
+
+.menu-btn:hover {
+  color: #00BFA6;
+  background-color: #E0F7F4;
+}
