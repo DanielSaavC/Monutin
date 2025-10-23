@@ -3,7 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const bcrypt = require("bcrypt");
-const sqlite3 = require("sqlite3").verbose();
+const Database = require("better-sqlite3");
 const path = require("path");
 
 // ================== CONFIGURACIÓN ==================
@@ -14,6 +14,7 @@ const DB_PATH = path.join(__dirname, "database.db");
 app.use(cors({
   origin: [
     "https://danielsaavc.github.io",
+    "https://danielsaavc.github.io/Monutin",
     "https://monutinbackend-production.up.railway.app"
   ],
   methods: ["GET", "POST"],
@@ -22,61 +23,50 @@ app.use(cors({
 
 app.use(bodyParser.json());
 
-// ================== CONEXIÓN A SQLITE ==================
-const db = new sqlite3.Database(DB_PATH, (err) => {
-  if (err) {
-    console.error("❌ Error conectando a SQLite:", err.message);
-  } else {
-    console.log("✅ Conectado a SQLite local:", DB_PATH);
-  }
-});
+// ================== CONEXIÓN A BETTER-SQLITE3 ==================
+let db;
+try {
+  db = new Database(DB_PATH);
+  console.log("✅ Conectado a SQLite local:", DB_PATH);
+} catch (err) {
+  console.error("❌ Error conectando a SQLite:", err.message);
+}
 
 // ================== CREACIÓN DE TABLAS ==================
-db.serialize(() => {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS usuarios (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nombre TEXT,
-      apellidopaterno TEXT,
-      apellidomaterno TEXT,
-      usuario TEXT NOT NULL UNIQUE,
-      password TEXT NOT NULL,
-      email TEXT NOT NULL,
-      tipo TEXT NOT NULL,
-      codigo TEXT
-    )
-  `);
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS usuarios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre TEXT,
+    apellidopaterno TEXT,
+    apellidomaterno TEXT,
+    usuario TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    email TEXT NOT NULL,
+    tipo TEXT NOT NULL,
+    codigo TEXT
+  )
+`).run();
 
-  db.run(`
-    CREATE TABLE IF NOT EXISTS sensores (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      device TEXT,
-      temperatura REAL,
-      humedad REAL,
-      ambtemp REAL,
-      objtemp REAL,
-      peso REAL,
-      fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS sensores (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    device TEXT,
+    temperatura REAL,
+    humedad REAL,
+    ambtemp REAL,
+    objtemp REAL,
+    peso REAL,
+    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )
+`).run();
 
-  console.log("✅ Tablas listas en SQLite");
-});
+console.log("✅ Tablas listas en SQLite");
 
 // ================== ENDPOINTS USUARIOS ==================
 
 // Registro
 app.post("/register", async (req, res) => {
-  const {
-    nombre,
-    apellidopaterno,
-    apellidomaterno,
-    usuario,
-    password,
-    email,
-    tipo,
-    codigo,
-  } = req.body;
+  const { nombre, apellidopaterno, apellidomaterno, usuario, password, email, tipo, codigo } = req.body;
 
   try {
     console.log("📥 Registro recibido:", req.body);
@@ -86,100 +76,72 @@ app.post("/register", async (req, res) => {
       INSERT INTO usuarios (nombre, apellidopaterno, apellidomaterno, usuario, password, email, tipo, codigo)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
+    const info = stmt.run(nombre, apellidopaterno, apellidomaterno, usuario.toLowerCase(), hashedPassword, email, tipo, codigo || null);
 
-    stmt.run(
-      nombre,
-      apellidopaterno,
-      apellidomaterno,
-      usuario.toLowerCase(),
-      hashedPassword,
-      email,
-      tipo,
-      codigo || null,
-      function (err) {
-        if (err) {
-          console.error("❌ Error al registrar usuario:", err);
-          res.status(500).json({ error: "Error al registrar usuario" });
-        } else {
-          console.log("✅ Usuario insertado ID:", this.lastID);
-          res.json({ message: "Usuario registrado ✅", id: this.lastID });
-        }
-      }
-    );
-    stmt.finalize();
+    console.log("✅ Usuario insertado ID:", info.lastInsertRowid);
+    res.json({ message: "Usuario registrado ✅", id: info.lastInsertRowid });
   } catch (err) {
-    console.error("❌ Error general en registro:", err);
+    console.error("❌ Error al registrar usuario:", err);
     res.status(500).json({ error: "Error al registrar usuario" });
   }
 });
 
 // Login
-app.post("/login", (req, res) => {
+app.post("/login", async (req, res) => {
   const { usuario, password } = req.body;
   console.log("🔑 Intento de login:", usuario);
 
-  db.get(
-    `SELECT * FROM usuarios WHERE usuario = ?`,
-    [usuario.toLowerCase()],
-    async (err, user) => {
-      if (err) {
-        console.error("❌ Error al consultar usuario:", err);
-        res.status(500).json({ error: "Error en la base de datos" });
-        return;
-      }
+  try {
+    const user = db.prepare(`SELECT * FROM usuarios WHERE usuario = ?`).get(usuario.toLowerCase());
 
-      if (!user) {
-        console.warn("❌ Usuario no encontrado:", usuario);
-        res.status(401).json({ error: "Usuario no encontrado" });
-        return;
-      }
-
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (isMatch) {
-        console.log("✅ Login correcto:", user.usuario);
-        res.json({ message: "Login correcto ✅", user });
-      } else {
-        console.warn("⚠️ Contraseña incorrecta para:", usuario);
-        res.status(401).json({ error: "Contraseña incorrecta" });
-      }
+    if (!user) {
+      console.warn("❌ Usuario no encontrado:", usuario);
+      return res.status(401).json({ error: "Usuario no encontrado" });
     }
-  );
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (isMatch) {
+      console.log("✅ Login correcto:", user.usuario);
+      res.json({ message: "Login correcto ✅", user });
+    } else {
+      console.warn("⚠️ Contraseña incorrecta para:", usuario);
+      res.status(401).json({ error: "Contraseña incorrecta" });
+    }
+  } catch (err) {
+    console.error("❌ Error al consultar usuario:", err);
+    res.status(500).json({ error: "Error en la base de datos" });
+  }
 });
 
 // ================== ENDPOINTS SENSORES ==================
 app.post("/api/sensores", (req, res) => {
   const { device, temperatura, humedad, ambtemp, objtemp, peso } = req.body;
 
-  const stmt = db.prepare(`
-    INSERT INTO sensores (device, temperatura, humedad, ambtemp, objtemp, peso)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `);
-
-  stmt.run(device, temperatura, humedad, ambtemp, objtemp, peso, function (err) {
-    if (err) {
-      console.error("❌ Error al insertar sensor:", err);
-      res.status(500).json({ error: "Error al guardar datos de sensor" });
-    } else {
-      res.json({ message: "✅ Datos guardados", id: this.lastID });
-    }
-  });
-
-  stmt.finalize();
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO sensores (device, temperatura, humedad, ambtemp, objtemp, peso)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    const info = stmt.run(device, temperatura, humedad, ambtemp, objtemp, peso);
+    res.json({ message: "✅ Datos guardados", id: info.lastInsertRowid });
+  } catch (err) {
+    console.error("❌ Error al insertar sensor:", err);
+    res.status(500).json({ error: "Error al guardar datos de sensor" });
+  }
 });
 
 app.get("/api/sensores", (req, res) => {
-  db.all(`SELECT * FROM sensores ORDER BY fecha DESC LIMIT 20`, [], (err, rows) => {
-    if (err) {
-      console.error("❌ Error al consultar sensores:", err);
-      res.status(500).json({ error: "Error al consultar sensores" });
-    } else {
-      res.json(rows);
-    }
-  });
+  try {
+    const rows = db.prepare(`SELECT * FROM sensores ORDER BY fecha DESC LIMIT 20`).all();
+    res.json(rows);
+  } catch (err) {
+    console.error("❌ Error al consultar sensores:", err);
+    res.status(500).json({ error: "Error al consultar sensores" });
+  }
 });
 
 app.get("/", (req, res) => {
-  res.send("🚀 Backend de Monutin funcionando correctamente en Railway");
+  res.send("🚀 Backend de Monutin funcionando correctamente en Railway (better-sqlite3)");
 });
 
 // ================== INICIO DEL SERVIDOR ==================
