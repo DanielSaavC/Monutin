@@ -217,7 +217,7 @@ button:hover,
 /* ===== RESPONSIVE ===== */
 @media (max-width: 992px) {
   body {
-    padding-top: 110px;
+    padding-top: 90px;
   }
 
   .login-container,
