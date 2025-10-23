@@ -1,16 +1,20 @@
 import React, { useState } from "react";
-import { Link,useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { API_URL } from "./api";
 import "./App.css";
+
 export default function Registro() {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    nickname: "",
+    nombre: "",
+    apellidopaterno: "",
+    apellidomaterno: "",
+    usuario: "", // antes nickname
     password: "",
     confirmPassword: "",
     email: "",
     tipo: "natural",
-    codigo: ""
+    codigo: "",
   });
 
   const handleChange = (e) => {
@@ -20,53 +24,81 @@ export default function Registro() {
     });
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  if (formData.password !== formData.confirmPassword) {
-    alert("❌ Las contraseñas no coinciden");
-    return;
-  }
+    if (formData.password !== formData.confirmPassword) {
+      alert("❌ Las contraseñas no coinciden");
+      return;
+    }
 
-  const usuario = {
-    nickname: formData.nickname,
-    password: formData.password,
-    email: formData.email,
-    tipo: formData.tipo,
-    codigo: formData.tipo !== "natural" ? formData.codigo : null,
+    const usuario = {
+      nombre: formData.nombre,
+      apellidopaterno: formData.apellidopaterno,
+      apellidomaterno: formData.apellidomaterno,
+      usuario: formData.usuario,
+      password: formData.password,
+      email: formData.email,
+      tipo: formData.tipo,
+      codigo: formData.tipo !== "natural" ? formData.codigo : null,
+    };
+
+    try {
+      const response = await fetch(`${API_URL}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(usuario),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        alert("✅ " + data.message);
+        navigate("/login");
+      } else {
+        alert("❌ " + data.error);
+      }
+    } catch (error) {
+      alert("⚠️ Error de conexión con el servidor");
+    }
   };
-
-  try {
-    const response = await fetch(`${API_URL}/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(usuario),
-    });
-
-    const data = await response.json();
-   if (response.ok) {
-     alert("✅ " + data.message);
-     navigate("/login"); // 🔹 redirige al login
-    }
-   else {
-      alert("❌ " + data.error);
-    }
-  } catch (error) {
-    alert("⚠️ Error de conexión con el servidor");
-  }
-};
-
 
   return (
     <div className="register-container">
       <h2>📝 Registro</h2>
       <form onSubmit={handleSubmit}>
-        <label>Nickname:</label>
+        <label>Nombre:</label>
         <input
           type="text"
-          name="nickname"
+          name="nombre"
+          value={formData.nombre}
+          onChange={handleChange}
+          required
+        />
+
+        <label>Apellido Paterno:</label>
+        <input
+          type="text"
+          name="apellidopaterno"
+          value={formData.apellidopaterno}
+          onChange={handleChange}
+          required
+        />
+
+        <label>Apellido Materno:</label>
+        <input
+          type="text"
+          name="apellidomaterno"
+          value={formData.apellidomaterno}
+          onChange={handleChange}
+          required
+        />
+
+        <label>Usuario:</label>
+        <input
+          type="text"
+          name="usuario"
           placeholder="Tu usuario"
-          value={formData.nickname}
+          value={formData.usuario}
           onChange={handleChange}
           required
         />
@@ -134,9 +166,8 @@ const handleSubmit = async (e) => {
 
       <div className="extra-info">
         <p>
-         ¿Ya tienes una cuenta? <Link to="/login">Inicia sesión</Link>
+          ¿Ya tienes una cuenta? <Link to="/login">Inicia sesión</Link>
         </p>
-
       </div>
     </div>
   );

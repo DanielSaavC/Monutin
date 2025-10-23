@@ -61,9 +61,9 @@ export default function Header() {
 
       {/* Contenedor derecho */}
       <div className="header-right">
-        {/* Nombre de usuario */}
+        {/* Mostrar el apellido paterno */}
         <div className="header-user" onClick={() => navigate("/ajustes")}>
-          {prefijo} {usuario.nickname}
+          {prefijo} {usuario.apellidopaterno || usuario.usuario}
         </div>
 
         {/* Botón hamburguesa visible solo en móvil */}
