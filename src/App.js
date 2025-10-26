@@ -39,7 +39,6 @@ import HospitalDelSur from "./pages/Biomedico/Hospitales/HospitalDelSur.jsx";
 import HospitalObrero from "./pages/Biomedico/Hospitales/HospitalObrero.jsx";
 import HospitalVietma from "./pages/Biomedico/Hospitales/HospitalVietma.jsx";
 import HospitalUnivalle from "./pages/Biomedico/Hospitales/HospitalUnivalle.jsx";
-import Hospital from "./pages/Biomedico/Hospitales/Hospital.jsx";
 
 // --- Registrar ---
 import AdquisicionDeEquipo from "./pages/Biomedico/Registrar/AdquisicionDeEquipo.jsx";
@@ -112,7 +111,7 @@ function App() {
         <Route path="/hospitalobrero" element={<HospitalObrero />} />
         <Route path="/hospitalviedma" element={<HospitalVietma />} />
         <Route path="/hospitalunivalle" element={<HospitalUnivalle />} />
-        <Route path="/hospitalmixto" element={<Hospital />} />
+
 
         {/* ---- REGISTRAR ---- */}
         <Route path="/adquisicion" element={<AdquisicionDeEquipo />} />
