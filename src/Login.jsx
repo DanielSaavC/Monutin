@@ -15,15 +15,14 @@ export default function Login() {
       const response = await fetch(`${API_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ usuario, password }), // 👈 backend espera "usuario"
+        body: JSON.stringify({ usuario, password }),
       });
 
       const data = await response.json();
       if (response.ok) {
-        alert("✅ Bienvenido " + data.user.nombre + " " + data.user.apellidopaterno);
+        alert(`✅ Bienvenido ${data.user.nombre} ${data.user.apellidopaterno}`);
         localStorage.setItem("usuario", JSON.stringify(data.user));
 
-        // Redirección según tipo
         switch (data.user.tipo) {
           case "natural":
             navigate("/natural");
@@ -52,41 +51,61 @@ export default function Login() {
   };
 
   return (
-    <div className="login-container">
-      <h2>🔐 Iniciar sesión</h2>
-      <form onSubmit={handleLogin}>
-        <label htmlFor="usuario">Usuario:</label>
-        <input
-          type="text"
-          id="usuario"
-          placeholder="Ingresa tu usuario"
-          value={usuario}
-          onChange={(e) => setUsuario(e.target.value)}
-          required
-        />
+    <div className="auth-container">
+      {/* === COLUMNA IZQUIERDA: FORMULARIO === */}
+      <div className="auth-texto">
+        <h2>🔐 Iniciar sesión</h2>
 
-        <label htmlFor="password">Contraseña:</label>
-        <input
-          type="password"
-          id="password"
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        <form onSubmit={handleLogin}>
+          <label htmlFor="usuario">Usuario:</label>
+          <input
+            type="text"
+            id="usuario"
+            placeholder="Ingresa tu usuario"
+            value={usuario}
+            onChange={(e) => setUsuario(e.target.value)}
+            required
+          />
 
-        <button type="submit" className="secondary-btn">
-          Entrar
-        </button>
-      </form>
+          <label htmlFor="password">Contraseña:</label>
+          <input
+            type="password"
+            id="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
 
-      <button
-        type="button"
-        className="secondary-btn"
-        onClick={() => navigate("/registro")}
-      >
-        Registrar
-      </button>
+          <button type="submit" className="btn-primary">
+            Entrar
+          </button>
+        </form>
+
+        <div className="extra-info">
+          <p>
+            ¿No tienes una cuenta?{" "}
+            <button
+              onClick={() => navigate("/registro")}
+              className="link-btn"
+              style={{
+                background: "none",
+                border: "none",
+                color: "#00796B",
+                fontWeight: "700",
+                cursor: "pointer",
+              }}
+            >
+              Crear cuenta
+            </button>
+          </p>
+        </div>
+      </div>
+
+      {/* === COLUMNA DERECHA: IMAGEN === */}
+      <div className="auth-imagen">
+        <img src={process.env.PUBLIC_URL + "/images/presentacion.png"} alt="Monutin presentación" />
+      </div>
     </div>
   );
 }

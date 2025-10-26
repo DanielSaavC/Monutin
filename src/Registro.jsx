@@ -63,9 +63,10 @@ export default function Registro() {
   };
 
   return (
-    <div className="register-container">
-      <h2>📝 Registro</h2>
-      <form onSubmit={handleSubmit}>
+<div className="auth-container">
+  <div className="auth-texto">
+    <h2>📝 Registro</h2>
+    <form onSubmit={handleSubmit}>
         <label>Nombre:</label>
         <input
           type="text"
@@ -161,14 +162,16 @@ export default function Registro() {
           </>
         )}
 
-        <button type="submit">Registrarse</button>
-      </form>
-
-      <div className="extra-info">
-        <p>
-          ¿Ya tienes una cuenta? <Link to="/login">Inicia sesión</Link>
-        </p>
-      </div>
+         <button type="submit" className="btn-primary">Registrarse</button>
+    </form>
+    <div className="extra-info">
+      <p>¿Ya tienes una cuenta? <Link to="/login">Inicia sesión</Link></p>
     </div>
+  </div>
+
+  <div className="auth-imagen">
+    <img src={process.env.PUBLIC_URL + "/images/presentacion.png"} alt="Monutin presentación" />
+  </div>
+</div>
   );
 }
