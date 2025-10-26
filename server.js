@@ -17,7 +17,7 @@ app.use(cors({
     "https://danielsaavc.github.io/Monutin",
     "https://monutinbackend-production.up.railway.app"
   ],
-  methods: ["GET", "POST"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // ✅ añadimos PUT y DELETE
   allowedHeaders: ["Content-Type"]
 }));
 
