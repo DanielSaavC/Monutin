@@ -16,11 +16,6 @@ export default function Biomedico() {
     }
   };
 
-  const handleError = (err) => {
-    console.error("Error al escanear:", err);
-    alert("No se pudo acceder a la cámara. Revisa los permisos.");
-  };
-
   return (
     <div>
       <Header />
