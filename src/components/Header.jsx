@@ -40,6 +40,29 @@ export default function Header() {
       prefijo = "";
   }
 
+  // Redirección al "Inicio" según tipo
+  const irInicio = () => {
+    switch (usuario.tipo) {
+      case "medico":
+        navigate("/medico");
+        break;
+      case "enfermera":
+        navigate("/enfermera");
+        break;
+      case "tecnico":
+        navigate("/tecnico");
+        break;
+      case "biomedico":
+        navigate("/biomedico");
+        break;
+      case "natural":
+        navigate("/natural");
+        break;
+      default:
+        navigate("/");
+    }
+  };
+
   // Función para cerrar sesión
   const cerrarSesion = () => {
     localStorage.removeItem("usuario");
@@ -56,22 +79,24 @@ export default function Header() {
         src={`${process.env.PUBLIC_URL}/images/Monutin.png`}
         alt="Logo Monutin"
         className="header-logo"
-        onClick={() => navigate("/biomedico")}
+        onClick={irInicio} // ✅ redirige según el rol
       />
 
       {/* Contenedor derecho */}
       <div className="header-right">
-        {/* Mostrar el apellido paterno */}
+        {/* Mostrar nombre o apellido */}
         <div className="header-user" onClick={() => navigate("/ajustes")}>
           {prefijo} {usuario.apellidopaterno || usuario.usuario}
         </div>
 
         {/* Botón hamburguesa visible solo en móvil */}
-        <div className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)}>☰</div>
+        <div className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)}>
+          ☰
+        </div>
 
         {/* Menú desplegable */}
         <nav className={`menu ${menuOpen ? "active" : ""}`}>
-          <button onClick={() => navigate("/biomedico")} className="menu-btn">Inicio</button>
+          <button onClick={irInicio} className="menu-btn">Inicio</button>
           <button onClick={() => navigate("/ajustes")} className="menu-btn">Ajustes</button>
           <button onClick={cerrarSesion} className="menu-btn">Cerrar sesión</button>
         </nav>
