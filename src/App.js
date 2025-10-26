@@ -47,6 +47,8 @@ import RegistrarEquipo from "./pages/Biomedico/Registrar/RegistrarEquipo.jsx";
 
 import VerSeguimiento from "./pages/Biomedico/Seguimiento/VerSeguimiento.jsx";
 import IniciarSeguimiento from "./pages/Biomedico/Seguimiento/IniciarSeguimiento.jsx";
+import IniciarSeguimiento from "./pages/Biomedico/Seguimiento/IniciarSeguimiento.jsx";
+
 
 // =============================
 // COMPONENTE PRINCIPAL
