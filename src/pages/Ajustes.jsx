@@ -18,31 +18,37 @@ export default function Ajustes() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Guardar cambios (UPDATE)
-  const handleGuardar = async () => {
-    setCargando(true);
-    try {
-      const response = await fetch(`${API_URL}/updateUser/${usuario.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        alert("✅ Datos actualizados correctamente");
-        localStorage.setItem("usuario", JSON.stringify(formData));
-        setUsuario(formData);
-        setEditando(false);
-      } else {
-        alert("❌ Error: " + data.error);
-      }
-    } catch (err) {
-      alert("⚠️ Error de conexión con el servidor");
-    } finally {
-      setCargando(false);
+// Guardar cambios (UPDATE)
+const handleGuardar = async () => {
+  setCargando(true);
+  try {
+    const dataToSend = { ...formData };
+    if (!dataToSend.password || dataToSend.password.trim() === "") {
+      delete dataToSend.password; // 👈 no enviar si está vacío
     }
-  };
+
+    const response = await fetch(`${API_URL}/updateUser/${usuario.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dataToSend),
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      alert("✅ Datos actualizados correctamente");
+      localStorage.setItem("usuario", JSON.stringify({ ...formData, password: undefined }));
+      setUsuario({ ...formData, password: undefined });
+      setEditando(false);
+    } else {
+      alert("❌ Error: " + data.error);
+    }
+  } catch (err) {
+    alert("⚠️ Error de conexión con el servidor");
+  } finally {
+    setCargando(false);
+  }
+};
+
 
   // Eliminar cuenta (DELETE)
   const handleEliminar = async () => {
@@ -98,44 +104,25 @@ export default function Ajustes() {
         </div>
       ) : (
         <div className="ajustes-card">
-          <h3>🛠️ Editar información</h3>
-          <input
-            name="nombre"
-            placeholder="Nombre"
-            value={formData.nombre}
-            onChange={handleChange}
-          />
-          <input
-            name="apellidopaterno"
-            placeholder="Apellido Paterno"
-            value={formData.apellidopaterno}
-            onChange={handleChange}
-          />
-          <input
-            name="apellidomaterno"
-            placeholder="Apellido Materno"
-            value={formData.apellidomaterno}
-            onChange={handleChange}
-          />
-          <input
-            name="usuario"
-            placeholder="Usuario"
-            value={formData.usuario}
-            onChange={handleChange}
-          />
-          <input
-            name="email"
-            type="email"
-            placeholder="Correo electrónico"
-            value={formData.email}
-            onChange={handleChange}
-          />
-          <input
-            name="password"
-            type="password"
-            placeholder="Nueva contraseña (opcional)"
-            onChange={handleChange}
-          />
+              <h3>🛠️ Editar información</h3>
+
+              <label>Nombre:</label>
+              <input name="nombre" value={formData.nombre} onChange={handleChange} />
+
+              <label>Apellido paterno:</label>
+              <input name="apellidopaterno" value={formData.apellidopaterno} onChange={handleChange} />
+
+              <label>Apellido materno:</label>
+              <input name="apellidomaterno" value={formData.apellidomaterno} onChange={handleChange} />
+
+              <label>Usuario:</label>
+              <input name="usuario" value={formData.usuario} onChange={handleChange} />
+
+              <label>Correo electrónico:</label>
+              <input name="email" type="email" value={formData.email} onChange={handleChange} />
+
+              <label>Nueva contraseña (opcional):</label>
+              <input name="password" type="password" placeholder="••••••" onChange={handleChange} />
 
           <div className="ajustes-btns">
               <button onClick={handleGuardar} disabled={cargando || !formData.nombre}>

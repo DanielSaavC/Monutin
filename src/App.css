@@ -788,3 +788,10 @@ button:hover,
 .delete-btn:hover {
   background: #e53935;
 }
+.ajustes-card label {
+  font-weight: 600;
+  color: #00796b;
+  display: block;
+  margin-top: 10px;
+  margin-bottom: 5px;
+}
