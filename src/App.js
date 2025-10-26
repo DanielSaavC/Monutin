@@ -118,6 +118,7 @@ function App() {
         <Route path="/registroequipo" element={<RegEquipo />} />
         <Route path="/registraequipo" element={<RegistrarEquipo />} />
         <Route path="/Verseguimiento" element={<VerSeguimiento />} />
+        <Route path="/Iniciarseguimiento" element={<VerSeguimiento />} />
       </Routes>
     </>
   );
