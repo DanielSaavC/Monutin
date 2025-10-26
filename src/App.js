@@ -34,7 +34,7 @@ import UTI from "./pages/Biomedico/Areas/Uti.jsx";
 import UTIN from "./pages/Biomedico/Areas/Utin.jsx";
 
 // --- Hospitales ---
-import CNSP from "./pages/Biomedico/Hospitales/CNSP.jsx";
+import CNSP from "./pages/Biomedico/Hospitales/CajaNacional.jsx";
 import HospitalDelSur from "./pages/Biomedico/Hospitales/HospitalDelSur.jsx";
 import HospitalObrero from "./pages/Biomedico/Hospitales/HospitalObrero.jsx";
 import HospitalVietma from "./pages/Biomedico/Hospitales/HospitalVietma.jsx";
