@@ -129,16 +129,23 @@ app.put("/updateUser/:id", async (req, res) => {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    // Si hay contraseña nueva, encriptarla
+    // ✅ Solo cambiar la contraseña si se ingresó una nueva
     let hashedPassword = userExistente.password;
     if (password && password.trim() !== "") {
       hashedPassword = await bcrypt.hash(password, 10);
     }
 
+    // ✅ Prevenir que se sobrescriba con vacío o undefined
     const stmt = db.prepare(`
       UPDATE usuarios
-      SET nombre = ?, apellidopaterno = ?, apellidomaterno = ?, 
-          usuario = ?, email = ?, password = ?, tipo = ?, codigo = ?
+      SET nombre = ?, 
+          apellidopaterno = ?, 
+          apellidomaterno = ?, 
+          usuario = ?, 
+          email = ?, 
+          password = ?, 
+          tipo = ?, 
+          codigo = ?
       WHERE id = ?
     `);
 
@@ -148,7 +155,7 @@ app.put("/updateUser/:id", async (req, res) => {
       apellidomaterno || userExistente.apellidomaterno,
       usuario ? usuario.toLowerCase() : userExistente.usuario,
       email || userExistente.email,
-      hashedPassword,
+      hashedPassword, // 👈 conserva el hash anterior si no se envió contraseña
       tipo || userExistente.tipo,
       codigo || userExistente.codigo,
       id
@@ -161,6 +168,7 @@ app.put("/updateUser/:id", async (req, res) => {
     res.status(500).json({ error: "Error al actualizar usuario" });
   }
 });
+
 
 // ================== ELIMINAR USUARIO ==================
 app.delete("/deleteUser/:id", (req, res) => {
