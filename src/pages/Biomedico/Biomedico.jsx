@@ -12,34 +12,12 @@ export default function Biomedico() {
 
         <div className="grid-menu">
           {/* === SECCIÓN DE EQUIPOS === */}
-          <Link to="/equipos" className="card">
-            Equipos
-          </Link>
-
-          {/* === SECCIÓN DE ÁREAS === */}
-          <Link to="/imagenologia" className="card">
-            Áreas
-          </Link>
-
-          {/* === SECCIÓN DE HOSPITALES === */}
-          <Link to="/hospitalviedma" className="card">
-            Hospitales
-          </Link>
-
-          {/* === SEGUIMIENTO === */}
-          <Link to="/verseguimiento" className="card">
-            Seguimiento
-          </Link>
-
-          {/* === REGISTRO === */}
-          <Link to="/adquisicion" className="card">
-            Registrar
-          </Link>
-
-          {/* === AJUSTES === */}
-          <Link to="/ajustes" className="card">
-            Ajustes
-          </Link>
+          <Link to="/equipos" className="card">Equipos</Link>
+          <Link to="/imagenologia" className="card">Áreas</Link>
+          <Link to="/hospitalviedma" className="card">Hospitales</Link>
+          <Link to="/verseguimiento" className="card">Seguimiento</Link>
+          <Link to="/adquisicion" className="card">Registrar</Link>
+          <Link to="/ajustes" className="card">Ajustes</Link>
         </div>
       </div>
     </div>
