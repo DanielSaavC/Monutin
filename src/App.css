@@ -8,6 +8,10 @@ body {
   padding-top: 100px; /* espacio para el header fijo */
   box-sizing: border-box;
 }
+.login-container,
+.register-container {
+  margin-top: 40px; /* 👈 añade separación desde el header fijo */
+}
 
 /* ===== CONTENEDORES PRINCIPALES ===== */
 .login-container,
@@ -456,4 +460,78 @@ button:hover,
 
 .qr-copy-btn:hover {
   background: #009e8e;
+}
+/* ===== ESCÁNER QR A PANTALLA COMPLETA MEJORADO ===== */
+.qr-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.95);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  color: #fff;
+  text-align: center;
+}
+
+.qr-video-full {
+  width: 90%;
+  max-width: 450px;
+  border: 4px solid #00bfa6;
+  border-radius: 12px;
+  box-shadow: 0 0 25px rgba(0, 191, 166, 0.7);
+}
+
+/* === BOTONES INFERIORES === */
+.qr-buttons {
+  position: fixed;
+  bottom: 30px;
+  display: flex;
+  gap: 15px;
+}
+
+.qr-btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 1em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.qr-btn-exit {
+  background: #ff5252;
+  color: white;
+}
+
+.qr-btn-exit:hover {
+  background: #e53935;
+}
+
+.qr-btn-copy {
+  background: #00bfa6;
+  color: white;
+}
+
+.qr-btn-copy:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* === TEXTO FLOTANTE CON EL RESULTADO === */
+.qr-floating-text {
+  position: fixed;
+  top: 20px;
+  max-width: 90%;
+  word-break: break-all;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 15px;
+  font-size: 0.95em;
+  line-height: 1.4em;
 }

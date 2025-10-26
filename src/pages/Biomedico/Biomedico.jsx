@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "../../App.css";
 import Header from "../../components/Header";
@@ -7,24 +7,46 @@ import { Scanner } from "@yudiel/react-qr-scanner";
 export default function Biomedico() {
   const [showScanner, setShowScanner] = useState(false);
   const [qrData, setQrData] = useState("");
+  const [copied, setCopied] = useState(false);
 
+  // 🔒 Evita que el botón "atrás" del móvil cierre toda la web cuando está activo el escáner
+  useEffect(() => {
+    const handleBack = (e) => {
+      if (showScanner) {
+        e.preventDefault();
+        setShowScanner(false);
+        window.history.pushState(null, "", window.location.href);
+      }
+    };
+
+    if (showScanner) {
+      window.history.pushState(null, "", window.location.href);
+      window.addEventListener("popstate", handleBack);
+    }
+
+    return () => window.removeEventListener("popstate", handleBack);
+  }, [showScanner]);
+
+  // ✅ Detecta código QR
   const handleScan = (result) => {
     if (result) {
       setQrData(result);
-      setShowScanner(false);
-
-      // Detecta si el QR es un link y lo abre automáticamente
-      if (result.startsWith("http://") || result.startsWith("https://")) {
-        window.open(result, "_blank");
-      } else {
-        alert(`📷 Código QR detectado:\n${result}`);
-      }
+      setCopied(false); // reinicia estado del botón
     }
   };
 
+  // ⚠️ Maneja errores de cámara
   const handleError = (error) => {
     console.error("Error al escanear:", error);
     alert("❌ No se pudo acceder a la cámara. Verifica los permisos del navegador.");
+  };
+
+  // 📋 Copiar al portapapeles
+  const handleCopy = () => {
+    if (qrData) {
+      navigator.clipboard.writeText(qrData);
+      setCopied(true);
+    }
   };
 
   return (
@@ -39,7 +61,6 @@ export default function Biomedico() {
           <Link to="/adquisicion" className="card">Registrar</Link>
           <Link to="/ajustes" className="card">Ajustes</Link>
 
-          {/* === BOTÓN ESCANEAR QR === */}
           <button
             className="card"
             style={{
@@ -62,45 +83,50 @@ export default function Biomedico() {
               onDecode={handleScan}
               onError={handleError}
               components={{
-                audio: true, // ✅ sonido de confirmación
-                tracker: true, // marco visual
+                audio: true,
+                tracker: true,
               }}
               constraints={{
                 facingMode: "environment",
               }}
               className="qr-video-full"
             />
-            <button
-              className="qr-close-full-btn"
-              onClick={() => setShowScanner(false)}
-            >
-              ✖ Cerrar
-            </button>
-          </div>
-        )}
 
-        {/* === RESULTADO DEL ESCÁNER === */}
-        {qrData && (
-          <div className="qr-result-container">
-            <p className="qr-result">
-              📷 Código detectado:
-              <br />
-              <span className="qr-link">
+            {/* === BOTONES DENTRO DEL ESCÁNER === */}
+            <div className="qr-buttons">
+              <button
+                className="qr-btn qr-btn-exit"
+                onClick={() => setShowScanner(false)}
+              >
+                ✖ Salir
+              </button>
+
+              <button
+                className="qr-btn qr-btn-copy"
+                onClick={handleCopy}
+                disabled={!qrData}
+              >
+                {copied ? "✅ Copiado" : "💾 Guardar Link"}
+              </button>
+            </div>
+
+            {/* === MOSTRAR RESULTADO ESCANEADO === */}
+            {qrData && (
+              <div className="qr-floating-text">
                 {qrData.startsWith("http") ? (
-                  <a href={qrData} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={qrData}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "#00BFA6" }}
+                  >
                     {qrData}
                   </a>
                 ) : (
                   qrData
                 )}
-              </span>
-            </p>
-            <button
-              className="qr-copy-btn"
-              onClick={() => navigator.clipboard.writeText(qrData)}
-            >
-              Copiar
-            </button>
+              </div>
+            )}
           </div>
         )}
       </div>
