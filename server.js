@@ -70,8 +70,14 @@ app.post("/register", async (req, res) => {
 
   try {
     console.log("📥 Registro recibido:", req.body);
-    const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Verificar si ya existe el usuario
+    const existe = db.prepare("SELECT id FROM usuarios WHERE usuario = ?").get(usuario.toLowerCase());
+    if (existe) {
+      return res.status(400).json({ error: "El usuario ya existe. Usa otro nombre de usuario." });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
     const stmt = db.prepare(`
       INSERT INTO usuarios (nombre, apellidopaterno, apellidomaterno, usuario, password, email, tipo, codigo)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -85,6 +91,7 @@ app.post("/register", async (req, res) => {
     res.status(500).json({ error: "Error al registrar usuario" });
   }
 });
+
 
 // Login
 app.post("/login", async (req, res) => {
