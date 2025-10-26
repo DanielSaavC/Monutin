@@ -9,7 +9,8 @@ body {
   box-sizing: border-box;
 }
 .login-container,
-.register-container {
+.register-container,
+.presentacion-card {
   margin-top: 40px; /* 👈 añade separación desde el header fijo */
 }
 
