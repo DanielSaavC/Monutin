@@ -10,7 +10,7 @@ export default function Biomedico() {
   const [showModal, setShowModal] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Control del botón "Atrás" del móvil
+  // ✅ Control del botón "Atrás" del móvil
   useEffect(() => {
     const handleBack = (e) => {
       if (showScanner) {
@@ -26,12 +26,23 @@ export default function Biomedico() {
     return () => window.removeEventListener("popstate", handleBack);
   }, [showScanner]);
 
-  // ✅ Escaneo del QR
+  // ✅ Detección flexible de formato del QR
   const handleScan = (result) => {
-    if (result && result[0]?.rawValue) {
-      const value = result[0].rawValue;
+    if (!result) return;
+
+    let value = "";
+    // Si devuelve un array con objetos (rawValue)
+    if (Array.isArray(result) && result[0]?.rawValue) {
+      value = result[0].rawValue;
+    }
+    // Si devuelve texto plano
+    else if (typeof result === "string") {
+      value = result;
+    }
+
+    if (value) {
       setQrData(value);
-      setShowModal(true); // abre modal
+      setShowModal(true);
       setCopied(false);
     }
   };
@@ -51,7 +62,7 @@ export default function Biomedico() {
     }
   };
 
-  // 🔗 Abrir URL
+  // 🔗 Abrir link o mostrar texto
   const handleOpen = () => {
     if (qrData.startsWith("http")) {
       window.open(qrData, "_blank");
