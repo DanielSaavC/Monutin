@@ -11,7 +11,7 @@ body {
 .login-container,
 .register-container,
 .presentacion-card {
-  margin-top: 40px; /* 👈 añade separación desde el header fijo */
+  margin-top: 50px; /* 👈 añade separación desde el header fijo */
 }
 
 /* ===== CONTENEDORES PRINCIPALES ===== */
