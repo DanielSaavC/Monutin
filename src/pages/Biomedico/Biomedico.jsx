@@ -8,19 +8,23 @@ export default function Biomedico() {
   const [showScanner, setShowScanner] = useState(false);
   const [qrData, setQrData] = useState("");
 
-  // ✅ Cuando se detecta un código QR
   const handleScan = (result) => {
     if (result) {
       setQrData(result);
       setShowScanner(false);
-      alert(`✅ Código QR detectado:\n${result}`);
+
+      // Detecta si el QR es un link y lo abre automáticamente
+      if (result.startsWith("http://") || result.startsWith("https://")) {
+        window.open(result, "_blank");
+      } else {
+        alert(`📷 Código QR detectado:\n${result}`);
+      }
     }
   };
 
-  // ⚠️ Si ocurre un error al usar la cámara
   const handleError = (error) => {
     console.error("Error al escanear:", error);
-    alert("No se pudo acceder a la cámara. Verifica los permisos del navegador.");
+    alert("❌ No se pudo acceder a la cámara. Verifica los permisos del navegador.");
   };
 
   return (
@@ -30,21 +34,12 @@ export default function Biomedico() {
         <h1 className="titulo-seccion">Biomédico</h1>
 
         <div className="grid-menu">
-          {/* === Opciones principales === */}
-          <Link to="/equipos" className="card">
-            Equipos
-          </Link>
-          <Link to="/verseguimiento" className="card">
-            Seguimiento
-          </Link>
-          <Link to="/adquisicion" className="card">
-            Registrar
-          </Link>
-          <Link to="/ajustes" className="card">
-            Ajustes
-          </Link>
+          <Link to="/equipos" className="card">Equipos</Link>
+          <Link to="/verseguimiento" className="card">Seguimiento</Link>
+          <Link to="/adquisicion" className="card">Registrar</Link>
+          <Link to="/ajustes" className="card">Ajustes</Link>
 
-          {/* === Botón Escanear QR === */}
+          {/* === BOTÓN ESCANEAR QR === */}
           <button
             className="card"
             style={{
@@ -60,36 +55,53 @@ export default function Biomedico() {
           </button>
         </div>
 
-        {/* === Contenedor del escáner === */}
+        {/* === ESCÁNER A PANTALLA COMPLETA === */}
         {showScanner && (
-          <div className="qr-scanner-container">
+          <div className="qr-fullscreen">
             <Scanner
               onDecode={handleScan}
               onError={handleError}
               components={{
-                audio: false, // desactiva sonido de confirmación
-                tracker: true, // muestra marco de escaneo
+                audio: true, // ✅ sonido de confirmación
+                tracker: true, // marco visual
               }}
               constraints={{
-                facingMode: "environment", // usa cámara trasera
+                facingMode: "environment",
               }}
-              className="qr-video"
+              className="qr-video-full"
             />
-
             <button
-              className="qr-close-btn"
+              className="qr-close-full-btn"
               onClick={() => setShowScanner(false)}
             >
-              Cerrar cámara
+              ✖ Cerrar
             </button>
           </div>
         )}
 
-        {/* === Resultado del escaneo === */}
+        {/* === RESULTADO DEL ESCÁNER === */}
         {qrData && (
-          <p className="qr-result">
-            📷 Código detectado: {qrData}
-          </p>
+          <div className="qr-result-container">
+            <p className="qr-result">
+              📷 Código detectado:
+              <br />
+              <span className="qr-link">
+                {qrData.startsWith("http") ? (
+                  <a href={qrData} target="_blank" rel="noopener noreferrer">
+                    {qrData}
+                  </a>
+                ) : (
+                  qrData
+                )}
+              </span>
+            </p>
+            <button
+              className="qr-copy-btn"
+              onClick={() => navigator.clipboard.writeText(qrData)}
+            >
+              Copiar
+            </button>
+          </div>
         )}
       </div>
     </div>

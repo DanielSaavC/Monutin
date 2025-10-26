@@ -390,3 +390,70 @@ button:hover,
     font-size: 0.85em;
   }
 }
+/* ===== ESCÁNER A PANTALLA COMPLETA ===== */
+.qr-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.qr-video-full {
+  width: 90%;
+  max-width: 450px;
+  border: 5px solid #00bfa6;
+  border-radius: 15px;
+  box-shadow: 0 0 25px rgba(0, 191, 166, 0.7);
+}
+
+.qr-close-full-btn {
+  margin-top: 20px;
+  background: #ff5252;
+  color: #fff;
+  font-size: 1.2em;
+  font-weight: bold;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 25px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.qr-close-full-btn:hover {
+  background: #e53935;
+}
+
+/* ===== RESULTADO Y COPIAR ===== */
+.qr-result-container {
+  margin-top: 25px;
+  text-align: center;
+}
+
+.qr-link a {
+  color: #00796b;
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.qr-copy-btn {
+  background: #00bfa6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 15px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: 0.3s;
+}
+
+.qr-copy-btn:hover {
+  background: #009e8e;
+}
