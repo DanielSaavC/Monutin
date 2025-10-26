@@ -27,13 +27,18 @@ export default function Biomedico() {
           </Link>
 
           {/* === SEGUIMIENTO === */}
-          <Link to="/seguimiento" className="card">
+          <Link to="/verseguimiento" className="card">
             Seguimiento
           </Link>
 
           {/* === REGISTRO === */}
           <Link to="/adquisicion" className="card">
             Registrar
+          </Link>
+
+          {/* === AJUSTES === */}
+          <Link to="/ajustes" className="card">
+            Ajustes
           </Link>
         </div>
       </div>

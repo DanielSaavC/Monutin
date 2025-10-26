@@ -27,17 +27,17 @@ import Equipos from "./pages/Biomedico/Equipos/Equipos.jsx";
 import Ventilador from "./pages/Biomedico/Equipos/ventiladores.jsx";
 import Servocuna from "./pages/Biomedico/Equipos/Servocunas.jsx";
 
-// --- Áreas ---
+// --- Áreas ---  
 import Imagenologia from "./pages/Biomedico/Areas/Imagenologia.jsx";
-import Quirófano from "./pages/Biomedico/Areas/Quirofano.jsx";
-import UTI from "./pages/Biomedico/Areas/Uti.jsx";
-import UTIN from "./pages/Biomedico/Areas/Utin.jsx";
+import Quirofano from "./pages/Biomedico/Areas/Quirofano.jsx";
+import Uti from "./pages/Biomedico/Areas/Uti.jsx";
+import Utin from "./pages/Biomedico/Areas/Utin.jsx";
 
 // --- Hospitales ---
 import CNSP from "./pages/Biomedico/Hospitales/CajaNacional.jsx";
 import HospitalDelSur from "./pages/Biomedico/Hospitales/HospitalDelSur.jsx";
 import HospitalObrero from "./pages/Biomedico/Hospitales/HospitalObrero.jsx";
-import HospitalVietma from "./pages/Biomedico/Hospitales/HospitalVietma.jsx";
+import HospitalViedma from "./pages/Biomedico/Hospitales/HospitalViedma.jsx";
 import HospitalUnivalle from "./pages/Biomedico/Hospitales/HospitalUnivalle.jsx";
 
 // --- Registrar ---
@@ -45,10 +45,9 @@ import AdquisicionDeEquipo from "./pages/Biomedico/Registrar/AdquisicionDeEquipo
 import RegEquipo from "./pages/Biomedico/Registrar/RegEquipo.jsx";
 import RegistrarEquipo from "./pages/Biomedico/Registrar/RegistrarEquipo.jsx";
 
+// --- Seguimiento ---
 import VerSeguimiento from "./pages/Biomedico/Seguimiento/VerSeguimiento.jsx";
 import IniciarSeguimiento from "./pages/Biomedico/Seguimiento/IniciarSeguimiento.jsx";
-
-
 
 // =============================
 // COMPONENTE PRINCIPAL
@@ -103,24 +102,25 @@ function App() {
 
         {/* ---- ÁREAS ---- */}
         <Route path="/imagenologia" element={<Imagenologia />} />
-        <Route path="/quirofano" element={<Quirófano />} />
-        <Route path="/uti" element={<UTI />} />
-        <Route path="/utin" element={<UTIN />} />
+        <Route path="/quirofano" element={<Quirofano />} />
+        <Route path="/uti" element={<Uti />} />
+        <Route path="/utin" element={<Utin />} />
 
         {/* ---- HOSPITALES ---- */}
         <Route path="/cnsp" element={<CNSP />} />
         <Route path="/hospitalsur" element={<HospitalDelSur />} />
         <Route path="/hospitalobrero" element={<HospitalObrero />} />
-        <Route path="/hospitalviedma" element={<HospitalVietma />} />
+        <Route path="/hospitalviedma" element={<HospitalViedma />} />
         <Route path="/hospitalunivalle" element={<HospitalUnivalle />} />
-
 
         {/* ---- REGISTRAR ---- */}
         <Route path="/adquisicion" element={<AdquisicionDeEquipo />} />
         <Route path="/registroequipo" element={<RegEquipo />} />
         <Route path="/registraequipo" element={<RegistrarEquipo />} />
-        <Route path="/Verseguimiento" element={<VerSeguimiento />} />
-        <Route path="/Iniciarseguimiento" element={<IniciarSeguimiento />} />
+
+        {/* ---- SEGUIMIENTO ---- */}
+        <Route path="/verseguimiento" element={<VerSeguimiento />} />
+        <Route path="/iniciarseguimiento" element={<IniciarSeguimiento />} />
       </Routes>
     </>
   );
