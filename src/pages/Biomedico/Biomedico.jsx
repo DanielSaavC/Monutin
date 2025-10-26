@@ -2,24 +2,25 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import "../../App.css";
 import Header from "../../components/Header";
-import { QrScanner } from "@yudiel/react-qr-scanner";
+import { Scanner } from "@yudiel/react-qr-scanner";
 
 export default function Biomedico() {
   const [showScanner, setShowScanner] = useState(false);
   const [qrData, setQrData] = useState("");
 
+  // ✅ Cuando se detecta un código QR
   const handleScan = (result) => {
-    if (result && result[0]?.rawValue) {
-      const value = result[0].rawValue;
-      setQrData(value);
+    if (result) {
+      setQrData(result);
       setShowScanner(false);
-      alert(`✅ Código QR detectado:\n${value}`);
+      alert(`✅ Código QR detectado:\n${result}`);
     }
   };
 
+  // ⚠️ Si ocurre un error al usar la cámara
   const handleError = (error) => {
     console.error("Error al escanear:", error);
-    alert("No se pudo acceder a la cámara. Revisa los permisos del navegador.");
+    alert("No se pudo acceder a la cámara. Verifica los permisos del navegador.");
   };
 
   return (
@@ -29,12 +30,21 @@ export default function Biomedico() {
         <h1 className="titulo-seccion">Biomédico</h1>
 
         <div className="grid-menu">
-          <Link to="/equipos" className="card">Equipos</Link>
-          <Link to="/verseguimiento" className="card">Seguimiento</Link>
-          <Link to="/adquisicion" className="card">Registrar</Link>
-          <Link to="/ajustes" className="card">Ajustes</Link>
+          {/* === Opciones principales === */}
+          <Link to="/equipos" className="card">
+            Equipos
+          </Link>
+          <Link to="/verseguimiento" className="card">
+            Seguimiento
+          </Link>
+          <Link to="/adquisicion" className="card">
+            Registrar
+          </Link>
+          <Link to="/ajustes" className="card">
+            Ajustes
+          </Link>
 
-          {/* BOTÓN DE ESCANEO QR */}
+          {/* === Botón Escanear QR === */}
           <button
             className="card"
             style={{
@@ -42,6 +52,7 @@ export default function Biomedico() {
               color: "#fff",
               border: "none",
               cursor: "pointer",
+              fontWeight: "600",
             }}
             onClick={() => setShowScanner(true)}
           >
@@ -49,64 +60,34 @@ export default function Biomedico() {
           </button>
         </div>
 
-        {/* ESCÁNER QR */}
+        {/* === Contenedor del escáner === */}
         {showScanner && (
-          <div
-            style={{
-              marginTop: "20px",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              background: "#e0f2f1",
-              padding: "20px",
-              borderRadius: "15px",
-              boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-            }}
-          >
-            <QrScanner
+          <div className="qr-scanner-container">
+            <Scanner
               onDecode={handleScan}
               onError={handleError}
+              components={{
+                audio: false, // desactiva sonido de confirmación
+                tracker: true, // muestra marco de escaneo
+              }}
               constraints={{
-                facingMode: "environment", // cámara trasera en móviles
+                facingMode: "environment", // usa cámara trasera
               }}
-              style={{
-                width: "320px",
-                borderRadius: "10px",
-                border: "4px solid #00BFA6",
-              }}
+              className="qr-video"
             />
+
             <button
+              className="qr-close-btn"
               onClick={() => setShowScanner(false)}
-              style={{
-                marginTop: "15px",
-                background: "#ff5252",
-                color: "#fff",
-                border: "none",
-                padding: "10px 20px",
-                borderRadius: "8px",
-                cursor: "pointer",
-                fontWeight: "bold",
-              }}
             >
               Cerrar cámara
             </button>
           </div>
         )}
 
-        {/* RESULTADO */}
+        {/* === Resultado del escaneo === */}
         {qrData && (
-          <p
-            style={{
-              marginTop: "20px",
-              color: "#00796B",
-              fontWeight: "bold",
-              textAlign: "center",
-              background: "#b2dfdb",
-              padding: "10px 20px",
-              borderRadius: "10px",
-              display: "inline-block",
-            }}
-          >
+          <p className="qr-result">
             📷 Código detectado: {qrData}
           </p>
         )}

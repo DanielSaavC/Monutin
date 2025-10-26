@@ -274,3 +274,70 @@ button:hover,
     padding: 20px 12px;
   }
 }
+/* ===== ESCÁNER QR (BIOMÉDICO) ===== */
+.qr-scanner-container {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #e0f2f1;
+  padding: 25px;
+  border-radius: 20px;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  animation: fadeIn 0.6s ease-in-out;
+}
+
+.qr-video {
+  width: 320px;
+  max-width: 90%;
+  border: 4px solid #00bfa6;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 0 15px rgba(0, 191, 166, 0.3);
+  transition: all 0.3s ease;
+}
+
+.qr-video:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 20px rgba(0, 191, 166, 0.5);
+}
+
+.qr-close-btn {
+  margin-top: 15px;
+  background: #ff5252;
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s ease;
+}
+
+.qr-close-btn:hover {
+  background: #e53935;
+}
+
+.qr-result {
+  margin-top: 20px;
+  background: #b2dfdb;
+  color: #004d40;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Animación suave al mostrar */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
