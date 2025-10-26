@@ -1,11 +1,11 @@
 import Header from "../../../components/Header";
 import React from "react";
-export default function RegistraEquipo() {
+export default function RegEquipo() {
   return (
     <div className="registrar-container">
         <Header /> 
-      <h1>Registrar Equipo</h1>
-      <p>Complete la información del equipo biomédico para su registro.</p>
+      <h1>Registro de Equipos</h1>
+      <p>Página destinada al registro general de equipos biomédicos.</p>
     </div>
   );
 }
