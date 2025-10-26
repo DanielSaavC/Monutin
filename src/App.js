@@ -46,8 +46,8 @@ import RegEquipo from "./pages/Biomedico/Registrar/RegEquipo.jsx";
 import RegistrarEquipo from "./pages/Biomedico/Registrar/RegistrarEquipo.jsx";
 
 import VerSeguimiento from "./pages/Biomedico/Seguimiento/VerSeguimiento.jsx";
-import IniciarSeguimiento from "./pages/Biomedico/Seguimiento/IniciarSeguimiento.jsx";
-import IniciarSeguimiento from "./pages/Biomedico/Seguimiento/IniciarSeguimiento.jsx";
+import Iniciar from "./pages/Biomedico/Seguimiento/Iniciar.jsx";
+
 
 
 // =============================
