@@ -4,10 +4,8 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: #f5f9fa;
   min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start; /* 👈 evita que quede centrado detrás del header */
-  padding: 120px 20px 20px; /* 👈 espacio superior para el header fijo */
+  display: block; /* ✅ antes era flex: rompía el responsive */
+  padding-top: 100px; /* espacio para el header fijo */
   box-sizing: border-box;
 }
 
@@ -115,23 +113,34 @@ button:hover,
 
 /* ===== MENU PRINCIPAL ===== */
 .menu-container {
-  padding: 120px 30px 40px; /* 👈 deja espacio por el header fijo */
+  width: 100%;
+  padding: 120px 20px 40px;
   text-align: center;
   background: #f5f9fa;
   min-height: 100vh;
   box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
+  display: block; /* ✅ evita que el flexbox fuerce ancho fijo */
 }
 
-.menu-container h2 {
+.menu-container h1 {
   color: #00796B;
+  font-size: 2em;
+  font-weight: 700;
   margin-bottom: 25px;
-  font-weight: 600;
-  font-size: 1.8em;
 }
+
+/* ===== GRID DEL MENU ===== */
+.grid-menu {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
 
 /* ===== GRID DEL MENU ===== */
 .grid-menu {
@@ -339,5 +348,45 @@ button:hover,
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+/* ===== RESPONSIVE PARA MÓVILES ===== */
+@media (max-width: 768px) {
+  .menu-container {
+    padding: 100px 15px 30px;
+  }
+
+  .menu-container h1 {
+    font-size: 1.6em;
+  }
+
+  .grid-menu {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+  }
+
+  .card {
+    padding: 25px 15px;
+    font-size: 0.95em;
+  }
+
+  .qr-scanner-container {
+    width: 95%;
+    max-width: 350px;
+  }
+
+  .qr-video {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .menu-container h1 {
+    font-size: 1.3em;
+  }
+
+  .card {
+    padding: 18px 10px;
+    font-size: 0.85em;
   }
 }
