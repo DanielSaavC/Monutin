@@ -92,6 +92,7 @@ app.post("/login", async (req, res) => {
   console.log("🔑 Intento de login:", usuario);
 
   try {
+    // Buscar usuario
     const user = db.prepare(`SELECT * FROM usuarios WHERE usuario = ?`).get(usuario.toLowerCase());
 
     if (!user) {
@@ -99,10 +100,13 @@ app.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Usuario no encontrado" });
     }
 
+    // Verificar contraseña
     const isMatch = await bcrypt.compare(password, user.password);
     if (isMatch) {
       console.log("✅ Login correcto:", user.usuario);
-      res.json({ message: "Login correcto ✅", user });
+
+      // 👇 Aquí colocamos correctamente la línea que asegura incluir el ID
+      res.json({ message: "Login correcto ✅", user: { ...user, id: user.id } });
     } else {
       console.warn("⚠️ Contraseña incorrecta para:", usuario);
       res.status(401).json({ error: "Contraseña incorrecta" });
@@ -110,6 +114,71 @@ app.post("/login", async (req, res) => {
   } catch (err) {
     console.error("❌ Error al consultar usuario:", err);
     res.status(500).json({ error: "Error en la base de datos" });
+  }
+});
+
+// ================== ACTUALIZAR USUARIO ==================
+app.put("/updateUser/:id", async (req, res) => {
+  const { id } = req.params;
+  const { nombre, apellidopaterno, apellidomaterno, usuario, email, password, tipo, codigo } = req.body;
+
+  try {
+    // Verificar existencia del usuario
+    const userExistente = db.prepare("SELECT * FROM usuarios WHERE id = ?").get(id);
+    if (!userExistente) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    // Si hay contraseña nueva, encriptarla
+    let hashedPassword = userExistente.password;
+    if (password && password.trim() !== "") {
+      hashedPassword = await bcrypt.hash(password, 10);
+    }
+
+    const stmt = db.prepare(`
+      UPDATE usuarios
+      SET nombre = ?, apellidopaterno = ?, apellidomaterno = ?, 
+          usuario = ?, email = ?, password = ?, tipo = ?, codigo = ?
+      WHERE id = ?
+    `);
+
+    stmt.run(
+      nombre || userExistente.nombre,
+      apellidopaterno || userExistente.apellidopaterno,
+      apellidomaterno || userExistente.apellidomaterno,
+      usuario ? usuario.toLowerCase() : userExistente.usuario,
+      email || userExistente.email,
+      hashedPassword,
+      tipo || userExistente.tipo,
+      codigo || userExistente.codigo,
+      id
+    );
+
+    console.log(`✅ Usuario ID ${id} actualizado correctamente`);
+    res.json({ message: "Usuario actualizado correctamente ✅" });
+  } catch (err) {
+    console.error("❌ Error al actualizar usuario:", err);
+    res.status(500).json({ error: "Error al actualizar usuario" });
+  }
+});
+
+// ================== ELIMINAR USUARIO ==================
+app.delete("/deleteUser/:id", (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const stmt = db.prepare("DELETE FROM usuarios WHERE id = ?");
+    const result = stmt.run(id);
+
+    if (result.changes === 0) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    console.log(`🗑️ Usuario ID ${id} eliminado correctamente`);
+    res.json({ message: "Usuario eliminado correctamente ✅" });
+  } catch (err) {
+    console.error("❌ Error al eliminar usuario:", err);
+    res.status(500).json({ error: "Error al eliminar usuario" });
   }
 });
 
