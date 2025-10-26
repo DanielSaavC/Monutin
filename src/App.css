@@ -535,3 +535,92 @@ button:hover,
   font-size: 0.95em;
   line-height: 1.4em;
 }
+/* ===== MODAL DE QR ===== */
+.qr-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 3000;
+}
+
+.qr-modal {
+  background: #ffffff;
+  padding: 25px 20px;
+  border-radius: 15px;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.25);
+  animation: fadeIn 0.3s ease;
+}
+
+.qr-modal h2 {
+  color: #00796b;
+  margin-bottom: 10px;
+}
+
+.qr-modal-text {
+  color: #004d40;
+  word-break: break-all;
+  background: #e0f2f1;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.qr-link {
+  color: #00bfa6;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.qr-modal-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.qr-modal-btn {
+  border: none;
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background 0.3s ease;
+}
+
+.qr-modal-btn.open {
+  background: #00bfa6;
+}
+
+.qr-modal-btn.copy {
+  background: #00796b;
+}
+
+.qr-modal-btn.cancel {
+  background: #ff5252;
+}
+
+.qr-modal-btn:hover {
+  opacity: 0.9;
+}
+
+/* Animación modal */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -7,9 +7,10 @@ import { Scanner } from "@yudiel/react-qr-scanner";
 export default function Biomedico() {
   const [showScanner, setShowScanner] = useState(false);
   const [qrData, setQrData] = useState("");
+  const [showModal, setShowModal] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // 🔒 Evita que el botón "atrás" del móvil cierre toda la web cuando está activo el escáner
+  // Control del botón "Atrás" del móvil
   useEffect(() => {
     const handleBack = (e) => {
       if (showScanner) {
@@ -18,27 +19,27 @@ export default function Biomedico() {
         window.history.pushState(null, "", window.location.href);
       }
     };
-
     if (showScanner) {
       window.history.pushState(null, "", window.location.href);
       window.addEventListener("popstate", handleBack);
     }
-
     return () => window.removeEventListener("popstate", handleBack);
   }, [showScanner]);
 
-  // ✅ Detecta código QR
+  // ✅ Escaneo del QR
   const handleScan = (result) => {
-    if (result) {
-      setQrData(result);
-      setCopied(false); // reinicia estado del botón
+    if (result && result[0]?.rawValue) {
+      const value = result[0].rawValue;
+      setQrData(value);
+      setShowModal(true); // abre modal
+      setCopied(false);
     }
   };
 
-  // ⚠️ Maneja errores de cámara
+  // ⚠️ Error de cámara
   const handleError = (error) => {
     console.error("Error al escanear:", error);
-    alert("❌ No se pudo acceder a la cámara. Verifica los permisos del navegador.");
+    alert("❌ No se pudo acceder a la cámara. Verifica los permisos.");
   };
 
   // 📋 Copiar al portapapeles
@@ -46,7 +47,19 @@ export default function Biomedico() {
     if (qrData) {
       navigator.clipboard.writeText(qrData);
       setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  // 🔗 Abrir URL
+  const handleOpen = () => {
+    if (qrData.startsWith("http")) {
+      window.open(qrData, "_blank");
+    } else {
+      alert(`Texto detectado:\n${qrData}`);
+    }
+    setShowModal(false);
+    setShowScanner(false);
   };
 
   return (
@@ -82,17 +95,14 @@ export default function Biomedico() {
             <Scanner
               onDecode={handleScan}
               onError={handleError}
+              constraints={{ facingMode: "environment" }}
               components={{
                 audio: true,
                 tracker: true,
               }}
-              constraints={{
-                facingMode: "environment",
-              }}
               className="qr-video-full"
             />
 
-            {/* === BOTONES DENTRO DEL ESCÁNER === */}
             <div className="qr-buttons">
               <button
                 className="qr-btn qr-btn-exit"
@@ -100,33 +110,44 @@ export default function Biomedico() {
               >
                 ✖ Salir
               </button>
-
-              <button
-                className="qr-btn qr-btn-copy"
-                onClick={handleCopy}
-                disabled={!qrData}
-              >
-                {copied ? "✅ Copiado" : "💾 Guardar Link"}
-              </button>
             </div>
+          </div>
+        )}
 
-            {/* === MOSTRAR RESULTADO ESCANEADO === */}
-            {qrData && (
-              <div className="qr-floating-text">
+        {/* === MODAL DE OPCIONES === */}
+        {showModal && (
+          <div className="qr-modal-overlay">
+            <div className="qr-modal">
+              <h2>📷 Código detectado</h2>
+              <p className="qr-modal-text">
                 {qrData.startsWith("http") ? (
                   <a
                     href={qrData}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ color: "#00BFA6" }}
+                    className="qr-link"
                   >
                     {qrData}
                   </a>
                 ) : (
                   qrData
                 )}
+              </p>
+              <div className="qr-modal-buttons">
+                <button className="qr-modal-btn open" onClick={handleOpen}>
+                  🔗 Abrir
+                </button>
+                <button className="qr-modal-btn copy" onClick={handleCopy}>
+                  {copied ? "✅ Copiado" : "💾 Guardar"}
+                </button>
+                <button
+                  className="qr-modal-btn cancel"
+                  onClick={() => setShowModal(false)}
+                >
+                  ❌ Cancelar
+                </button>
               </div>
-            )}
+            </div>
           </div>
         )}
       </div>
