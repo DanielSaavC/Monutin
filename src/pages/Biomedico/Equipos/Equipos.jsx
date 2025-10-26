@@ -17,7 +17,6 @@ export default function Equipos() {
           <Link to="/servocunas" className="card">
             Servocunas
           </Link>
-          <div className="card">Máquinas de Anestesia</div>
           <Link to="/ventiladores" className="card">
             Ventiladores
           </Link>

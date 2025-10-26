@@ -8,7 +8,7 @@ export default function Biomedico() {
     <div>
       <Header />
       <div className="menu-container">
-        <h1 className="titulo-seccion">Área Biomédico</h1>
+        <h1 className="titulo-seccion">Biomédico</h1>
 
         <div className="grid-menu">
           {/* === SECCIÓN DE EQUIPOS === */}
