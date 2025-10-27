@@ -238,3 +238,138 @@ app.get("/", (req, res) => {
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
 });
+// ================== TABLAS PARA EQUIPOS Y PROVEEDORES ==================
+// ================== TABLAS PARA EQUIPOS Y FICHAS ==================
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS fichas_tecnicas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    proveedor_id INTEGER,
+    datos_tecnicos TEXT,
+    accesorios TEXT,
+    observaciones TEXT,
+    manual_operacion TEXT,
+    manual_instalacion TEXT,
+    manual_servicio TEXT,
+    estado_nuevo INTEGER DEFAULT 0,
+    estado_bueno INTEGER DEFAULT 0,
+    estado_reparable INTEGER DEFAULT 0,
+    estado_descartable INTEGER DEFAULT 0,
+    frecuencia TEXT,
+    elaborado_por TEXT,
+    imagen_base64 TEXT,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (proveedor_id) REFERENCES proveedores(id)
+  )
+`).run();
+
+
+console.log("✅ Tablas de equipos y proveedores listas");
+// ================== ENDPOINTS FICHAS TÉCNICAS ==================
+
+// ➕ Crear ficha técnica
+app.post("/api/fichatecnica", (req, res) => {
+  const {
+    proveedor,
+    datosTecnicos,
+    accesorios,
+    observaciones,
+    manuales,
+    estado,
+    frecuencia,
+    nombreElaboracion,
+    imagenBase64,
+  } = req.body;
+
+  try {
+    // Guardar proveedor si no existe
+    let proveedor_id = null;
+    if (proveedor?.nombre) {
+      const existente = db
+        .prepare("SELECT id FROM proveedores WHERE nombre = ?")
+        .get(proveedor.nombre);
+
+      if (existente) {
+        proveedor_id = existente.id;
+      } else {
+        const infoProv = db
+          .prepare(
+            `INSERT INTO proveedores (nombre, direccion, telefono, correo)
+             VALUES (?, ?, ?, ?)`
+          )
+          .run(
+            proveedor.nombre,
+            proveedor.direccion || "",
+            proveedor.telefono || "",
+            proveedor.correo || ""
+          );
+        proveedor_id = infoProv.lastInsertRowid;
+      }
+    }
+
+    // Insertar ficha técnica
+    const stmt = db.prepare(`
+      INSERT INTO fichas_tecnicas (
+        proveedor_id,
+        datos_tecnicos,
+        accesorios,
+        observaciones,
+        manual_operacion,
+        manual_instalacion,
+        manual_servicio,
+        estado_nuevo,
+        estado_bueno,
+        estado_reparable,
+        estado_descartable,
+        frecuencia,
+        elaborado_por,
+        imagen_base64
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const info = stmt.run(
+      proveedor_id,
+      JSON.stringify(datosTecnicos),
+      JSON.stringify(accesorios),
+      JSON.stringify(observaciones),
+      manuales.operacion || "",
+      manuales.instalacion || "",
+      manuales.servicio || "",
+      estado.nuevo ? 1 : 0,
+      estado.bueno ? 1 : 0,
+      estado.reparable ? 1 : 0,
+      estado.descartable ? 1 : 0,
+      frecuencia,
+      nombreElaboracion,
+      imagenBase64 || null
+    );
+
+    res.json({ message: "✅ Ficha técnica guardada", id: info.lastInsertRowid });
+  } catch (err) {
+    console.error("❌ Error al guardar ficha técnica:", err);
+    res.status(500).json({ error: "Error al guardar ficha técnica" });
+  }
+});
+
+// 📋 Obtener todas las fichas técnicas
+app.get("/api/fichatecnica", (req, res) => {
+  try {
+    const rows = db.prepare(`
+      SELECT f.*, p.nombre AS proveedor_nombre
+      FROM fichas_tecnicas f
+      LEFT JOIN proveedores p ON f.proveedor_id = p.id
+      ORDER BY f.fecha_registro DESC
+    `).all();
+
+    // Convertir textos JSON a arrays
+    rows.forEach(r => {
+      r.datos_tecnicos = JSON.parse(r.datos_tecnicos || "[]");
+      r.accesorios = JSON.parse(r.accesorios || "[]");
+      r.observaciones = JSON.parse(r.observaciones || "[]");
+    });
+
+    res.json(rows);
+  } catch (err) {
+    console.error("❌ Error al consultar fichas técnicas:", err);
+    res.status(500).json({ error: "Error al consultar fichas técnicas" });
+  }
+});
