@@ -77,12 +77,11 @@ const handleGuardar = async () => {
     }
   };
 
-  // Cerrar sesión
+  // Cerrar sesión (idéntico al header)
   const cerrarSesion = () => {
     localStorage.removeItem("usuario");
-    navigate("/");
+    window.location.href = "/"; // ✅ fuerza recarga completa (compatible con HashRouter)
   };
-
   return (
     <div className="menu-container">
       <Header />
