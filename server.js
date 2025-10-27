@@ -124,6 +124,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
+// ================== ACTUALIZAR USUARIO ==================
 app.put("/updateUser/:id", async (req, res) => {
   const { id } = req.params;
   const { nombre, apellidopaterno, apellidomaterno, usuario, email, password, tipo, codigo } = req.body;
@@ -139,7 +140,7 @@ app.put("/updateUser/:id", async (req, res) => {
     if (password && password.trim() !== "") {
       hashedPassword = await bcrypt.hash(password, 10);
     }
-    
+
     // Si no hay contraseña nueva, no la actualizamos
     const stmt = hashedPassword
       ? db.prepare(`
@@ -198,6 +199,7 @@ app.put("/updateUser/:id", async (req, res) => {
     res.status(500).json({ error: "Error al actualizar usuario" });
   }
 });
+
 // ================== ELIMINAR USUARIO ==================
 app.delete("/deleteUser/:id", (req, res) => {
   const { id } = req.params;
