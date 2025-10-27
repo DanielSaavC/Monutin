@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { API_URL } from "../api";
 
 export default function Ajustes() {
-  const navigate = useNavigate();
   const usuarioGuardado = JSON.parse(localStorage.getItem("usuario"));
   const [usuario, setUsuario] = useState(usuarioGuardado);
   const [editando, setEditando] = useState(false);
