@@ -135,64 +135,38 @@ app.put("/updateUser/:id", async (req, res) => {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    // ⚙️ Preparamos el update dinámico
-    let hashedPassword = null;
+    // ✅ Si viene una nueva contraseña, la encriptamos
+    let hashedPassword = userExistente.password;
     if (password && password.trim() !== "") {
       hashedPassword = await bcrypt.hash(password, 10);
     }
 
-    // Si no hay contraseña nueva, no la actualizamos
-    const stmt = hashedPassword
-      ? db.prepare(`
-          UPDATE usuarios
-          SET nombre = COALESCE(?, nombre),
-              apellidopaterno = COALESCE(?, apellidopaterno),
-              apellidomaterno = COALESCE(?, apellidomaterno),
-              usuario = COALESCE(?, usuario),
-              email = COALESCE(?, email),
-              password = ?,
-              tipo = COALESCE(?, tipo),
-              codigo = COALESCE(?, codigo)
-          WHERE id = ?
-        `)
-      : db.prepare(`
-          UPDATE usuarios
-          SET nombre = COALESCE(?, nombre),
-              apellidopaterno = COALESCE(?, apellidopaterno),
-              apellidomaterno = COALESCE(?, apellidomaterno),
-              usuario = COALESCE(?, usuario),
-              email = COALESCE(?, email),
-              tipo = COALESCE(?, tipo),
-              codigo = COALESCE(?, codigo)
-          WHERE id = ?
-        `);
+    // ✅ Actualización segura: solo reemplaza si hay datos nuevos
+    const stmt = db.prepare(`
+      UPDATE usuarios
+      SET nombre = COALESCE(?, nombre),
+          apellidopaterno = COALESCE(?, apellidopaterno),
+          apellidomaterno = COALESCE(?, apellidomaterno),
+          usuario = COALESCE(?, usuario),
+          email = COALESCE(?, email),
+          password = ?,
+          tipo = COALESCE(?, tipo),
+          codigo = COALESCE(?, codigo)
+      WHERE id = ?
+    `);
 
-    if (hashedPassword) {
-      stmt.run(
-        nombre,
-        apellidopaterno,
-        apellidomaterno,
-        usuario ? usuario.toLowerCase() : null,
-        email,
-        hashedPassword,
-        tipo,
-        codigo,
-        id
-      );
-    } else {
-      stmt.run(
-        nombre,
-        apellidopaterno,
-        apellidomaterno,
-        usuario ? usuario.toLowerCase() : null,
-        email,
-        tipo,
-        codigo,
-        id
-      );
-    }
+    stmt.run(
+      nombre,
+      apellidopaterno,
+      apellidomaterno,
+      usuario ? usuario.toLowerCase() : null,
+      email,
+      hashedPassword, // ✅ siempre guardamos el hash correcto
+      tipo,
+      codigo,
+      id
+    );
 
-    console.log(`✅ Usuario ID ${id} actualizado correctamente`);
     res.json({ message: "Usuario actualizado correctamente ✅" });
   } catch (err) {
     console.error("❌ Error al actualizar usuario:", err);
