@@ -41,7 +41,7 @@ import HospitalViedma from "./pages/Biomedico/Hospitales/HospitalViedma.jsx";
 import HospitalUnivalle from "./pages/Biomedico/Hospitales/HospitalUnivalle.jsx";
 
 // --- Registrar ---
-import AdquisicionDeEquipo from "./pages/Biomedico/Registrar/AdquisicionDeEquipo.jsx";
+import FichaTecnica from "./pages/Biomedico/Registrar/FichaTecnica.jsx";
 import RegEquipo from "./pages/Biomedico/Registrar/RegEquipo.jsx";
 import RegistrarEquipo from "./pages/Biomedico/Registrar/RegistrarEquipo.jsx";
 
@@ -114,7 +114,7 @@ function App() {
         <Route path="/hospitalunivalle" element={<HospitalUnivalle />} />
 
         {/* ---- REGISTRAR ---- */}
-        <Route path="/adquisicion" element={<AdquisicionDeEquipo />} />
+        <Route path="/fichatecnica" element={<FichaTecnica />} />
         <Route path="/registroequipo" element={<RegEquipo />} />
         <Route path="/registraequipo" element={<RegistrarEquipo />} />
 

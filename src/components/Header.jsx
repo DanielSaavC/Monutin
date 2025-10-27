@@ -99,6 +99,9 @@ export default function Header() {
           <button onClick={irInicio} className="menu-btn">Inicio</button>
           <button onClick={() => navigate("/ajustes")} className="menu-btn">Ajustes</button>
           <button onClick={cerrarSesion} className="menu-btn">Cerrar sesión</button>
+          <button onClick={() => document.body.classList.toggle("dark-mode")} 
+          style={{background: "none",border: "none",color: "#00BFA6",fontSize: "1.2em",cursor: "pointer"}}>🌙</button>
+
         </nav>
       </div>
     </header>

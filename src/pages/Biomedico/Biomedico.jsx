@@ -82,7 +82,7 @@ export default function Biomedico() {
         <div className="grid-menu">
           <Link to="/equipos" className="card">Equipos</Link>
           <Link to="/verseguimiento" className="card">Seguimiento</Link>
-          <Link to="/adquisicion" className="card">Registrar</Link>
+          <Link to="/fichatecnica" className="card">Registrar</Link>
 
           <button
             className="card"
