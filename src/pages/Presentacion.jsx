@@ -33,7 +33,7 @@ export default function Presentacion() {
 
       {/* === COLUMNA DERECHA (IMAGEN) === */}
       <div className="presentacion-imagen">
-        <img src={process.env.PUBLIC_URL + "/images/presentacion.png"} alt="Monutin presentación" />
+        <img src={process.env.PUBLIC_URL + "/images/utin2.png"} alt="Monutin presentación" />
       </div>
     </div>
   );

@@ -170,7 +170,7 @@ export default function Registro() {
   </div>
 
   <div className="auth-imagen">
-    <img src={process.env.PUBLIC_URL + "/images/presentacion.png"} alt="Monutin presentación" />
+    <img src={process.env.PUBLIC_URL + "/images/terapiaintermedia.jpg"} alt="Monutin presentación" />
   </div>
 </div>
   );

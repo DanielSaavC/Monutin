@@ -104,7 +104,7 @@ export default function Login() {
 
       {/* === COLUMNA DERECHA: IMAGEN === */}
       <div className="auth-imagen">
-        <img src={process.env.PUBLIC_URL + "/images/presentacion.png"} alt="Monutin presentación" />
+        <img src={process.env.PUBLIC_URL + "/images/utin.jpg"} alt="Monutin presentación" />
       </div>
     </div>
   );

@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import Header from "../components/Header";
-import { useNavigate } from "react-router-dom";
 import { API_URL } from "../api";
 
 export default function Ajustes() {
