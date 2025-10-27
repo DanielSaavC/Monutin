@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import Header from "../components/Header";
+import { useNavigate } from "react-router-dom";
 import { API_URL } from "../api";
 
 export default function Ajustes() {
+  const navigate = useNavigate();
   const usuarioGuardado = JSON.parse(localStorage.getItem("usuario"));
   const [usuario, setUsuario] = useState(usuarioGuardado);
   const [editando, setEditando] = useState(false);
@@ -24,9 +26,8 @@ const handleGuardar = async () => {
   try {
     const dataToSend = { ...formData };
     if (!dataToSend.password || dataToSend.password.trim() === "") {
-      delete dataToSend.password; // 👈 no enviar si está vacío
+      delete dataToSend.password; // No enviar contraseña vacía
     }
-
     const response = await fetch(`${API_URL}/updateUser/${usuario.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -77,9 +78,9 @@ const handleGuardar = async () => {
   };
 
   // Cerrar sesión
-  const handleCerrarSesion = () => {
+  const cerrarSesion = () => {
     localStorage.removeItem("usuario");
-    window.location.href = "/login";
+    navigate("/");
   };
 
   return (
@@ -99,7 +100,7 @@ const handleGuardar = async () => {
           <div className="ajustes-btns">
             <button onClick={() => setEditando(true)}>✏️ Editar datos</button>
             <button onClick={handleEliminar} className="delete-btn">🗑️ Eliminar cuenta</button>
-            <button onClick={handleCerrarSesion} className="secondary-btn">🚪 Cerrar sesión</button>
+            <button onClick={cerrarSesion} className="secondary-btn">🚪 Cerrar sesión</button>
           </div>
         </div>
       ) : (
