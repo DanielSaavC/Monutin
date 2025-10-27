@@ -130,41 +130,40 @@ app.put("/updateUser/:id", async (req, res) => {
   const { nombre, apellidopaterno, apellidomaterno, usuario, email, password, tipo, codigo } = req.body;
 
   try {
-    // Verificar existencia del usuario
     const userExistente = db.prepare("SELECT * FROM usuarios WHERE id = ?").get(id);
     if (!userExistente) {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    // ✅ Solo cambiar la contraseña si se ingresó una nueva
+    // ⚙️ Mantener la contraseña anterior si no se manda nueva
     let hashedPassword = userExistente.password;
     if (password && password.trim() !== "") {
       hashedPassword = await bcrypt.hash(password, 10);
     }
 
-    // ✅ Prevenir que se sobrescriba con vacío o undefined
+    // 👇 Asegurar que no se reemplace con null/undefined
     const stmt = db.prepare(`
       UPDATE usuarios
-      SET nombre = ?, 
-          apellidopaterno = ?, 
-          apellidomaterno = ?, 
-          usuario = ?, 
-          email = ?, 
-          password = ?, 
-          tipo = ?, 
-          codigo = ?
+      SET nombre = COALESCE(?, nombre),
+          apellidopaterno = COALESCE(?, apellidopaterno),
+          apellidomaterno = COALESCE(?, apellidomaterno),
+          usuario = COALESCE(?, usuario),
+          email = COALESCE(?, email),
+          password = ?,
+          tipo = COALESCE(?, tipo),
+          codigo = COALESCE(?, codigo)
       WHERE id = ?
     `);
 
     stmt.run(
-      nombre || userExistente.nombre,
-      apellidopaterno || userExistente.apellidopaterno,
-      apellidomaterno || userExistente.apellidomaterno,
-      usuario ? usuario.toLowerCase() : userExistente.usuario,
-      email || userExistente.email,
-      hashedPassword, // 👈 conserva el hash anterior si no se envió contraseña
-      tipo || userExistente.tipo,
-      codigo || userExistente.codigo,
+      nombre,
+      apellidopaterno,
+      apellidomaterno,
+      usuario ? usuario.toLowerCase() : null,
+      email,
+      hashedPassword,
+      tipo,
+      codigo,
       id
     );
 
@@ -175,7 +174,6 @@ app.put("/updateUser/:id", async (req, res) => {
     res.status(500).json({ error: "Error al actualizar usuario" });
   }
 });
-
 
 // ================== ELIMINAR USUARIO ==================
 app.delete("/deleteUser/:id", (req, res) => {
