@@ -83,7 +83,6 @@ export default function Biomedico() {
           <Link to="/equipos" className="card">Equipos</Link>
           <Link to="/verseguimiento" className="card">Seguimiento</Link>
           <Link to="/adquisicion" className="card">Registrar</Link>
-          <Link to="/ajustes" className="card">Ajustes</Link>
 
           <button
             className="card"
