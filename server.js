@@ -127,31 +127,38 @@ app.post("/login", async (req, res) => {
 // ================== ACTUALIZAR USUARIO ==================
 app.put("/updateUser/:id", async (req, res) => {
   const { id } = req.params;
-  const { nombre, apellidopaterno, apellidomaterno, usuario, email, password, tipo, codigo } = req.body;
+  let { nombre, apellidopaterno, apellidomaterno, usuario, email, password, tipo, codigo } = req.body;
 
   try {
-    const userExistente = db.prepare("SELECT * FROM usuarios WHERE id = ?").get(id);
-    if (!userExistente) {
-      return res.status(404).json({ error: "Usuario no encontrado" });
-    }
+    const user = db.prepare("SELECT * FROM usuarios WHERE id = ?").get(id);
+    if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
 
-    // ✅ Si viene una nueva contraseña, la encriptamos
-    let hashedPassword = userExistente.password;
+    // 🔒 Mantener valores anteriores si los nuevos están vacíos
+    nombre = nombre?.trim() || user.nombre;
+    apellidopaterno = apellidopaterno?.trim() || user.apellidopaterno;
+    apellidomaterno = apellidomaterno?.trim() || user.apellidomaterno;
+    usuario = usuario?.trim().toLowerCase() || user.usuario;
+    email = email?.trim() || user.email;
+    tipo = tipo?.trim() || user.tipo;
+    codigo = codigo?.trim() || user.codigo;
+
+    // 🔐 Solo actualizar contraseña si se envía una nueva
+    let hashedPassword = user.password;
     if (password && password.trim() !== "") {
       hashedPassword = await bcrypt.hash(password, 10);
     }
 
-    // ✅ Actualización segura: solo reemplaza si hay datos nuevos
+    // 🧱 Ejecutar el UPDATE limpio y seguro
     const stmt = db.prepare(`
-      UPDATE usuarios
-      SET nombre = COALESCE(?, nombre),
-          apellidopaterno = COALESCE(?, apellidopaterno),
-          apellidomaterno = COALESCE(?, apellidomaterno),
-          usuario = COALESCE(?, usuario),
-          email = COALESCE(?, email),
-          password = ?,
-          tipo = COALESCE(?, tipo),
-          codigo = COALESCE(?, codigo)
+      UPDATE usuarios SET
+        nombre = ?,
+        apellidopaterno = ?,
+        apellidomaterno = ?,
+        usuario = ?,
+        email = ?,
+        password = ?,
+        tipo = ?,
+        codigo = ?
       WHERE id = ?
     `);
 
@@ -159,15 +166,17 @@ app.put("/updateUser/:id", async (req, res) => {
       nombre,
       apellidopaterno,
       apellidomaterno,
-      usuario ? usuario.toLowerCase() : null,
+      usuario,
       email,
-      hashedPassword, // ✅ siempre guardamos el hash correcto
+      hashedPassword,
       tipo,
       codigo,
       id
     );
 
+    console.log(`✅ Usuario ID ${id} actualizado correctamente`);
     res.json({ message: "Usuario actualizado correctamente ✅" });
+
   } catch (err) {
     console.error("❌ Error al actualizar usuario:", err);
     res.status(500).json({ error: "Error al actualizar usuario" });
