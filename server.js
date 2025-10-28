@@ -69,7 +69,7 @@ const crearTablas = [
   fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
   FOREIGN KEY (equipo_id) REFERENCES fichas_tecnicas(id)
-)`
+)`,
 
   `CREATE TABLE IF NOT EXISTS proveedores (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
