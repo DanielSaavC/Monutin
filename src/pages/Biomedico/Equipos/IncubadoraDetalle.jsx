@@ -8,7 +8,7 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip,  
   ResponsiveContainer,
 } from "recharts";
 import axios from "axios";
@@ -66,7 +66,14 @@ const toggleSeguimiento = async () => {
     setEnSeguimiento(false);
 
     // 🧩 Quitar del backend
-    await axios.delete(`https://monutinbackend-production.up.railway.app/api/seguimiento/${id}`);
+    const usuario = JSON.parse(localStorage.getItem("usuario"));
+await axios.delete("https://monutinbackend-production.up.railway.app/api/seguimiento", {
+  data: {
+    usuario_id: usuario.id,
+    equipo_id: equipo.id,
+  },
+});
+
   } else {
     const nuevoEquipo = {
       id: parseInt(id),

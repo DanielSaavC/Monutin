@@ -67,7 +67,14 @@ const toggleSeguimiento = async () => {
     setEnSeguimiento(false);
 
     // 🔸 Quitar también del backend
-    await axios.delete(`https://monutinbackend-production.up.railway.app/api/seguimiento/${id}`);
+    const usuario = JSON.parse(localStorage.getItem("usuario"));
+await axios.delete("https://monutinbackend-production.up.railway.app/api/seguimiento", {
+  data: {
+    usuario_id: usuario.id,
+    equipo_id: equipo.id,
+  },
+});
+
   } else {
     // 🔹 Crear objeto del nuevo equipo
     const nuevoEquipo = {
