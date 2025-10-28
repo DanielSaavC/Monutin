@@ -13,11 +13,12 @@ import {
 import axios from "axios";
 import "../../../App.css";
 
-export default function ServocunaDetalle() {
+export default function IncubadoraDetalle() {
   const { id } = useParams();
   const [equipo, setEquipo] = useState(null);
+  const [enSeguimiento, setEnSeguimiento] = useState(false);
 
-  // 🔹 Datos simulados (por ahora)
+  // 🔹 Datos simulados de sensores (luego reemplazas con tu API/MQTT)
   const data = Array.from({ length: 10 }, (_, i) => ({
     time: i,
     temp: 36 + Math.random(),
@@ -26,6 +27,7 @@ export default function ServocunaDetalle() {
     tempBebe: 36.5 + Math.random() * 0.5,
   }));
 
+  // 🔹 Obtener datos del equipo
   useEffect(() => {
     axios
       .get("https://monutinbackend-production.up.railway.app/api/equipos")
@@ -33,14 +35,50 @@ export default function ServocunaDetalle() {
         const encontrado = res.data.find((eq) => eq.id === parseInt(id));
         setEquipo(encontrado || null);
       })
-      .catch((err) => console.error("❌ Error al cargar servocuna:", err));
+      .catch((err) => console.error("❌ Error cargando equipo:", err));
   }, [id]);
+
+  // 🔹 Verificar si ya está en seguimiento
+  useEffect(() => {
+    const lista = JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
+    const existe = lista.some((eq) => eq.id === parseInt(id));
+    setEnSeguimiento(existe);
+  }, [id]);
+
+  // 🔹 Función para agregar o quitar del seguimiento
+  const toggleSeguimiento = () => {
+    let lista = JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
+
+    if (enSeguimiento) {
+      // Quitar del seguimiento
+      lista = lista.filter((eq) => eq.id !== parseInt(id));
+      setEnSeguimiento(false);
+    } else {
+      // Agregar con toda la información disponible
+      const nuevoEquipo = {
+        id: parseInt(id),
+        nombre: equipo.nombre_equipo || `Incubadora ${id}`,
+        marca: equipo.marca || "N/A",
+        modelo: equipo.modelo || "N/A",
+        ubicacion: equipo.ubicacion || "N/A",
+        tipo: "incubadora",
+        imagen: equipo.imagen_base64 || null,
+        accesorios: equipo.accesorios || [],
+        datos_tecnicos: equipo.datos_tecnicos || [],
+        sensores: data, // se guarda el dataset actual
+      };
+      lista.push(nuevoEquipo);
+      setEnSeguimiento(true);
+    }
+
+    localStorage.setItem("equipos_en_seguimiento", JSON.stringify(lista));
+  };
 
   if (!equipo) {
     return (
       <div className="menu-container">
         <Header />
-        <h2>🛏️ Cargando datos de la servocuna...</h2>
+        <h2>📊 Cargando datos de la incubadora...</h2>
       </div>
     );
   }
@@ -48,9 +86,27 @@ export default function ServocunaDetalle() {
   return (
     <div className="menu-container">
       <Header />
-      <h2>🛏️ {equipo.nombre_equipo || `Servocuna ${id}`}</h2>
+      <h2>📊 {equipo.nombre_equipo || `Incubadora ${id}`}</h2>
 
-      {/* 📸 Imagen */}
+      {/* 📈 BOTÓN DE SEGUIMIENTO */}
+      <div style={{ marginBottom: "20px" }}>
+        <button
+          onClick={toggleSeguimiento}
+          style={{
+            background: enSeguimiento ? "#00bfa6" : "#00796b",
+            color: "#fff",
+            border: "none",
+            padding: "10px 20px",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontWeight: "bold",
+          }}
+        >
+          {enSeguimiento ? "👁️ En seguimiento" : "📈 Dar seguimiento"}
+        </button>
+      </div>
+
+      {/* 📸 Imagen del equipo */}
       <div className="equipo-detalle-imagen">
         {equipo.imagen_base64 ? (
           <img
@@ -83,7 +139,7 @@ export default function ServocunaDetalle() {
         )}
       </div>
 
-      {/* 📋 Información */}
+      {/* 📋 Información técnica */}
       <div className="equipo-detalle-info">
         <h3>🔧 Información del Equipo</h3>
         <p><b>Marca:</b> {equipo.marca || "N/A"}</p>
@@ -119,7 +175,7 @@ export default function ServocunaDetalle() {
         )}
       </div>
 
-      {/* === Gráficos simulados === */}
+      {/* === Gráficos de sensores === */}
       <div className="chart-box">
         <h4>🌡️ Temp Externa (°C) vs 💧 Humedad (%)</h4>
         <ResponsiveContainer width="100%" height={250}>

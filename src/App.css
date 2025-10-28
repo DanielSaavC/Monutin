@@ -1293,9 +1293,10 @@ textarea {
 
 .equipos-grid {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column; /* 🔹 En columna, una debajo de otra */
+  gap: 20px; /* Espaciado entre tarjetas */
+  align-items: center; /* Centra horizontalmente */
   justify-content: center;
-  gap: 25px;
   padding: 20px;
 }
 
