@@ -58,34 +58,42 @@ useEffect(() => {
   }, [id]);
 
   // 🔹 Agregar o quitar del seguimiento
-  const toggleSeguimiento = () => {
-    let lista =
-      JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
+const toggleSeguimiento = async () => {
+  let lista = JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
 
-    if (enSeguimiento) {
-      // Quitar
-      lista = lista.filter((eq) => eq.id !== parseInt(id));
-      setEnSeguimiento(false);
-    } else {
-      // Agregar equipo con toda su información
-      const nuevoEquipo = {
-        id: parseInt(id),
-        nombre: equipo.nombre_equipo || `Servocuna ${id}`,
-        marca: equipo.marca || "N/A",
-        modelo: equipo.modelo || "N/A",
-        ubicacion: equipo.ubicacion || "N/A",
-        tipo: "servocuna",
-        imagen: equipo.imagen_base64 || null,
-        accesorios: equipo.accesorios || [],
-        datos_tecnicos: equipo.datos_tecnicos || [],
-        sensores: data, // se guarda el dataset de sensores
-      };
-      lista.push(nuevoEquipo);
-      setEnSeguimiento(true);
-    }
+  if (enSeguimiento) {
+    // 🔸 Quitar equipo del seguimiento local
+    lista = lista.filter((eq) => eq.id !== parseInt(id));
+    setEnSeguimiento(false);
 
-    localStorage.setItem("equipos_en_seguimiento", JSON.stringify(lista));
-  };
+    // 🔸 Quitar también del backend
+    await axios.delete(`https://monutinbackend-production.up.railway.app/api/seguimiento/${id}`);
+  } else {
+    // 🔹 Crear objeto del nuevo equipo
+    const nuevoEquipo = {
+      id: parseInt(id),
+      nombre: equipo.nombre_equipo,
+      marca: equipo.marca,
+      modelo: equipo.modelo,
+      ubicacion: equipo.ubicacion,
+      tipo: "incubadora",
+    };
+
+    lista.push(nuevoEquipo);
+    setEnSeguimiento(true);
+
+    // 🔹 Guardar en backend
+    const usuario = JSON.parse(localStorage.getItem("usuario"));
+    await axios.post("https://monutinbackend-production.up.railway.app/api/seguimiento", {
+      usuario_id: usuario.id,
+      equipo_id: equipo.id,
+    });
+  }
+
+  // 🔄 Actualizar almacenamiento local
+  localStorage.setItem("equipos_en_seguimiento", JSON.stringify(lista));
+};
+
 
   // 🆕 === GENERAR Y DESCARGAR CÓDIGO QR ===
   const generarQR = async () => {

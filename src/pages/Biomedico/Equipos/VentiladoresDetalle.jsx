@@ -58,34 +58,56 @@ useEffect(() => {
   }, [id]);
 
   // 🔹 Agregar o quitar del seguimiento
-  const toggleSeguimiento = () => {
-    let lista =
-      JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
+ const toggleSeguimiento = async () => {
+  let lista = JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
+  const usuario = JSON.parse(localStorage.getItem("usuario"));
 
-    if (enSeguimiento) {
-      // Quitar del seguimiento
-      lista = lista.filter((eq) => eq.id !== parseInt(id));
-      setEnSeguimiento(false);
-    } else {
-      // Agregar nuevo equipo con todos sus datos
-      const nuevoEquipo = {
-        id: parseInt(id),
-        nombre: equipo.nombre_equipo || `Ventilador ${id}`,
-        marca: equipo.marca || "N/A",
-        modelo: equipo.modelo || "N/A",
-        ubicacion: equipo.ubicacion || "N/A",
-        tipo: "ventilador",
-        imagen: equipo.imagen_base64 || null,
-        accesorios: equipo.accesorios || [],
-        datos_tecnicos: equipo.datos_tecnicos || [],
-        sensores: data, // datos de sensores simulados
-      };
-      lista.push(nuevoEquipo);
-      setEnSeguimiento(true);
+  if (enSeguimiento) {
+    // 🔸 Quitar del seguimiento local
+    lista = lista.filter((eq) => eq.id !== parseInt(id));
+    setEnSeguimiento(false);
+
+    try {
+      // 🔸 Quitar del backend
+      await axios.delete(`https://monutinbackend-production.up.railway.app/api/seguimiento/${id}`);
+      console.log("🗑️ Equipo eliminado del seguimiento remoto");
+    } catch (error) {
+      console.error("❌ Error al eliminar del backend:", error);
     }
+  } else {
+    // 🔹 Crear nuevo objeto con todos los datos disponibles
+    const nuevoEquipo = {
+      id: parseInt(id),
+      nombre: equipo.nombre_equipo || `Ventilador ${id}`,
+      marca: equipo.marca || "N/A",
+      modelo: equipo.modelo || "N/A",
+      ubicacion: equipo.ubicacion || "N/A",
+      tipo: "ventilador",
+      imagen: equipo.imagen_base64 || null,
+      accesorios: equipo.accesorios || [],
+      datos_tecnicos: equipo.datos_tecnicos || [],
+      sensores: data, // datos de sensores simulados
+    };
 
-    localStorage.setItem("equipos_en_seguimiento", JSON.stringify(lista));
-  };
+    lista.push(nuevoEquipo);
+    setEnSeguimiento(true);
+
+    try {
+      // 🔹 Guardar también en backend
+      await axios.post("https://monutinbackend-production.up.railway.app/api/seguimiento", {
+        usuario_id: usuario.id,
+        equipo_id: equipo.id,
+      });
+      console.log("✅ Equipo agregado al seguimiento remoto");
+    } catch (error) {
+      console.error("❌ Error al guardar en el backend:", error);
+    }
+  }
+
+  // 🔄 Actualizar almacenamiento local
+  localStorage.setItem("equipos_en_seguimiento", JSON.stringify(lista));
+};
+
 
   // 🆕 === GENERAR Y DESCARGAR CÓDIGO QR ===
   const generarQR = async () => {

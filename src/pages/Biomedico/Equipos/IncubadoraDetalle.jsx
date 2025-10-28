@@ -58,33 +58,39 @@ useEffect(() => {
   }, [id]);
 
   // 🔹 Función para agregar o quitar del seguimiento
-  const toggleSeguimiento = () => {
-    let lista = JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
+const toggleSeguimiento = async () => {
+  let lista = JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
 
-    if (enSeguimiento) {
-      // Quitar del seguimiento
-      lista = lista.filter((eq) => eq.id !== parseInt(id));
-      setEnSeguimiento(false);
-    } else {
-      // Agregar con toda la información disponible
-      const nuevoEquipo = {
-        id: parseInt(id),
-        nombre: equipo.nombre_equipo || `Incubadora ${id}`,
-        marca: equipo.marca || "N/A",
-        modelo: equipo.modelo || "N/A",
-        ubicacion: equipo.ubicacion || "N/A",
-        tipo: "incubadora",
-        imagen: equipo.imagen_base64 || null,
-        accesorios: equipo.accesorios || [],
-        datos_tecnicos: equipo.datos_tecnicos || [],
-        sensores: data, // se guarda el dataset actual
-      };
-      lista.push(nuevoEquipo);
-      setEnSeguimiento(true);
-    }
+  if (enSeguimiento) {
+    lista = lista.filter((eq) => eq.id !== parseInt(id));
+    setEnSeguimiento(false);
 
-    localStorage.setItem("equipos_en_seguimiento", JSON.stringify(lista));
-  };
+    // 🧩 Quitar del backend
+    await axios.delete(`https://monutinbackend-production.up.railway.app/api/seguimiento/${id}`);
+  } else {
+    const nuevoEquipo = {
+      id: parseInt(id),
+      nombre: equipo.nombre_equipo,
+      marca: equipo.marca,
+      modelo: equipo.modelo,
+      ubicacion: equipo.ubicacion,
+      tipo: "incubadora",
+    };
+
+    lista.push(nuevoEquipo);
+    setEnSeguimiento(true);
+
+    // 🧩 Guardar también en backend
+    const usuario = JSON.parse(localStorage.getItem("usuario"));
+    await axios.post("https://monutinbackend-production.up.railway.app/api/seguimiento", {
+      usuario_id: usuario.id,
+      equipo_id: equipo.id,
+    });
+  }
+
+  localStorage.setItem("equipos_en_seguimiento", JSON.stringify(lista));
+};
+
 
   // 🆕 === GENERAR Y DESCARGAR CÓDIGO QR ===
   const generarQR = async () => {
