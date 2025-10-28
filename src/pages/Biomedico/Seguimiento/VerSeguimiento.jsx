@@ -2,6 +2,16 @@ import React, { useEffect, useState } from "react";
 import Header from "../../../components/Header";
 import "../../../App.css";
 import axios from "axios";
+// ====== GRAFICOS (Recharts) ======
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 export default function VerSeguimiento() {
   const [equipos, setEquipos] = useState([]);
