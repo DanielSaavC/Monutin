@@ -65,9 +65,19 @@ const crearTablas = [
     telefono TEXT,
     correo TEXT
   )`,
-  `CREATE TABLE IF NOT EXISTS fichas_tecnicas (
+ `CREATE TABLE IF NOT EXISTS fichas_tecnicas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     proveedor_id INTEGER,
+    nombre_equipo TEXT,
+    marca TEXT,
+    modelo TEXT,
+    serie TEXT,
+    codigo TEXT,
+    servicio TEXT,
+    ubicacion TEXT,
+    garantia TEXT,
+    procedencia TEXT,
+    fecha_compra TEXT,
     datos_tecnicos TEXT,
     accesorios TEXT,
     observaciones TEXT,
@@ -206,15 +216,34 @@ app.get("/api/sensores", (_, res) => {
 
 // ================== ENDPOINTS FICHAS TÉCNICAS ==================
 app.post("/api/fichatecnica", (req, res) => {
-  const { proveedor, datosTecnicos, accesorios, observaciones, manuales, estado, frecuencia, nombreElaboracion, imagenBase64 } = req.body;
+  const {
+    proveedor,
+    datosTecnicos,
+    accesorios,
+    observaciones,
+    manuales,
+    estado,
+    frecuencia,
+    nombreElaboracion,
+    imagenBase64,
+    nombreEquipo,
+    marca,
+    modelo,
+    serie,
+    codigo,
+    servicio,
+    ubicacion,
+    garantia,
+    procedencia,
+    fechaCompra
+  } = req.body;
+
   try {
     let proveedor_id = null;
-
     if (proveedor?.nombre) {
       const existente = db.prepare("SELECT id FROM proveedores WHERE nombre = ?").get(proveedor.nombre);
-      if (existente) {
-        proveedor_id = existente.id;
-      } else {
+      if (existente) proveedor_id = existente.id;
+      else {
         const infoProv = db.prepare(
           "INSERT INTO proveedores (nombre, direccion, telefono, correo) VALUES (?, ?, ?, ?)"
         ).run(proveedor.nombre, proveedor.direccion || "", proveedor.telefono || "", proveedor.correo || "");
@@ -224,15 +253,28 @@ app.post("/api/fichatecnica", (req, res) => {
 
     const stmt = db.prepare(`
       INSERT INTO fichas_tecnicas (
-        proveedor_id, datos_tecnicos, accesorios, observaciones,
+        proveedor_id, nombre_equipo, marca, modelo, serie, codigo, servicio, ubicacion,
+        garantia, procedencia, fecha_compra,
+        datos_tecnicos, accesorios, observaciones,
         manual_operacion, manual_instalacion, manual_servicio,
         estado_nuevo, estado_bueno, estado_reparable, estado_descartable,
         frecuencia, elaborado_por, imagen_base64
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const info = stmt.run(
       proveedor_id,
+      nombreEquipo || "",
+      marca || "",
+      modelo || "",
+      serie || "",
+      codigo || "",
+      servicio || "",
+      ubicacion || "",
+      garantia || "",
+      procedencia || "",
+      fechaCompra || "",
       JSON.stringify(datosTecnicos || []),
       JSON.stringify(accesorios || []),
       JSON.stringify(observaciones || []),
@@ -249,33 +291,12 @@ app.post("/api/fichatecnica", (req, res) => {
     );
 
     res.json({ message: "✅ Ficha técnica guardada", id: info.lastInsertRowid });
-  } catch {
+  } catch (err) {
+    console.error("❌ Error:", err);
     res.status(500).json({ error: "Error al guardar ficha técnica" });
   }
 });
 
-app.get("/api/fichatecnica", (_, res) => {
-  try {
-    const rows = db.prepare(`
-      SELECT f.*, p.nombre AS proveedor_nombre
-      FROM fichas_tecnicas f
-      LEFT JOIN proveedores p ON f.proveedor_id = p.id
-      ORDER BY f.fecha_registro DESC
-    `).all();
-
-    rows.forEach(r => {
-      r.datos_tecnicos = JSON.parse(r.datos_tecnicos || "[]");
-      r.accesorios = JSON.parse(r.accesorios || "[]");
-      r.observaciones = JSON.parse(r.observaciones || "[]");
-    });
-
-    res.json(rows);
-  } catch {
-    res.status(500).json({ error: "Error al consultar fichas técnicas" });
-  }
-});
-
-// ================== NUEVO: GENERACIÓN DE PDF ==================
 // ================== DESCARGA DIRECTA DE PDF ==================
 app.post("/api/fichatecnica/pdf", (req, res) => {
   try {
@@ -296,6 +317,21 @@ app.post("/api/fichatecnica/pdf", (req, res) => {
     const logoPath = path.join(process.cwd(), "HOSP.png");
     if (fs.existsSync(logoPath)) doc.image(logoPath, 460, 30, { width: 80 });
     doc.moveDown(2);
+    
+    // ===== DATOS GENERALES DEL EQUIPO =====
+    doc.font("Helvetica-Bold").fontSize(12).text("DATOS GENERALES DEL EQUIPO:");
+    doc.font("Helvetica").fontSize(10);
+    doc.text(`Equipo: ${req.body.nombreEquipo || "N/A"}`);
+    doc.text(`Marca: ${req.body.marca || "N/A"}`);
+    doc.text(`Modelo: ${req.body.modelo || "N/A"}`);
+    doc.text(`Serie: ${req.body.serie || "N/A"}`);
+    doc.text(`Código: ${req.body.codigo || "N/A"}`);
+    doc.text(`Servicio: ${req.body.servicio || "N/A"}`);
+    doc.text(`Ubicación: ${req.body.ubicacion || "N/A"}`);
+    doc.text(`Garantía: ${req.body.garantia || "N/A"}`);
+    doc.text(`Procedencia: ${req.body.procedencia || "N/A"}`);
+    doc.text(`Fecha de compra: ${req.body.fechaCompra || "N/A"}`);
+    doc.moveDown(1);
 
     // ===== DATOS DEL PROVEEDOR =====
     doc.font("Helvetica-Bold").fontSize(12).text("DATOS DEL PROVEEDOR:");
