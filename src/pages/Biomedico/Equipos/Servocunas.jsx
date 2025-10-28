@@ -13,7 +13,11 @@ export default function Servocunas() {
       .then((res) => {
         const filtradas = res.data.filter((eq) => {
           const texto = `${eq.nombre_equipo} ${eq.marca} ${eq.modelo}`.toLowerCase();
-          return texto.includes("servocuna");
+          return texto.includes( "servocuna",
+            "servo cuna",
+            "cuna térmica",
+            "cuna de calor",
+            "cuna radiante",);
         });
         setServocunas(filtradas);
       })

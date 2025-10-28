@@ -1,2 +1,152 @@
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import Header from "../../../components/Header";
-<Header /> 
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import axios from "axios";
+import "../../../App.css";
+
+export default function VentiladorDetalle() {
+  const { id } = useParams();
+  const [equipo, setEquipo] = useState(null);
+
+  // 🔹 Datos simulados (se reemplazarán con los sensores reales)
+  const data = Array.from({ length: 10 }, (_, i) => ({
+    time: i,
+    flujo: 20 + Math.random() * 5, // flujo de aire (L/min)
+    presion: 30 + Math.random() * 5, // presión (cmH2O)
+    volumen: 500 + Math.random() * 50, // volumen tidal (mL)
+    oxigeno: 90 + Math.random() * 5, // saturación O2 (%)
+  }));
+
+  useEffect(() => {
+    axios
+      .get("https://monutinbackend-production.up.railway.app/api/equipos")
+      .then((res) => {
+        const encontrado = res.data.find((eq) => eq.id === parseInt(id));
+        setEquipo(encontrado || null);
+      })
+      .catch((err) => console.error("❌ Error al cargar ventilador:", err));
+  }, [id]);
+
+  if (!equipo) {
+    return (
+      <div className="menu-container">
+        <Header />
+        <h2>💨 Cargando datos del ventilador...</h2>
+      </div>
+    );
+  }
+
+  return (
+    <div className="menu-container">
+      <Header />
+      <h2>💨 {equipo.nombre_equipo || `Ventilador ${id}`}</h2>
+
+      {/* 📸 Imagen del equipo */}
+      <div className="equipo-detalle-imagen">
+        {equipo.imagen_base64 ? (
+          <img
+            src={equipo.imagen_base64}
+            alt={equipo.nombre_equipo}
+            style={{
+              width: "300px",
+              height: "200px",
+              objectFit: "cover",
+              borderRadius: "10px",
+              boxShadow: "0 3px 10px rgba(0,0,0,0.15)",
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              width: "300px",
+              height: "200px",
+              background: "#e0f2f1",
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#00bfa6",
+              fontSize: "2em",
+            }}
+          >
+            📷 Sin imagen
+          </div>
+        )}
+      </div>
+
+      {/* 📋 Información del equipo */}
+      <div className="equipo-detalle-info">
+        <h3>🔧 Información del Equipo</h3>
+        <p><b>Marca:</b> {equipo.marca || "N/A"}</p>
+        <p><b>Modelo:</b> {equipo.modelo || "N/A"}</p>
+        <p><b>Serie:</b> {equipo.serie || "N/A"}</p>
+        <p><b>Servicio:</b> {equipo.servicio || "N/A"}</p>
+        <p><b>Ubicación:</b> {equipo.ubicacion || "N/A"}</p>
+
+        <h3>🧩 Accesorios</h3>
+        {equipo.accesorios && equipo.accesorios.length > 0 ? (
+          <ul>
+            {equipo.accesorios.map((acc, i) => (
+              <li key={i}>
+                <b>{acc.funcion}:</b> {acc.info}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No se registraron accesorios.</p>
+        )}
+
+        <h3>⚙️ Datos Técnicos</h3>
+        {equipo.datos_tecnicos && equipo.datos_tecnicos.length > 0 ? (
+          <ul>
+            {equipo.datos_tecnicos.map((dt, i) => (
+              <li key={i}>
+                <b>{dt.funcion}:</b> {dt.info}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No se registraron datos técnicos.</p>
+        )}
+      </div>
+
+      {/* === Gráficos simulados === */}
+      <div className="chart-box">
+        <h4>🌬️ Flujo (L/min) vs 💨 Presión (cmH₂O)</h4>
+        <ResponsiveContainer width="100%" height={250}>
+          <LineChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="time" />
+            <YAxis />
+            <Tooltip />
+            <Line type="monotone" dataKey="flujo" stroke="blue" name="Flujo" />
+            <Line type="monotone" dataKey="presion" stroke="red" name="Presión" />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="chart-box">
+        <h4>🫁 Volumen Tidal (mL) vs O₂ (%)</h4>
+        <ResponsiveContainer width="100%" height={250}>
+          <LineChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="time" />
+            <YAxis />
+            <Tooltip />
+            <Line type="monotone" dataKey="volumen" stroke="green" name="Volumen" />
+            <Line type="monotone" dataKey="oxigeno" stroke="orange" name="O₂" />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}

@@ -15,7 +15,11 @@ export default function Incubadoras() {
         // ✅ Filtrar solo equipos que incluyan "incubadora" en su nombre, marca o modelo
         const filtradas = res.data.filter((eq) => {
           const texto = `${eq.nombre_equipo} ${eq.marca} ${eq.modelo}`.toLowerCase();
-          return texto.includes("incubadora");
+          return texto.includes("incubadora",
+            "incubadoras",
+            "incubadora neonatal",
+            "neonatal incubadora",
+            "cuna incubadora",);
         });
         setIncubadoras(filtradas);
       })
