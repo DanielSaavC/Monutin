@@ -12,6 +12,16 @@ export default function FichaTecnica() {
     telefono: "",
     correo: "",
   });
+  const [nombreEquipo, setNombreEquipo] = useState("");
+  const [marca, setMarca] = useState("");
+  const [modelo, setModelo] = useState("");
+  const [serie, setSerie] = useState("");
+  const [codigo, setCodigo] = useState("");
+  const [servicio, setServicio] = useState("");
+  const [ubicacion, setUbicacion] = useState("");
+  const [garantia, setGarantia] = useState("");
+  const [procedencia, setProcedencia] = useState("");
+  const [fechaCompra, setFechaCompra] = useState("");
 
   const [datosTecnicos, setDatosTecnicos] = useState([]);
   const [accesorios, setAccesorios] = useState([]);
@@ -115,6 +125,16 @@ export default function FichaTecnica() {
         frecuencia,
         nombreElaboracion,
         imagenBase64,
+        nombreEquipo,
+        marca,
+        modelo,
+        serie,
+        codigo,
+        servicio,
+        ubicacion,
+        garantia,
+        procedencia,
+        fechaCompra
       };
 
       const res = await axios.post(
@@ -163,7 +183,11 @@ export default function FichaTecnica() {
                 ref={webcamRef}
                 screenshotFormat="image/jpeg"
                 className="webcam"
+                videoConstraints={{
+                  facingMode: { exact: "environment" }, // ✅ fuerza cámara trasera
+                }}
               />
+
               <div className="camara-buttons">
                 <button onClick={capturarFoto}>📷 Capturar</button>
                 <button onClick={() => setMostrarCamara(false)}>❌ Cancelar</button>
@@ -180,6 +204,62 @@ export default function FichaTecnica() {
               </label>
             </div>
           )}
+        </section>
+        {/* === DATOS GENERALES DEL EQUIPO === */}
+        <section>
+          <h2>Datos Generales del Equipo</h2>
+
+          <input
+            placeholder="Nombre del Equipo"
+            value={nombreEquipo}
+            onChange={(e) => setNombreEquipo(e.target.value)}
+          />
+          <input
+            placeholder="Marca"
+            value={marca}
+            onChange={(e) => setMarca(e.target.value)}
+          />
+          <input
+            placeholder="Modelo"
+            value={modelo}
+            onChange={(e) => setModelo(e.target.value)}
+          />
+          <input
+            placeholder="Serie"
+            value={serie}
+            onChange={(e) => setSerie(e.target.value)}
+          />
+          <input
+            placeholder="Código"
+            value={codigo}
+            onChange={(e) => setCodigo(e.target.value)}
+          />
+          <input
+            placeholder="Servicio"
+            value={servicio}
+            onChange={(e) => setServicio(e.target.value)}
+          />
+          <input
+            placeholder="Ubicación"
+            value={ubicacion}
+            onChange={(e) => setUbicacion(e.target.value)}
+          />
+          <input
+            placeholder="Garantía"
+            value={garantia}
+            onChange={(e) => setGarantia(e.target.value)}
+          />
+          <input
+            placeholder="Procedencia"
+            value={procedencia}
+            onChange={(e) => setProcedencia(e.target.value)}
+          />
+          <label>Fecha de Compra:</label>
+          <input
+            type="date"
+            value={fechaCompra}
+            onChange={(e) => setFechaCompra(e.target.value)}
+          />
         </section>
 
         {/* === PROVEEDOR === */}
