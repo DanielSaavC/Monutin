@@ -61,6 +61,16 @@ const crearTablas = [
     peso REAL,
     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`,
+  
+  `CREATE TABLE IF NOT EXISTS seguimiento (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  usuario_id INTEGER,
+  equipo_id INTEGER,
+  fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+  FOREIGN KEY (equipo_id) REFERENCES fichas_tecnicas(id)
+)`
+
   `CREATE TABLE IF NOT EXISTS proveedores (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre TEXT,
@@ -104,6 +114,70 @@ console.log("✅ Tablas listas");
 // ================== FUNCIONES AUXILIARES ==================
 const findUserByUsername = usuario =>
   db.prepare("SELECT * FROM usuarios WHERE usuario = ?").get(usuario.toLowerCase());
+// ================== ENDPOINTS SEGUIMIENTO ==================
+
+// 🔹 Agregar un equipo al seguimiento
+app.post("/api/seguimiento", (req, res) => {
+  const { usuario_id, equipo_id } = req.body;
+
+  try {
+    const existe = db.prepare(`
+      SELECT * FROM seguimiento WHERE usuario_id = ? AND equipo_id = ?
+    `).get(usuario_id, equipo_id);
+
+    if (existe) {
+      return res.status(400).json({ error: "El equipo ya está en seguimiento" });
+    }
+
+    db.prepare(`
+      INSERT INTO seguimiento (usuario_id, equipo_id)
+      VALUES (?, ?)
+    `).run(usuario_id, equipo_id);
+
+    res.json({ message: "✅ Equipo agregado al seguimiento" });
+  } catch (err) {
+    console.error("❌ Error al agregar a seguimiento:", err);
+    res.status(500).json({ error: "Error interno al agregar a seguimiento" });
+  }
+});
+
+// 🔹 Eliminar un equipo del seguimiento
+app.delete("/api/seguimiento", (req, res) => {
+  const { usuario_id, equipo_id } = req.body;
+
+  try {
+    const result = db.prepare(`
+      DELETE FROM seguimiento WHERE usuario_id = ? AND equipo_id = ?
+    `).run(usuario_id, equipo_id);
+
+    if (!result.changes)
+      return res.status(404).json({ error: "No estaba en seguimiento" });
+
+    res.json({ message: "🗑️ Equipo eliminado del seguimiento" });
+  } catch (err) {
+    console.error("❌ Error al quitar seguimiento:", err);
+    res.status(500).json({ error: "Error al quitar equipo del seguimiento" });
+  }
+});
+
+// 🔹 Obtener lista de seguimiento de un usuario
+app.get("/api/seguimiento/:usuario_id", (req, res) => {
+  const { usuario_id } = req.params;
+  try {
+    const rows = db.prepare(`
+      SELECT f.*
+      FROM fichas_tecnicas f
+      JOIN seguimiento s ON f.id = s.equipo_id
+      WHERE s.usuario_id = ?
+      ORDER BY s.fecha DESC
+    `).all(usuario_id);
+
+    res.json(rows);
+  } catch (err) {
+    console.error("❌ Error al obtener seguimiento:", err);
+    res.status(500).json({ error: "Error al obtener seguimiento" });
+  }
+});
 
 // ================== ENDPOINTS USUARIOS ==================
 
@@ -332,234 +406,27 @@ app.post("/api/fichatecnica", (req, res) => {
   }
 });
 
-// ================== DESCARGA DIRECTA DE PDF ==================
-app.post("/api/fichatecnica/pdf", async (req, res) => {
+// ================== ACTUALIZAR ESTADO DEL EQUIPO ==================
+app.put("/api/equipos/:id", (req, res) => {
+  const { id } = req.params;
+  const { estado } = req.body;
+
   try {
-    const {
-      proveedor,
-      datosTecnicos,
-      accesorios,
-      observaciones,
-      manuales,
-      estado,
-      frecuencia,
-      nombreElaboracion,
-      imagenBase64,
-      nombreEquipo,
-      marca,
-      modelo,
-      serie,
-      codigo,
-      servicio,
-      ubicacion,
-      garantia,
-      procedencia,
-      fechaCompra
-    } = req.body;
-
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=FichaTecnica_${(nombreEquipo || "equipo").replace(/\s+/g, "_")}.pdf`
-    );
-
-    const doc = new PDFDocument({ size: "LETTER", margin: 40 });
-    doc.pipe(res);
-
-    // === LOGO Y ENCABEZADO ===
-    const logoPath = path.join(process.cwd(), "HOSP.png");
-    if (fs.existsSync(logoPath)) doc.image(logoPath, 470, 30, { width: 90 });
-
-    doc.font("Helvetica-Bold").fontSize(16).text("FICHA TÉCNICA DEL EQUIPO MÉDICO", { align: "center" });
-    doc.font("Helvetica").fontSize(12).text("HOSPITAL UNIVALLE", { align: "center" });
-    doc.moveDown(1.2);
-
-    doc.moveTo(40, doc.y).lineTo(570, doc.y).strokeColor("#00796B").lineWidth(2).stroke();
-    doc.moveDown(1.2);
-
-    // === TABLA 1: DATOS GENERALES ===
-    const datosGenerales = [
-      ["Equipo", nombreEquipo || "N/A"],
-      ["Marca", marca || "N/A"],
-      ["Modelo", modelo || "N/A"],
-      ["Serie", serie || "N/A"],
-      ["Código", codigo || "N/A"],
-      ["Servicio", servicio || "N/A"],
-      ["Ubicación", ubicacion || "N/A"],
-      ["Garantía", garantia || "N/A"],
-      ["Procedencia", procedencia || "N/A"],
-      ["Fecha de compra", fechaCompra || "N/A"],
-    ];
-
-    await doc.table({
-      title: "1. DATOS GENERALES DEL EQUIPO",
-      headers: ["Campo", "Información"],
-      rows: datosGenerales,
-    }, {
-      prepareHeader: () => doc.font("Helvetica-Bold").fontSize(11).fillColor("#00796B"),
-      prepareRow: () => doc.font("Helvetica").fontSize(10).fillColor("black"),
-      columnSpacing: 10,
-      divider: { header: { width: 1, opacity: 0.8 }, horizontal: { width: 0.5 } },
-      width: 500,
-    });
-
-    doc.moveDown(1);
-
-    // === TABLA 2: DATOS DEL PROVEEDOR ===
-    const datosProveedor = [
-      ["Nombre", proveedor?.nombre || "N/A"],
-      ["Dirección", proveedor?.direccion || "N/A"],
-      ["Teléfono", proveedor?.telefono || "N/A"],
-      ["Correo", proveedor?.correo || "N/A"],
-    ];
-
-    await doc.table({
-      title: "2. DATOS DEL PROVEEDOR",
-      headers: ["Campo", "Información"],
-      rows: datosProveedor,
-    }, {
-      prepareHeader: () => doc.font("Helvetica-Bold").fontSize(11).fillColor("#00796B"),
-      prepareRow: () => doc.font("Helvetica").fontSize(10),
-      columnSpacing: 10,
-      width: 500,
-    });
-
-    doc.moveDown(1);
-
-    // === TABLA 3: DATOS TÉCNICOS ===
-    const datosTec = datosTecnicos?.length
-      ? datosTecnicos.map((dt) => [dt.funcion, dt.info])
-      : [["Sin registros", "N/A"]];
-
-    await doc.table({
-      title: "3. DATOS TÉCNICOS",
-      headers: ["Parámetro", "Descripción"],
-      rows: datosTec,
-    }, {
-      prepareHeader: () => doc.font("Helvetica-Bold").fontSize(11).fillColor("#00796B"),
-      prepareRow: () => doc.font("Helvetica").fontSize(10),
-      columnSpacing: 10,
-      width: 500,
-    });
-
-    doc.moveDown(1);
-
-    // === IMAGEN ===
-    doc.font("Helvetica-Bold").fontSize(12).fillColor("#00796B").text("4. IMAGEN DEL EQUIPO");
-    doc.moveDown(0.5);
-    if (imagenBase64) {
-      try {
-        const imageBuffer = Buffer.from(imagenBase64.split(",")[1], "base64");
-        doc.image(imageBuffer, { fit: [200, 200], align: "center", valign: "center" });
-      } catch {
-        doc.font("Helvetica").fillColor("black").text("⚠️ No se pudo insertar imagen.");
-      }
-    } else {
-      doc.font("Helvetica").fillColor("black").text("Sin imagen adjunta.");
+    // ✅ Buscar en la tabla correcta
+    const equipoExistente = db.prepare("SELECT * FROM fichas_tecnicas WHERE id = ?").get(id);
+    if (!equipoExistente) {
+      return res.status(404).json({ error: "Equipo no encontrado" });
     }
-    doc.moveDown(1.5);
 
-    // === TABLA 4: ACCESORIOS ===
-    const datosAcc = accesorios?.length
-      ? accesorios.map((a) => [a.funcion, a.info])
-      : [["Sin accesorios", "N/A"]];
+    // ✅ Actualizar estado textual
+    const stmt = db.prepare("UPDATE fichas_tecnicas SET estado = ? WHERE id = ?");
+    stmt.run(estado, id);
 
-    await doc.table({
-      title: "5. ACCESORIOS",
-      headers: ["Accesorio", "Descripción"],
-      rows: datosAcc,
-    }, {
-      prepareHeader: () => doc.font("Helvetica-Bold").fontSize(11).fillColor("#00796B"),
-      prepareRow: () => doc.font("Helvetica").fontSize(10),
-      width: 500,
-    });
-
-    doc.moveDown(1);
-
-    // === TABLA 5: MANUALES ===
-    const datosManuales = [
-      ["Operación", manuales?.operacion || "N/A"],
-      ["Instalación", manuales?.instalacion || "N/A"],
-      ["Servicio", manuales?.servicio || "N/A"],
-    ];
-
-    await doc.table({
-      title: "6. MANUALES",
-      headers: ["Tipo", "Disponibilidad"],
-      rows: datosManuales,
-    }, {
-      prepareHeader: () => doc.font("Helvetica-Bold").fontSize(11).fillColor("#00796B"),
-      prepareRow: () => doc.font("Helvetica").fontSize(10),
-      width: 500,
-    });
-
-    doc.moveDown(1);
-
-    // === TABLA 6: OBSERVACIONES ===
-    const datosObs = observaciones?.length
-      ? observaciones.map((o) => [o.funcion, o.info])
-      : [["Sin observaciones", "N/A"]];
-
-    await doc.table({
-      title: "7. OBSERVACIONES",
-      headers: ["Aspecto", "Detalle"],
-      rows: datosObs,
-    }, {
-      prepareHeader: () => doc.font("Helvetica-Bold").fontSize(11).fillColor("#00796B"),
-      prepareRow: () => doc.font("Helvetica").fontSize(10),
-      width: 500,
-    });
-
-    doc.moveDown(1);
-
-    // === TABLA 7: ESTADO Y FRECUENCIA ===
-    const estadoEquipo = [
-      ["Nuevo", estado?.nuevo ? "Sí" : "No"],
-      ["Bueno", estado?.bueno ? "Sí" : "No"],
-      ["Reparable", estado?.reparable ? "Sí" : "No"],
-      ["Descartable", estado?.descartable ? "Sí" : "No"],
-      ["Frecuencia de mantenimiento", frecuencia || "N/A"],
-    ];
-
-    await doc.table({
-      title: "8. ESTADO Y FRECUENCIA",
-      headers: ["Condición", "Estado"],
-      rows: estadoEquipo,
-    }, {
-      prepareHeader: () => doc.font("Helvetica-Bold").fontSize(11).fillColor("#00796B"),
-      prepareRow: () => doc.font("Helvetica").fontSize(10),
-      width: 500,
-    });
-
-    doc.moveDown(1.2);
-
-    // === REGISTRO DE ELABORACIÓN ===
-    const datosElaboracion = [
-      ["Elaborado por", nombreElaboracion || "N/A"],
-      ["Fecha", new Date().toISOString().split("T")[0]],
-      ["Firma", "___________________________"],
-    ];
-
-    await doc.table({
-      title: "9. REGISTRO DE ELABORACIÓN",
-      headers: ["Campo", "Detalle"],
-      rows: datosElaboracion,
-    }, {
-      prepareHeader: () => doc.font("Helvetica-Bold").fontSize(11).fillColor("#00796B"),
-      prepareRow: () => doc.font("Helvetica").fontSize(10),
-      width: 500,
-    });
-
-    // === PIE DE PÁGINA ===
-    doc.moveDown(2);
-    doc.fontSize(8).fillColor("gray").text("Documento generado automáticamente por el sistema MONUTIN.", {
-      align: "center",
-    });
-
-    doc.end();
-  } catch (err) {
-    console.error("❌ Error al generar PDF:", err);
-    res.status(500).json({ error: "Error al generar PDF" });
+    console.log(`✅ Estado del equipo ID ${id} actualizado a "${estado}"`);
+    res.json({ success: true, message: "Estado actualizado correctamente", estado });
+  } catch (error) {
+    console.error("❌ Error al actualizar estado del equipo:", error);
+    res.status(500).json({ error: "Error al actualizar estado del equipo" });
   }
 });
 
