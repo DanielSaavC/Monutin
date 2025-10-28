@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Header from "../../../components/Header";
+import { useNavigate } from "react-router-dom"; // 🔹 Importar
 import {
   LineChart,
   Line,
@@ -15,6 +16,7 @@ import QRCode from "qrcode";
 import "../../../App.css";
 
 export default function IncubadoraDetalle() {
+  const navigate = useNavigate(); 
   const { id } = useParams();
   const [equipo, setEquipo] = useState(null);
   const [enSeguimiento, setEnSeguimiento] = useState(false);
@@ -39,7 +41,14 @@ export default function IncubadoraDetalle() {
       })
       .catch((err) => console.error("❌ Error cargando equipo:", err));
   }, [id]);
-
+useEffect(() => {
+    const usuario = JSON.parse(localStorage.getItem("usuario"));
+    if (!usuario) {
+      // Guardar la ruta actual para redirigir luego del login
+      localStorage.setItem("redirectAfterLogin", window.location.hash);
+      navigate("/login");
+    }
+  }, [navigate]);
   // 🔹 Verificar si ya está en seguimiento
   useEffect(() => {
     const lista =
