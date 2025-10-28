@@ -188,10 +188,10 @@ await axios.post("https://monutinbackend-production.up.railway.app/api/seguimien
                 </ResponsiveContainer>
               </div>
 
-              {/* 🔍 Información extra */}
+             {/* 🔍 Información extra */}
               <div style={{ marginTop: "10px" }}>
                 <h4>⚙️ Datos Técnicos</h4>
-                {eq.datos_tecnicos?.length > 0 ? (
+                {Array.isArray(eq.datos_tecnicos) && eq.datos_tecnicos.length > 0 ? (
                   <ul>
                     {eq.datos_tecnicos.map((dt, i) => (
                       <li key={i}>
@@ -204,7 +204,7 @@ await axios.post("https://monutinbackend-production.up.railway.app/api/seguimien
                 )}
 
                 <h4>🔌 Accesorios</h4>
-                {eq.accesorios?.length > 0 ? (
+                {Array.isArray(eq.accesorios) && eq.accesorios.length > 0 ? (
                   <ul>
                     {eq.accesorios.map((acc, i) => (
                       <li key={i}>
@@ -215,8 +215,8 @@ await axios.post("https://monutinbackend-production.up.railway.app/api/seguimien
                 ) : (
                   <p>No hay accesorios registrados.</p>
                 )}
-                
               </div>
+
             </div>
             
           ))
