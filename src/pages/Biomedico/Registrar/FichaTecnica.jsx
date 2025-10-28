@@ -171,10 +171,9 @@ const generarFichaPDF = async () => {
               <button type="button" className="btn-camara">
                 📷 Tomar Foto
               </button>
-
               <label className="btn-upload">
                 🖼️ Subir Imagen
-                <input type="file" accept="image/*" />
+                <input type="file" accept="image/*" onChange={handleImageUpload} />
               </label>
             </div>
 
