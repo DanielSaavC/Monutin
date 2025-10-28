@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { HashRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 
 // ====== COMPONENTES ======
@@ -66,6 +66,58 @@ function App() {
   // Rutas públicas (sin login)
   const publicPaths = ["/", "/login", "/registro"];
   const isPublic = publicPaths.includes(location.pathname.toLowerCase());
+
+  // =======================
+  // 🔔 NOTIFICACIONES PUSH
+  // =======================
+  useEffect(() => {
+    if ("serviceWorker" in navigator && "PushManager" in window) {
+      navigator.serviceWorker.ready.then(async (reg) => {
+        const publicKey =
+          "BPa9Ypp_D-5nqP2NvdMWAlJvz5z9IpZHHFUZdtVRDgf4Grx1Txr4h8Bzi1ljCimbK2zFgnqfkZ6VaPLHf7dwA3M";
+
+        try {
+          // Solicita permiso al usuario
+          const permission = await Notification.requestPermission();
+          if (permission !== "granted") {
+            console.warn("❌ Permiso de notificaciones denegado");
+            return;
+          }
+
+          // Crear o recuperar suscripción
+          const subscription = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(publicKey),
+          });
+
+          console.log("✅ Suscripción Push creada:", subscription);
+
+          // Enviar suscripción al backend
+          await fetch("https://monutinbackend-production.up.railway.app/api/suscribir", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(subscription),
+          });
+        } catch (err) {
+          console.error("❌ Error al suscribirse al push:", err);
+        }
+      });
+    } else {
+      console.warn("⚠️ Este navegador no soporta notificaciones push");
+    }
+  }, []);
+
+  // Función auxiliar para convertir la clave
+  function urlBase64ToUint8Array(base64String) {
+    const padding = "=".repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
 
   return (
     <>
