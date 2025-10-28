@@ -15,10 +15,11 @@ import {
 
 export default function VerSeguimiento() {
   const [equipos, setEquipos] = useState([]);
+  const usuario = JSON.parse(localStorage.getItem("usuario"));
 
   // Cargar lista de seguimiento
 useEffect(() => {
-  const usuario = JSON.parse(localStorage.getItem("usuario"));
+
   if (!usuario) return;
 
   axios
