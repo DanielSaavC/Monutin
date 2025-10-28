@@ -17,10 +17,20 @@ export default function VerSeguimiento() {
   const [equipos, setEquipos] = useState([]);
 
   // Cargar lista de seguimiento
-  useEffect(() => {
-    const lista = JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
-    setEquipos(lista);
-  }, []);
+useEffect(() => {
+  const usuario = JSON.parse(localStorage.getItem("usuario"));
+  if (!usuario) return;
+
+  axios
+    .get(`https://monutinbackend-production.up.railway.app/api/seguimiento/${usuario.id}`)
+    .then((res) => {
+      setEquipos(res.data);
+    })
+    .catch((err) => {
+      console.error("❌ Error al cargar equipos en seguimiento:", err);
+    });
+}, []);
+
 
   // Guardar cambios globales
   const actualizarLocalStorage = (nuevaLista) => {
@@ -43,10 +53,11 @@ const toggleEstado = async (id) => {
 
   try {
     // ✅ Actualiza también en el backend
-    await axios.put(
-      `https://monutinbackend-production.up.railway.app/api/equipos/${id}`,
-      { estado: nuevoEstado }
-    );
+await axios.post("https://monutinbackend-production.up.railway.app/api/seguimiento", {
+  usuario_id: usuario.id,
+  equipo_id: equipo.id,
+});
+
 
     // ✅ Actualiza localmente
     const nuevaLista = equipos.map((eq) =>
