@@ -7,7 +7,9 @@ import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
 import PDFDocument from "pdfkit";
-import { Table } from "pdfkit-table";
+import pkg from "pdfkit-table";
+const { default: PDFTable } = pkg;
+
 
 // ================== CONFIGURACIÓN ==================
 const app = express();
