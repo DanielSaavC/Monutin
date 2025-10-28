@@ -11,12 +11,14 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import axios from "axios";
+import QRCode from "qrcode"; // 🆕
 import "../../../App.css";
 
 export default function ServocunaDetalle() {
   const { id } = useParams();
   const [equipo, setEquipo] = useState(null);
   const [enSeguimiento, setEnSeguimiento] = useState(false);
+  const [qrImage, setQrImage] = useState(null); // 🆕 estado QR
 
   // 🔹 Datos simulados (por ahora)
   const data = Array.from({ length: 10 }, (_, i) => ({
@@ -40,14 +42,16 @@ export default function ServocunaDetalle() {
 
   // 🔹 Verificar si ya está en seguimiento
   useEffect(() => {
-    const lista = JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
+    const lista =
+      JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
     const existe = lista.some((eq) => eq.id === parseInt(id));
     setEnSeguimiento(existe);
   }, [id]);
 
   // 🔹 Agregar o quitar del seguimiento
   const toggleSeguimiento = () => {
-    let lista = JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
+    let lista =
+      JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
 
     if (enSeguimiento) {
       // Quitar
@@ -74,6 +78,36 @@ export default function ServocunaDetalle() {
     localStorage.setItem("equipos_en_seguimiento", JSON.stringify(lista));
   };
 
+  // 🆕 === GENERAR Y DESCARGAR CÓDIGO QR ===
+  const generarQR = async () => {
+    try {
+      // URL del equipo actual (producción)
+      const url = `https://danielsaavc.github.io/Monutin/#/servocunas/${id}`;
+
+      // Generar QR en base64 (PNG)
+      const qr = await QRCode.toDataURL(url, {
+        errorCorrectionLevel: "H",
+        width: 350,
+        color: { dark: "#00796B", light: "#FFFFFF" },
+      });
+
+      setQrImage(qr);
+
+      // 🔽 Descargar automáticamente el QR
+      const link = document.createElement("a");
+      link.href = qr;
+      link.download = `QR_Servocuna_${id}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      console.log("✅ QR generado y descargado:", url);
+    } catch (err) {
+      console.error("❌ Error al generar QR:", err);
+      alert("Error al generar el código QR.");
+    }
+  };
+
   if (!equipo) {
     return (
       <div className="menu-container">
@@ -96,6 +130,46 @@ export default function ServocunaDetalle() {
         >
           {enSeguimiento ? "👁️ En seguimiento" : "📈 Dar seguimiento"}
         </button>
+      </div>
+
+      {/* 🆕 Botón Generar QR */}
+      <div style={{ marginTop: "15px", textAlign: "center" }}>
+        <button
+          onClick={generarQR}
+          style={{
+            backgroundColor: "#00796B",
+            color: "#fff",
+            border: "none",
+            borderRadius: "8px",
+            padding: "10px 20px",
+            cursor: "pointer",
+            fontWeight: "600",
+            fontSize: "1em",
+          }}
+        >
+          🔳 Generar QR
+        </button>
+
+        {/* Mostrar QR si existe */}
+        {qrImage && (
+          <div style={{ marginTop: "20px" }}>
+            <img
+              src={qrImage}
+              alt="QR de la servocuna"
+              style={{
+                width: "200px",
+                height: "200px",
+                border: "2px solid #00796B",
+                borderRadius: "10px",
+                padding: "10px",
+                backgroundColor: "#fff",
+              }}
+            />
+            <p style={{ fontSize: "0.9em", color: "#555" }}>
+              Escanéame para abrir esta servocuna
+            </p>
+          </div>
+        )}
       </div>
 
       {/* 📸 Imagen */}

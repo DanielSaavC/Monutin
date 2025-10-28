@@ -27,25 +27,32 @@ export default function Biomedico() {
   }, [showScanner]);
 
   // ✅ Detección flexible de formato del QR
-  const handleScan = (result) => {
-    if (!result) return;
+const handleScan = (result) => {
+  if (!result) return;
 
-    let value = "";
-    // Si devuelve un array con objetos (rawValue)
-    if (Array.isArray(result) && result[0]?.rawValue) {
-      value = result[0].rawValue;
-    }
-    // Si devuelve texto plano
-    else if (typeof result === "string") {
-      value = result;
-    }
+  let value = "";
 
-    if (value) {
-      setQrData(value);
-      setShowModal(true);
-      setCopied(false);
-    }
-  };
+  // 🟢 Si devuelve array
+  if (Array.isArray(result) && result[0]?.rawValue) {
+    value = result[0].rawValue;
+  }
+  // 🟢 Si devuelve objeto simple
+  else if (typeof result === "object" && result?.rawValue) {
+    value = result.rawValue;
+  }
+  // 🟢 Si devuelve string directo
+  else if (typeof result === "string") {
+    value = result;
+  }
+
+  if (value) {
+    console.log("✅ QR detectado:", value);
+    setQrData(value.trim());
+    setShowModal(true);
+    setCopied(false);
+  }
+};
+
 
   // ⚠️ Error de cámara
   const handleError = (error) => {

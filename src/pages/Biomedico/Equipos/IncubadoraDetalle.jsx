@@ -11,12 +11,14 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import axios from "axios";
+import QRCode from "qrcode";
 import "../../../App.css";
 
 export default function IncubadoraDetalle() {
   const { id } = useParams();
   const [equipo, setEquipo] = useState(null);
   const [enSeguimiento, setEnSeguimiento] = useState(false);
+  const [qrImage, setQrImage] = useState(null); // 🆕 QR generado
 
   // 🔹 Datos simulados de sensores (luego reemplazas con tu API/MQTT)
   const data = Array.from({ length: 10 }, (_, i) => ({
@@ -40,7 +42,8 @@ export default function IncubadoraDetalle() {
 
   // 🔹 Verificar si ya está en seguimiento
   useEffect(() => {
-    const lista = JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
+    const lista =
+      JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
     const existe = lista.some((eq) => eq.id === parseInt(id));
     setEnSeguimiento(existe);
   }, [id]);
@@ -74,6 +77,36 @@ export default function IncubadoraDetalle() {
     localStorage.setItem("equipos_en_seguimiento", JSON.stringify(lista));
   };
 
+  // 🆕 === GENERAR Y DESCARGAR CÓDIGO QR ===
+  const generarQR = async () => {
+    try {
+      // URL de este equipo en producción
+      const url = `https://danielsaavc.github.io/Monutin/#/incubadoras/${id}`;
+
+      // Generar QR en base64 (PNG)
+      const qr = await QRCode.toDataURL(url, {
+        errorCorrectionLevel: "H",
+        width: 350,
+        color: { dark: "#00796B", light: "#FFFFFF" },
+      });
+
+      setQrImage(qr); // mostrar visualmente
+
+      // 🔽 Descargar automáticamente el QR
+      const link = document.createElement("a");
+      link.href = qr;
+      link.download = `QR_Incubadora_${id}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      console.log("✅ QR generado y descargado:", url);
+    } catch (err) {
+      console.error("❌ Error al generar QR:", err);
+      alert("Error al generar el código QR.");
+    }
+  };
+
   if (!equipo) {
     return (
       <div className="menu-container">
@@ -90,13 +123,53 @@ export default function IncubadoraDetalle() {
 
       {/* 📈 BOTÓN DE SEGUIMIENTO */}
       <div className="seguimiento-boton-container">
-  <button
-    onClick={toggleSeguimiento}
-    className={`btn-seguimiento ${enSeguimiento ? "activo" : ""}`}
-  >
-    {enSeguimiento ? "👁️ En seguimiento" : "📈 Dar seguimiento"}
-  </button>
-</div>
+        <button
+          onClick={toggleSeguimiento}
+          className={`btn-seguimiento ${enSeguimiento ? "activo" : ""}`}
+        >
+          {enSeguimiento ? "👁️ En seguimiento" : "📈 Dar seguimiento"}
+        </button>
+      </div>
+
+      {/* 🆕 BOTÓN DE GENERAR QR */}
+      <div style={{ marginTop: "15px", textAlign: "center" }}>
+        <button
+          onClick={generarQR}
+          style={{
+            backgroundColor: "#00796B",
+            color: "#fff",
+            border: "none",
+            borderRadius: "8px",
+            padding: "10px 20px",
+            cursor: "pointer",
+            fontWeight: "600",
+            fontSize: "1em",
+          }}
+        >
+          🔳 Generar QR
+        </button>
+
+        {/* Mostrar QR si existe */}
+        {qrImage && (
+          <div style={{ marginTop: "20px" }}>
+            <img
+              src={qrImage}
+              alt="QR del equipo"
+              style={{
+                width: "200px",
+                height: "200px",
+                border: "2px solid #00796B",
+                borderRadius: "10px",
+                padding: "10px",
+                backgroundColor: "#fff",
+              }}
+            />
+            <p style={{ fontSize: "0.9em", color: "#555" }}>
+              Escanéame para abrir este equipo
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* 📸 Imagen del equipo */}
       <div className="equipo-detalle-imagen">
@@ -177,7 +250,12 @@ export default function IncubadoraDetalle() {
             <YAxis />
             <Tooltip />
             <Line type="monotone" dataKey="temp" stroke="red" name="Temp Ext" />
-            <Line type="monotone" dataKey="humedad" stroke="blue" name="Humedad" />
+            <Line
+              type="monotone"
+              dataKey="humedad"
+              stroke="blue"
+              name="Humedad"
+            />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -190,8 +268,18 @@ export default function IncubadoraDetalle() {
             <XAxis dataKey="time" />
             <YAxis />
             <Tooltip />
-            <Line type="monotone" dataKey="peso" stroke="green" name="Peso" />
-            <Line type="monotone" dataKey="tempBebe" stroke="orange" name="Temp Bebé" />
+            <Line
+              type="monotone"
+              dataKey="peso"
+              stroke="green"
+              name="Peso"
+            />
+            <Line
+              type="monotone"
+              dataKey="tempBebe"
+              stroke="orange"
+              name="Temp Bebé"
+            />
           </LineChart>
         </ResponsiveContainer>
       </div>
