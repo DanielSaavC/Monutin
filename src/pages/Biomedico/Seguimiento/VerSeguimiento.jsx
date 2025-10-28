@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Header from "../../../components/Header";
 import "../../../App.css";
+import axios from "axios";
 
 export default function VerSeguimiento() {
   const [equipos, setEquipos] = useState([]);
@@ -23,17 +24,34 @@ export default function VerSeguimiento() {
   };
 
   // Cambiar estado
-  const toggleEstado = (id) => {
-    const nuevaLista = equipos.map((eq) =>
-      eq.id === id
-        ? {
-            ...eq,
-            estado: eq.estado === "mantenimiento" ? "bueno" : "mantenimiento",
-          }
-        : eq
+
+const toggleEstado = async (id) => {
+  const equipo = equipos.find((eq) => eq.id === id);
+  if (!equipo) return;
+
+  const nuevoEstado = equipo.estado === "bueno" ? "mantenimiento" : "bueno";
+
+  try {
+    // ✅ Actualiza también en el backend
+    await axios.put(
+      `https://monutinbackend-production.up.railway.app/api/equipos/${id}`,
+      { estado: nuevoEstado }
     );
-    actualizarLocalStorage(nuevaLista);
-  };
+
+    // ✅ Actualiza localmente
+    const nuevaLista = equipos.map((eq) =>
+      eq.id === id ? { ...eq, estado: nuevoEstado } : eq
+    );
+
+    setEquipos(nuevaLista);
+    localStorage.setItem("equipos_en_seguimiento", JSON.stringify(nuevaLista));
+
+    alert(`✅ Estado del equipo cambiado a "${nuevoEstado}".`);
+  } catch (error) {
+    console.error("❌ Error al actualizar estado:", error);
+    alert("Error al actualizar el estado del equipo.");
+  }
+};
 
   // Quitar del seguimiento (solo si está operativo)
   const quitar = (id) => {
@@ -45,6 +63,15 @@ export default function VerSeguimiento() {
 
     const nuevaLista = equipos.filter((eq) => eq.id !== id);
     actualizarLocalStorage(nuevaLista);
+  };
+    const generarDatosSensores = () => {
+    return Array.from({ length: 10 }, (_, i) => ({
+      time: i,
+      temp: 36 + Math.random(),
+      humedad: 40 + Math.random() * 10,
+      peso: 3 + Math.random() * 0.5,
+      tempBebe: 36.5 + Math.random() * 0.5,
+    }));
   };
 
   return (
@@ -125,6 +152,19 @@ export default function VerSeguimiento() {
                   ❌ Quitar del seguimiento
                 </button>
               </div>
+              <div className="chart-box" style={{ marginTop: "20px" }}>
+                <h4>🌡️ Temp Externa (°C) vs 💧 Humedad (%)</h4>
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={generarDatosSensores()}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="time" />
+                    <YAxis />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="temp" stroke="red" name="Temp Ext" />
+                    <Line type="monotone" dataKey="humedad" stroke="blue" name="Humedad" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
 
               {/* 🔍 Información extra */}
               <div style={{ marginTop: "10px" }}>
@@ -153,8 +193,10 @@ export default function VerSeguimiento() {
                 ) : (
                   <p>No hay accesorios registrados.</p>
                 )}
+                
               </div>
             </div>
+            
           ))
         )}
       </div>
