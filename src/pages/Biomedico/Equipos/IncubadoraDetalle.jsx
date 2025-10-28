@@ -1,4 +1,3 @@
-// src/pages/Biomedico/Equipos/IncubadoraDetalle.jsx
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Header from "../../../components/Header";
@@ -17,6 +16,7 @@ import "../../../App.css";
 export default function IncubadoraDetalle() {
   const { id } = useParams();
   const [equipo, setEquipo] = useState(null);
+  const [enSeguimiento, setEnSeguimiento] = useState(false);
 
   // 🔹 Datos simulados de sensores (luego reemplazas con tu API/MQTT)
   const data = Array.from({ length: 10 }, (_, i) => ({
@@ -38,6 +38,42 @@ export default function IncubadoraDetalle() {
       .catch((err) => console.error("❌ Error cargando equipo:", err));
   }, [id]);
 
+  // 🔹 Verificar si ya está en seguimiento
+  useEffect(() => {
+    const lista = JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
+    const existe = lista.some((eq) => eq.id === parseInt(id));
+    setEnSeguimiento(existe);
+  }, [id]);
+
+  // 🔹 Función para agregar o quitar del seguimiento
+  const toggleSeguimiento = () => {
+    let lista = JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
+
+    if (enSeguimiento) {
+      // Quitar del seguimiento
+      lista = lista.filter((eq) => eq.id !== parseInt(id));
+      setEnSeguimiento(false);
+    } else {
+      // Agregar con toda la información disponible
+      const nuevoEquipo = {
+        id: parseInt(id),
+        nombre: equipo.nombre_equipo || `Incubadora ${id}`,
+        marca: equipo.marca || "N/A",
+        modelo: equipo.modelo || "N/A",
+        ubicacion: equipo.ubicacion || "N/A",
+        tipo: "incubadora",
+        imagen: equipo.imagen_base64 || null,
+        accesorios: equipo.accesorios || [],
+        datos_tecnicos: equipo.datos_tecnicos || [],
+        sensores: data, // se guarda el dataset actual
+      };
+      lista.push(nuevoEquipo);
+      setEnSeguimiento(true);
+    }
+
+    localStorage.setItem("equipos_en_seguimiento", JSON.stringify(lista));
+  };
+
   if (!equipo) {
     return (
       <div className="menu-container">
@@ -51,6 +87,16 @@ export default function IncubadoraDetalle() {
     <div className="menu-container">
       <Header />
       <h2>📊 {equipo.nombre_equipo || `Incubadora ${id}`}</h2>
+
+      {/* 📈 BOTÓN DE SEGUIMIENTO */}
+      <div className="seguimiento-boton-container">
+  <button
+    onClick={toggleSeguimiento}
+    className={`btn-seguimiento ${enSeguimiento ? "activo" : ""}`}
+  >
+    {enSeguimiento ? "👁️ En seguimiento" : "📈 Dar seguimiento"}
+  </button>
+</div>
 
       {/* 📸 Imagen del equipo */}
       <div className="equipo-detalle-imagen">

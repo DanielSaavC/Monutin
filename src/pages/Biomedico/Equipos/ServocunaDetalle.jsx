@@ -13,12 +13,12 @@ import {
 import axios from "axios";
 import "../../../App.css";
 
-export default function IncubadoraDetalle() {
+export default function ServocunaDetalle() {
   const { id } = useParams();
   const [equipo, setEquipo] = useState(null);
   const [enSeguimiento, setEnSeguimiento] = useState(false);
 
-  // 🔹 Datos simulados de sensores (luego reemplazas con tu API/MQTT)
+  // 🔹 Datos simulados (por ahora)
   const data = Array.from({ length: 10 }, (_, i) => ({
     time: i,
     temp: 36 + Math.random(),
@@ -27,7 +27,7 @@ export default function IncubadoraDetalle() {
     tempBebe: 36.5 + Math.random() * 0.5,
   }));
 
-  // 🔹 Obtener datos del equipo
+  // 🔹 Cargar datos reales del equipo
   useEffect(() => {
     axios
       .get("https://monutinbackend-production.up.railway.app/api/equipos")
@@ -35,7 +35,7 @@ export default function IncubadoraDetalle() {
         const encontrado = res.data.find((eq) => eq.id === parseInt(id));
         setEquipo(encontrado || null);
       })
-      .catch((err) => console.error("❌ Error cargando equipo:", err));
+      .catch((err) => console.error("❌ Error al cargar servocuna:", err));
   }, [id]);
 
   // 🔹 Verificar si ya está en seguimiento
@@ -45,27 +45,27 @@ export default function IncubadoraDetalle() {
     setEnSeguimiento(existe);
   }, [id]);
 
-  // 🔹 Función para agregar o quitar del seguimiento
+  // 🔹 Agregar o quitar del seguimiento
   const toggleSeguimiento = () => {
     let lista = JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
 
     if (enSeguimiento) {
-      // Quitar del seguimiento
+      // Quitar
       lista = lista.filter((eq) => eq.id !== parseInt(id));
       setEnSeguimiento(false);
     } else {
-      // Agregar con toda la información disponible
+      // Agregar equipo con toda su información
       const nuevoEquipo = {
         id: parseInt(id),
-        nombre: equipo.nombre_equipo || `Incubadora ${id}`,
+        nombre: equipo.nombre_equipo || `Servocuna ${id}`,
         marca: equipo.marca || "N/A",
         modelo: equipo.modelo || "N/A",
         ubicacion: equipo.ubicacion || "N/A",
-        tipo: "incubadora",
+        tipo: "servocuna",
         imagen: equipo.imagen_base64 || null,
         accesorios: equipo.accesorios || [],
         datos_tecnicos: equipo.datos_tecnicos || [],
-        sensores: data, // se guarda el dataset actual
+        sensores: data, // se guarda el dataset de sensores
       };
       lista.push(nuevoEquipo);
       setEnSeguimiento(true);
@@ -78,7 +78,7 @@ export default function IncubadoraDetalle() {
     return (
       <div className="menu-container">
         <Header />
-        <h2>📊 Cargando datos de la incubadora...</h2>
+        <h2>🛏️ Cargando datos de la servocuna...</h2>
       </div>
     );
   }
@@ -86,27 +86,19 @@ export default function IncubadoraDetalle() {
   return (
     <div className="menu-container">
       <Header />
-      <h2>📊 {equipo.nombre_equipo || `Incubadora ${id}`}</h2>
+      <h2>🛏️ {equipo.nombre_equipo || `Servocuna ${id}`}</h2>
 
-      {/* 📈 BOTÓN DE SEGUIMIENTO */}
-      <div style={{ marginBottom: "20px" }}>
+      {/* 📈 Botón de seguimiento */}
+      <div className="seguimiento-boton-container">
         <button
           onClick={toggleSeguimiento}
-          style={{
-            background: enSeguimiento ? "#00bfa6" : "#00796b",
-            color: "#fff",
-            border: "none",
-            padding: "10px 20px",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontWeight: "bold",
-          }}
+          className={`btn-seguimiento ${enSeguimiento ? "activo" : ""}`}
         >
           {enSeguimiento ? "👁️ En seguimiento" : "📈 Dar seguimiento"}
         </button>
       </div>
 
-      {/* 📸 Imagen del equipo */}
+      {/* 📸 Imagen */}
       <div className="equipo-detalle-imagen">
         {equipo.imagen_base64 ? (
           <img
@@ -139,7 +131,7 @@ export default function IncubadoraDetalle() {
         )}
       </div>
 
-      {/* 📋 Información técnica */}
+      {/* 📋 Información */}
       <div className="equipo-detalle-info">
         <h3>🔧 Información del Equipo</h3>
         <p><b>Marca:</b> {equipo.marca || "N/A"}</p>
@@ -175,7 +167,7 @@ export default function IncubadoraDetalle() {
         )}
       </div>
 
-      {/* === Gráficos de sensores === */}
+      {/* === Gráficos simulados === */}
       <div className="chart-box">
         <h4>🌡️ Temp Externa (°C) vs 💧 Humedad (%)</h4>
         <ResponsiveContainer width="100%" height={250}>

@@ -16,6 +16,7 @@ import "../../../App.css";
 export default function VentiladorDetalle() {
   const { id } = useParams();
   const [equipo, setEquipo] = useState(null);
+  const [enSeguimiento, setEnSeguimiento] = useState(false);
 
   // 🔹 Datos simulados (se reemplazarán con los sensores reales)
   const data = Array.from({ length: 10 }, (_, i) => ({
@@ -26,6 +27,7 @@ export default function VentiladorDetalle() {
     oxigeno: 90 + Math.random() * 5, // saturación O2 (%)
   }));
 
+  // 🔹 Obtener datos del backend
   useEffect(() => {
     axios
       .get("https://monutinbackend-production.up.railway.app/api/equipos")
@@ -35,6 +37,42 @@ export default function VentiladorDetalle() {
       })
       .catch((err) => console.error("❌ Error al cargar ventilador:", err));
   }, [id]);
+
+  // 🔹 Verificar si ya está en seguimiento
+  useEffect(() => {
+    const lista = JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
+    const existe = lista.some((eq) => eq.id === parseInt(id));
+    setEnSeguimiento(existe);
+  }, [id]);
+
+  // 🔹 Agregar o quitar del seguimiento
+  const toggleSeguimiento = () => {
+    let lista = JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
+
+    if (enSeguimiento) {
+      // Quitar del seguimiento
+      lista = lista.filter((eq) => eq.id !== parseInt(id));
+      setEnSeguimiento(false);
+    } else {
+      // Agregar nuevo equipo con todos sus datos
+      const nuevoEquipo = {
+        id: parseInt(id),
+        nombre: equipo.nombre_equipo || `Ventilador ${id}`,
+        marca: equipo.marca || "N/A",
+        modelo: equipo.modelo || "N/A",
+        ubicacion: equipo.ubicacion || "N/A",
+        tipo: "ventilador",
+        imagen: equipo.imagen_base64 || null,
+        accesorios: equipo.accesorios || [],
+        datos_tecnicos: equipo.datos_tecnicos || [],
+        sensores: data, // datos de sensores simulados
+      };
+      lista.push(nuevoEquipo);
+      setEnSeguimiento(true);
+    }
+
+    localStorage.setItem("equipos_en_seguimiento", JSON.stringify(lista));
+  };
 
   if (!equipo) {
     return (
@@ -49,6 +87,16 @@ export default function VentiladorDetalle() {
     <div className="menu-container">
       <Header />
       <h2>💨 {equipo.nombre_equipo || `Ventilador ${id}`}</h2>
+
+      {/* 📈 Botón de seguimiento */}
+      <div className="seguimiento-boton-container">
+        <button
+          onClick={toggleSeguimiento}
+          className={`btn-seguimiento ${enSeguimiento ? "activo" : ""}`}
+        >
+          {enSeguimiento ? "👁️ En seguimiento" : "📈 Dar seguimiento"}
+        </button>
+      </div>
 
       {/* 📸 Imagen del equipo */}
       <div className="equipo-detalle-imagen">
