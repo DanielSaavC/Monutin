@@ -59,8 +59,8 @@ export default function FichaTecnica() {
 
   // ==== CARGAR PROVEEDORES ====
   useEffect(() => {
-    axios
-      .get("http://localhost:4000/api/proveedores")
+  axios.get("https://monutinbackend-production.up.railway.app/api/proveedores")
+
       .then((res) => setProveedores(res.data))
       .catch(() => console.warn("⚠️ No se pudieron cargar los proveedores"));
   }, []);
@@ -106,15 +106,16 @@ const generarFichaPDF = async () => {
     };
 
     // 💾 1. Guardar ficha técnica en BD
-    await axios.post("http://localhost:4000/api/fichatecnica", payload);
+    await axios.post("https://monutinbackend-production.up.railway.app/api/fichatecnica", payload);
     alert("✅ Ficha técnica guardada correctamente en la base de datos.");
 
     // 🧾 2. (Opcional) Generar PDF
     const response = await axios.post(
-      "http://localhost:4000/api/fichatecnica/pdf",
+      "https://monutinbackend-production.up.railway.app/api/fichatecnica/pdf",
       payload,
       { responseType: "blob" }
     );
+
 
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement("a");
