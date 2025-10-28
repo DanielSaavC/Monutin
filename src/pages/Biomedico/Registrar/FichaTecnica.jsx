@@ -172,10 +172,10 @@ export default function FichaTecnica() {
           ) : (
             <div className="foto-opciones">
               <button className="btn-camara" onClick={abrirCamara}>
-                📷 Tomar Foto
+                <span>📷 Tomar Foto</span>
               </button>
               <label className="btn-upload">
-                🖼️ Subir Imagen
+                <span>🖼️ Subir Imagen</span>
                 <input type="file" accept="image/*" onChange={handleImageUpload} />
               </label>
             </div>
