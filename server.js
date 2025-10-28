@@ -435,5 +435,106 @@ app.post("/api/fichatecnica/pdf", (req, res) => {
 
 // ================== ROOT ==================
 app.get("/", (_, res) => res.send("🚀 Backend Monutin activo en Railway (better-sqlite3)"));
+
+// ================== NOTIFICACIONES PUSH (PWA) ==================
+import webpush from "web-push";
+
+// 🗝️ Claves VAPID generadas (NO cambian nunca)
+const VAPID_PUBLIC_KEY = "BPa9Ypp_D-5nqP2NvdMWAlJvz5z9IpZHHFUZdtVRDgf4Grx1Txr4h8Bzi1ljCimbK2zFgnqfkZ6VaPLHf7dwA3M";
+const VAPID_PRIVATE_KEY = "srq_Qj913_ClF6bNbK5mDksxim_Nhc0upRHjMVNOFYw";
+
+// Configurar servicio web-push
+webpush.setVapidDetails(
+  "mailto:monutin@soporte.com",
+  VAPID_PUBLIC_KEY,
+  VAPID_PRIVATE_KEY
+);
+
+// 📡 Base en memoria para suscripciones (puedes guardar en SQLite más adelante)
+let suscripciones = [];
+
+// Endpoint para registrar suscripciones
+app.post("/api/suscribir", (req, res) => {
+  const subscription = req.body;
+  // Evita duplicados
+  const existe = suscripciones.find((s) => s.endpoint === subscription.endpoint);
+  if (!existe) suscripciones.push(subscription);
+  console.log("✅ Suscripción guardada:", subscription.endpoint);
+  res.status(201).json({ message: "Suscripción registrada correctamente" });
+});
+
+// Endpoint manual para enviar notificación (por si la necesitas probar)
+app.post("/api/notificar", async (req, res) => {
+  const { title, body } = req.body;
+  const payload = JSON.stringify({ title, body });
+
+  try {
+    await Promise.all(suscripciones.map((sub) => webpush.sendNotification(sub, payload)));
+    console.log("📨 Notificaciones enviadas manualmente");
+    res.json({ message: "Notificaciones enviadas correctamente" });
+  } catch (err) {
+    console.error("❌ Error al enviar notificación:", err);
+    res.status(500).json({ error: "Error enviando notificaciones" });
+  }
+});
+
+// ================== ALERTAS AUTOMÁTICAS SEGÚN SENSORES ==================
+// Cuando llega un nuevo dato del sensor, verificamos si hay valores críticos.
+const oldPostSensor = app._router.stack.find(r => r.route && r.route.path === "/api/sensores")?.route.stack[0].handle;
+
+app.post("/api/sensores", async (req, res) => {
+  try {
+    const { device, temperatura, humedad, ambtemp, objtemp, peso } = req.body;
+
+    // Guardar en la base de datos (igual que antes)
+    const stmt = db.prepare(`
+      INSERT INTO sensores (device, temperatura, humedad, ambtemp, objtemp, peso)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    const info = stmt.run(device, temperatura, humedad, ambtemp, objtemp, peso);
+
+    // 🚨 Detectar condiciones críticas
+    let alertas = [];
+
+    if (temperatura > 37.5) {
+      alertas.push(`Temperatura externa elevada: ${temperatura.toFixed(1)} °C`);
+    }
+    if (humedad < 40) {
+      alertas.push(`Humedad baja: ${humedad.toFixed(1)} %`);
+    }
+    if (objtemp > 37.5) {
+      alertas.push(`Temperatura del paciente elevada: ${objtemp.toFixed(1)} °C`);
+    }
+
+    // Si hay alertas → enviar notificación push
+    if (alertas.length > 0 && suscripciones.length > 0) {
+      const payload = JSON.stringify({
+        title: "⚠️ Alerta Monutin",
+        body: alertas.join(" | "),
+      });
+
+      await Promise.all(
+        suscripciones.map((sub) =>
+          webpush.sendNotification(sub, payload).catch((err) => {
+            if (err.statusCode === 410 || err.statusCode === 404) {
+              console.log("🗑️ Eliminando suscripción inválida");
+              suscripciones = suscripciones.filter((s) => s.endpoint !== sub.endpoint);
+            } else {
+              console.error("❌ Error push:", err);
+            }
+          })
+        )
+      );
+
+      console.log("📢 Notificación automática enviada:", alertas.join(" | "));
+    }
+
+    // Respuesta normal
+    res.json({ message: "✅ Datos guardados y analizados", id: info.lastInsertRowid });
+  } catch (err) {
+    console.error("❌ Error en /api/sensores:", err);
+    res.status(500).json({ error: "Error al guardar datos de sensor" });
+  }
+});
 // ================== SERVIDOR ==================
 app.listen(PORT, "0.0.0.0", () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));

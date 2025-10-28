@@ -1,6 +1,7 @@
 {
   "name": "monutin-backend",
   "version": "1.0.0",
+  "type": "module",
   "description": "Backend de Monutin con Express y Better-SQLite3",
   "main": "server.js",
   "scripts": {
@@ -12,6 +13,7 @@
     "body-parser": "^1.20.3",
     "cors": "^2.8.5",
     "express": "^4.21.2",
-    "pdfkit": "^0.17.2"
+    "pdfkit": "^0.17.2",
+    "web-push": "^3.6.7"
   }
 }
