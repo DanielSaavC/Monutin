@@ -227,6 +227,21 @@ button:hover,
 .header-logo-bio:hover {
   transform: scale(1.05);
 }
+.header-back {
+  font-size: 3.5rem; /* 🔥 tamaño gigante */
+  font-weight: bold;
+  cursor: pointer;
+  color: #00796b;
+  transition: all 0.3s ease;
+  margin-right: 20px; /* separada del logo */
+  user-select: none;
+  line-height: 1; /* evita que se desplace verticalmente */
+}
+
+.header-back:hover {
+  color: #00bfa6;
+  transform: translateX(-6px); /* efecto de empuje al pasar el mouse */
+}
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 992px) {
