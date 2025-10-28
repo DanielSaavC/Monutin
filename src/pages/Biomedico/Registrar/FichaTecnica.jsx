@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import Header from "../../../components/Header";
 import axios from "axios";
-import "../../../App.css";
 import Webcam from "react-webcam";
+import "../../../App.css";
 
 export default function FichaTecnica() {
   const [proveedores, setProveedores] = useState([]);
@@ -16,7 +16,6 @@ export default function FichaTecnica() {
   const [datosTecnicos, setDatosTecnicos] = useState([]);
   const [accesorios, setAccesorios] = useState([]);
   const [observaciones, setObservaciones] = useState([]);
-
   const [nuevoDato, setNuevoDato] = useState({ funcion: "", info: "" });
   const [nuevoAccesorio, setNuevoAccesorio] = useState({ funcion: "", info: "" });
   const [nuevaObs, setNuevaObs] = useState({ funcion: "", info: "" });
@@ -38,32 +37,45 @@ export default function FichaTecnica() {
   const [nombreElaboracion, setNombreElaboracion] = useState("");
   const [imagenBase64, setImagenBase64] = useState(null);
 
-  // ==== CÁMARA ====
-  const webcamRef = useRef(null);
   const [mostrarCamara, setMostrarCamara] = useState(false);
+  const webcamRef = useRef(null);
 
-  const capturarFoto = () => {
-    const imagen = webcamRef.current.getScreenshot();
-    setImagenBase64(imagen);
-    setMostrarCamara(false);
-  };
+  // === CARGAR PROVEEDORES ===
+  useEffect(() => {
+    axios
+      .get("https://monutinbackend-production.up.railway.app/api/proveedores")
+      .then((res) => setProveedores(res.data))
+      .catch((err) => console.warn("⚠️ No se pudieron cargar los proveedores", err));
+  }, []);
 
-  const handleImageUpload = (e) => {
-    const archivo = e.target.files[0];
-    if (archivo) {
-      const lector = new FileReader();
-      lector.onloadend = () => setImagenBase64(lector.result);
-      lector.readAsDataURL(archivo);
+  // === MANEJO DE FOTO ===
+  const abrirCamara = async () => {
+    try {
+      await navigator.mediaDevices.getUserMedia({ video: true });
+      setMostrarCamara(true);
+    } catch (error) {
+      alert("❌ No se pudo acceder a la cámara. Verifica permisos.");
     }
   };
 
-  // ==== CARGAR PROVEEDORES ====
-  useEffect(() => {
-  axios.get("https://monutinbackend-production.up.railway.app/api/proveedores")
+  const capturarFoto = () => {
+    const imageSrc = webcamRef.current.getScreenshot();
+    if (imageSrc) {
+      setImagenBase64(imageSrc);
+      setMostrarCamara(false);
+    } else {
+      alert("⚠️ No se pudo capturar la imagen");
+    }
+  };
 
-      .then((res) => setProveedores(res.data))
-      .catch(() => console.warn("⚠️ No se pudieron cargar los proveedores"));
-  }, []);
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setImagenBase64(reader.result);
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleProveedorChange = (e) => {
     const selected = proveedores.find((p) => p.nombre === e.target.value);
@@ -76,79 +88,72 @@ export default function FichaTecnica() {
   };
 
   const agregarFila = (tipo) => {
-    if (tipo === "datos") {
-      if (!nuevoDato.funcion || !nuevoDato.info) return alert("Complete ambos campos.");
+    const check = (obj) => obj.funcion && obj.info;
+    if (tipo === "datos" && check(nuevoDato)) {
       setDatosTecnicos([...datosTecnicos, nuevoDato]);
       setNuevoDato({ funcion: "", info: "" });
-    } else if (tipo === "accesorios") {
-      if (!nuevoAccesorio.funcion || !nuevoAccesorio.info) return alert("Complete ambos campos.");
+    } else if (tipo === "accesorios" && check(nuevoAccesorio)) {
       setAccesorios([...accesorios, nuevoAccesorio]);
       setNuevoAccesorio({ funcion: "", info: "" });
-    } else if (tipo === "observaciones") {
-      if (!nuevaObs.funcion || !nuevaObs.info) return alert("Complete ambos campos.");
+    } else if (tipo === "observaciones" && check(nuevaObs)) {
       setObservaciones([...observaciones, nuevaObs]);
       setNuevaObs({ funcion: "", info: "" });
+    } else {
+      alert("⚠️ Complete ambos campos antes de agregar.");
     }
   };
 
-const generarFichaPDF = async () => {
-  try {
-    const payload = {
-      proveedor,
-      datosTecnicos,
-      accesorios,
-      observaciones,
-      manuales,
-      estado,
-      frecuencia,
-      nombreElaboracion,
-      imagenBase64,
-    };
+  const generarFichaPDF = async () => {
+    try {
+      const payload = {
+        proveedor,
+        datosTecnicos,
+        accesorios,
+        observaciones,
+        manuales,
+        estado,
+        frecuencia,
+        nombreElaboracion,
+        imagenBase64,
+      };
 
-    // 💾 1. Guardar ficha técnica en BD
-    await axios.post("https://monutinbackend-production.up.railway.app/api/fichatecnica", payload);
-    alert("✅ Ficha técnica guardada correctamente en la base de datos.");
+      const res = await axios.post(
+        "https://monutinbackend-production.up.railway.app/api/fichatecnica",
+        payload
+      );
+      alert("✅ Ficha guardada con ID: " + res.data.id);
 
-    // 🧾 2. (Opcional) Generar PDF
-    const response = await axios.post(
-      "https://monutinbackend-production.up.railway.app/api/fichatecnica/pdf",
-      payload,
-      { responseType: "blob" }
-    );
+      const pdfRes = await axios.post(
+        "https://monutinbackend-production.up.railway.app/api/fichatecnica/pdf",
+        payload,
+        { responseType: "blob" }
+      );
+      const url = URL.createObjectURL(new Blob([pdfRes.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "Ficha_Tecnica.pdf";
+      link.click();
+    } catch (error) {
+      console.error("❌ Error al guardar/generar ficha:", error);
+      alert("❌ Error al guardar o generar la ficha técnica.");
+    }
+  };
 
-
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", "Ficha_Tecnica.pdf");
-    document.body.appendChild(link);
-    link.click();
-
-    alert("📄 Ficha técnica generada correctamente");
-  } catch (err) {
-    console.error("❌ Error al generar ficha técnica:", err);
-    alert("❌ Error al guardar o generar la ficha técnica");
-  }
-};
-
-
-  // ==== RENDER ====
   return (
     <div className="adquisicion-container">
       <Header />
       <div className="form-card">
         <h1>📋 Ficha Técnica del Equipo</h1>
 
-        {/* === FOTO DEL EQUIPO === */}
+        {/* === FOTO === */}
         <section>
-          <h2>📷 Fotografía del Equipo</h2>
-
+          <h2>📷 Fotografía</h2>
           {imagenBase64 ? (
             <div className="foto-preview-container">
               <img src={imagenBase64} alt="Equipo" className="foto-preview" />
               <div className="foto-buttons">
                 <button onClick={() => setImagenBase64(null)}>🗑️ Eliminar</button>
-                <button onClick={() => setMostrarCamara(true)}>📸 Tomar otra</button>
+                <button onClick={abrirCamara}>📸 Nueva Foto</button>
               </div>
             </div>
           ) : mostrarCamara ? (
@@ -158,9 +163,6 @@ const generarFichaPDF = async () => {
                 ref={webcamRef}
                 screenshotFormat="image/jpeg"
                 className="webcam"
-                videoConstraints={{
-                  facingMode: "environment",
-                }}
               />
               <div className="camara-buttons">
                 <button onClick={capturarFoto}>📷 Capturar</button>
@@ -169,8 +171,7 @@ const generarFichaPDF = async () => {
             </div>
           ) : (
             <div className="foto-opciones">
-              <button type="button" className="btn-camara">
-                 onClick={() => setMostrarCamara(true)} 
+              <button className="btn-camara" onClick={abrirCamara}>
                 📷 Tomar Foto
               </button>
               <label className="btn-upload">
@@ -178,48 +179,31 @@ const generarFichaPDF = async () => {
                 <input type="file" accept="image/*" onChange={handleImageUpload} />
               </label>
             </div>
-
           )}
         </section>
 
-        {/* === DATOS DEL PROVEEDOR === */}
+        {/* === PROVEEDOR === */}
         <section>
           <h2>Proveedor</h2>
-          <select onChange={handleProveedorChange} defaultValue="">
-            <option value="">Seleccionar proveedor existente o nuevo</option>
+          <select onChange={handleProveedorChange}>
+            <option value="">Seleccionar proveedor</option>
             {proveedores.map((p) => (
-              <option key={p.nombre} value={p.nombre}>
+              <option key={p.id} value={p.nombre}>
                 {p.nombre}
               </option>
             ))}
           </select>
 
-          <input
-            name="nombre"
-            placeholder="Nombre"
-            value={proveedor.nombre}
-            onChange={(e) => handleChange(e, setProveedor)}
-          />
-          <input
-            name="direccion"
-            placeholder="Dirección"
-            value={proveedor.direccion}
-            onChange={(e) => handleChange(e, setProveedor)}
-          />
-          <input
-            name="telefono"
-            placeholder="Teléfono"
-            value={proveedor.telefono}
-            onChange={(e) => handleChange(e, setProveedor)}
-          />
-          <input
-            name="correo"
-            placeholder="Correo"
-            value={proveedor.correo}
-            onChange={(e) => handleChange(e, setProveedor)}
-          />
+          {["nombre", "direccion", "telefono", "correo"].map((campo) => (
+            <input
+              key={campo}
+              name={campo}
+              placeholder={campo.toUpperCase()}
+              value={proveedor[campo]}
+              onChange={(e) => handleChange(e, setProveedor)}
+            />
+          ))}
         </section>
-
         {/* === DATOS TÉCNICOS === */}
         <section>
           <h2>Datos Técnicos</h2>
