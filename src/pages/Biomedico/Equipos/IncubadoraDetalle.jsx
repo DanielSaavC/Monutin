@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import Header from "../../../components/Header";
-import { useNavigate } from "react-router-dom"; // 🔹 Importar
 import {
   LineChart,
   Line,
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,  
+  Tooltip,
   ResponsiveContainer,
 } from "recharts";
 import axios from "axios";
@@ -16,13 +15,13 @@ import QRCode from "qrcode";
 import "../../../App.css";
 
 export default function IncubadoraDetalle() {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
   const { id } = useParams();
   const [equipo, setEquipo] = useState(null);
   const [enSeguimiento, setEnSeguimiento] = useState(false);
-  const [qrImage, setQrImage] = useState(null); // 🆕 QR generado
+  const [qrImage, setQrImage] = useState(null);
 
-  // 🔹 Datos simulados de sensores (luego reemplazas con tu API/MQTT)
+  // 🔹 Datos simulados
   const data = Array.from({ length: 10 }, (_, i) => ({
     time: i,
     temp: 36 + Math.random(),
@@ -41,109 +40,111 @@ export default function IncubadoraDetalle() {
       })
       .catch((err) => console.error("❌ Error cargando equipo:", err));
   }, [id]);
-useEffect(() => {
+
+  // 🔹 Verificar sesión
+  useEffect(() => {
     const usuario = JSON.parse(localStorage.getItem("usuario"));
     if (!usuario) {
-      // Guardar la ruta actual para redirigir luego del login
       localStorage.setItem("redirectAfterLogin", window.location.hash);
       navigate("/login");
     }
   }, [navigate]);
+
   // 🔹 Verificar si ya está en seguimiento
   useEffect(() => {
-    const lista =
-      JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
+    const lista = JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
     const existe = lista.some((eq) => eq.id === parseInt(id));
     setEnSeguimiento(existe);
   }, [id]);
 
-  // 🔹 Función para agregar o quitar del seguimiento
-const toggleSeguimiento = async () => {
-  let lista = JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
+  // 🔹 Agregar o quitar del seguimiento
+  const toggleSeguimiento = async () => {
+    try {
+      const usuario = JSON.parse(localStorage.getItem("usuario"));
+      if (!usuario || !equipo) {
+        alert("⚠️ Usuario o equipo no definidos.");
+        return;
+      }
 
-  if (enSeguimiento) {
-    lista = lista.filter((eq) => eq.id !== parseInt(id));
-    setEnSeguimiento(false);
+      let lista = JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
 
-    // 🧩 Quitar del backend
-    const usuario = JSON.parse(localStorage.getItem("usuario"));
-await axios.delete("https://monutinbackend-production.up.railway.app/api/seguimiento", {
-  data: {
-    usuario_id: usuario.id,
-    equipo_id: equipo.id,
-  },
-});
+      if (enSeguimiento) {
+        // 🔻 Quitar del seguimiento
+        lista = lista.filter((eq) => eq.id !== parseInt(id));
+        setEnSeguimiento(false);
+        localStorage.setItem("equipos_en_seguimiento", JSON.stringify(lista));
 
-  } else {
-    const nuevoEquipo = {
-      id: parseInt(id),
-      nombre: equipo.nombre_equipo,
-      marca: equipo.marca,
-      modelo: equipo.modelo,
-      ubicacion: equipo.ubicacion,
-      tipo: "incubadora",
-    };
+        await axios.delete("https://monutinbackend-production.up.railway.app/api/seguimiento", {
+          data: { usuario_id: usuario.id, equipo_id: equipo.id },
+        });
 
-    lista.push(nuevoEquipo);
-    setEnSeguimiento(true);
+        alert("🗑️ Equipo eliminado del seguimiento.");
+      } else {
+        // 🔺 Agregar al seguimiento
+        const nuevoEquipo = {
+          id: parseInt(id),
+          nombre: equipo.nombre_equipo,
+          marca: equipo.marca,
+          modelo: equipo.modelo,
+          ubicacion: equipo.ubicacion,
+          tipo: "incubadora",
+          estado: "bueno",
+        };
 
-    // 🧩 Guardar también en backend
-    const usuario = JSON.parse(localStorage.getItem("usuario"));
-    await axios.post("https://monutinbackend-production.up.railway.app/api/seguimiento", {
-      usuario_id: usuario.id,
-      equipo_id: equipo.id,
-    });
-  }
+        lista.push(nuevoEquipo);
+        localStorage.setItem("equipos_en_seguimiento", JSON.stringify(lista));
+        setEnSeguimiento(true);
 
-  localStorage.setItem("equipos_en_seguimiento", JSON.stringify(lista));
-};
+        await axios.post("https://monutinbackend-production.up.railway.app/api/seguimiento", {
+          usuario_id: usuario.id,
+          equipo_id: equipo.id,
+        });
 
+        alert("✅ Equipo agregado al seguimiento.");
+      }
+    } catch (err) {
+      console.error("❌ Error al cambiar seguimiento:", err);
+      alert("Error al actualizar el seguimiento del equipo.");
+    }
+  };
 
-  // 🆕 === GENERAR Y DESCARGAR CÓDIGO QR ===
+  // 🔹 Generar código QR
   const generarQR = async () => {
     try {
-      // URL de este equipo en producción
       const url = `https://danielsaavc.github.io/Monutin/#/incubadoras/${id}`;
-
-      // Generar QR en base64 (PNG)
       const qr = await QRCode.toDataURL(url, {
         errorCorrectionLevel: "H",
         width: 350,
         color: { dark: "#00796B", light: "#FFFFFF" },
       });
 
-      setQrImage(qr); // mostrar visualmente
-
-      // 🔽 Descargar automáticamente el QR
+      setQrImage(qr);
       const link = document.createElement("a");
       link.href = qr;
       link.download = `QR_Incubadora_${id}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-
-      console.log("✅ QR generado y descargado:", url);
     } catch (err) {
       console.error("❌ Error al generar QR:", err);
-      alert("Error al generar el código QR.");
+      alert("No se pudo generar el QR.");
     }
   };
 
-  if (!equipo) {
+  if (!equipo)
     return (
       <div className="menu-container">
         <Header />
         <h2>📊 Cargando datos de la incubadora...</h2>
       </div>
     );
-  }
 
   return (
     <div className="menu-container">
       <Header />
       <h2>📊 {equipo.nombre_equipo || `Incubadora ${id}`}</h2>
 
-      {/* 📈 BOTÓN DE SEGUIMIENTO */}
+      {/* 📈 Botón seguimiento */}
       <div className="seguimiento-boton-container">
         <button
           onClick={toggleSeguimiento}
@@ -153,7 +154,7 @@ await axios.delete("https://monutinbackend-production.up.railway.app/api/seguimi
         </button>
       </div>
 
-      {/* 🆕 BOTÓN DE GENERAR QR */}
+      {/* 🔳 Botón QR */}
       <div style={{ marginTop: "15px", textAlign: "center" }}>
         <button
           onClick={generarQR}
@@ -171,7 +172,6 @@ await axios.delete("https://monutinbackend-production.up.railway.app/api/seguimi
           🔳 Generar QR
         </button>
 
-        {/* Mostrar QR si existe */}
         {qrImage && (
           <div style={{ marginTop: "20px" }}>
             <img
@@ -193,7 +193,7 @@ await axios.delete("https://monutinbackend-production.up.railway.app/api/seguimi
         )}
       </div>
 
-      {/* 📸 Imagen del equipo */}
+      {/* 📸 Imagen */}
       <div className="equipo-detalle-imagen">
         {equipo.imagen_base64 ? (
           <img
@@ -226,7 +226,7 @@ await axios.delete("https://monutinbackend-production.up.railway.app/api/seguimi
         )}
       </div>
 
-      {/* 📋 Información técnica */}
+      {/* Información */}
       <div className="equipo-detalle-info">
         <h3>🔧 Información del Equipo</h3>
         <p><b>Marca:</b> {equipo.marca || "N/A"}</p>
@@ -236,11 +236,11 @@ await axios.delete("https://monutinbackend-production.up.railway.app/api/seguimi
         <p><b>Ubicación:</b> {equipo.ubicacion || "N/A"}</p>
 
         <h3>🧩 Accesorios</h3>
-        {equipo.accesorios && equipo.accesorios.length > 0 ? (
+        {equipo.accesorios?.length ? (
           <ul>
-            {equipo.accesorios.map((acc, i) => (
+            {equipo.accesorios.map((a, i) => (
               <li key={i}>
-                <b>{acc.funcion}:</b> {acc.info}
+                <b>{a.funcion}:</b> {a.info}
               </li>
             ))}
           </ul>
@@ -249,7 +249,7 @@ await axios.delete("https://monutinbackend-production.up.railway.app/api/seguimi
         )}
 
         <h3>⚙️ Datos Técnicos</h3>
-        {equipo.datos_tecnicos && equipo.datos_tecnicos.length > 0 ? (
+        {equipo.datos_tecnicos?.length ? (
           <ul>
             {equipo.datos_tecnicos.map((dt, i) => (
               <li key={i}>
@@ -262,7 +262,7 @@ await axios.delete("https://monutinbackend-production.up.railway.app/api/seguimi
         )}
       </div>
 
-      {/* === Gráficos de sensores === */}
+      {/* 📊 Gráficos */}
       <div className="chart-box">
         <h4>🌡️ Temp Externa (°C) vs 💧 Humedad (%)</h4>
         <ResponsiveContainer width="100%" height={250}>
@@ -272,12 +272,7 @@ await axios.delete("https://monutinbackend-production.up.railway.app/api/seguimi
             <YAxis />
             <Tooltip />
             <Line type="monotone" dataKey="temp" stroke="red" name="Temp Ext" />
-            <Line
-              type="monotone"
-              dataKey="humedad"
-              stroke="blue"
-              name="Humedad"
-            />
+            <Line type="monotone" dataKey="humedad" stroke="blue" name="Humedad" />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -290,18 +285,8 @@ await axios.delete("https://monutinbackend-production.up.railway.app/api/seguimi
             <XAxis dataKey="time" />
             <YAxis />
             <Tooltip />
-            <Line
-              type="monotone"
-              dataKey="peso"
-              stroke="green"
-              name="Peso"
-            />
-            <Line
-              type="monotone"
-              dataKey="tempBebe"
-              stroke="orange"
-              name="Temp Bebé"
-            />
+            <Line type="monotone" dataKey="peso" stroke="green" name="Peso" />
+            <Line type="monotone" dataKey="tempBebe" stroke="orange" name="Temp Bebé" />
           </LineChart>
         </ResponsiveContainer>
       </div>

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import Header from "../../../components/Header";
-import { useNavigate } from "react-router-dom"; // 🔹 Importar
 import {
   LineChart,
   Line,
@@ -12,23 +11,23 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import axios from "axios";
-import QRCode from "qrcode"; // 🆕 Importar QRCode
+import QRCode from "qrcode";
 import "../../../App.css";
 
 export default function VentiladorDetalle() {
-      const navigate = useNavigate(); 
+  const navigate = useNavigate();
   const { id } = useParams();
   const [equipo, setEquipo] = useState(null);
   const [enSeguimiento, setEnSeguimiento] = useState(false);
-  const [qrImage, setQrImage] = useState(null); // 🆕 QR generado
+  const [qrImage, setQrImage] = useState(null);
 
-  // 🔹 Datos simulados (se reemplazarán con los sensores reales)
+  // 🔹 Datos simulados de sensores
   const data = Array.from({ length: 10 }, (_, i) => ({
     time: i,
     flujo: 20 + Math.random() * 5, // flujo de aire (L/min)
-    presion: 30 + Math.random() * 5, // presión (cmH2O)
+    presion: 30 + Math.random() * 5, // presión (cmH₂O)
     volumen: 500 + Math.random() * 50, // volumen tidal (mL)
-    oxigeno: 90 + Math.random() * 5, // saturación O2 (%)
+    oxigeno: 90 + Math.random() * 5, // saturación O₂ (%)
   }));
 
   // 🔹 Obtener datos del backend
@@ -41,77 +40,78 @@ export default function VentiladorDetalle() {
       })
       .catch((err) => console.error("❌ Error al cargar ventilador:", err));
   }, [id]);
-useEffect(() => {
+
+  // 🔹 Verificar sesión
+  useEffect(() => {
     const usuario = JSON.parse(localStorage.getItem("usuario"));
     if (!usuario) {
-      // Guardar la ruta actual para redirigir luego del login
       localStorage.setItem("redirectAfterLogin", window.location.hash);
       navigate("/login");
     }
   }, [navigate]);
+
   // 🔹 Verificar si ya está en seguimiento
   useEffect(() => {
-    const lista =
-      JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
+    const lista = JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
     const existe = lista.some((eq) => eq.id === parseInt(id));
     setEnSeguimiento(existe);
   }, [id]);
 
   // 🔹 Agregar o quitar del seguimiento
- const toggleSeguimiento = async () => {
-  try {
-    let lista = JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
-    const usuario = JSON.parse(localStorage.getItem("usuario"));
+  const toggleSeguimiento = async () => {
+    try {
+      const usuario = JSON.parse(localStorage.getItem("usuario"));
+      if (!usuario || !equipo) {
+        alert("⚠️ Usuario o equipo no definidos.");
+        return;
+      }
 
-    if (enSeguimiento) {
-      // Quitar del seguimiento
-      lista = lista.filter((eq) => eq.id !== parseInt(id));
-      setEnSeguimiento(false);
+      let lista = JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
 
-      // 🧩 Quitar del backend correctamente
-      await axios.delete("https://monutinbackend-production.up.railway.app/api/seguimiento", {
-        data: {
+      if (enSeguimiento) {
+        // 🔻 Quitar del seguimiento
+        lista = lista.filter((eq) => eq.id !== parseInt(id));
+        setEnSeguimiento(false);
+        localStorage.setItem("equipos_en_seguimiento", JSON.stringify(lista));
+
+        await axios.delete("https://monutinbackend-production.up.railway.app/api/seguimiento", {
+          data: { usuario_id: usuario.id, equipo_id: equipo.id },
+        });
+
+        alert("🗑️ Ventilador eliminado del seguimiento.");
+      } else {
+        // 🔺 Agregar al seguimiento
+        const nuevoEquipo = {
+          id: parseInt(id),
+          nombre: equipo.nombre_equipo,
+          marca: equipo.marca,
+          modelo: equipo.modelo,
+          ubicacion: equipo.ubicacion,
+          tipo: "ventilador",
+          estado: "bueno",
+        };
+
+        lista.push(nuevoEquipo);
+        localStorage.setItem("equipos_en_seguimiento", JSON.stringify(lista));
+        setEnSeguimiento(true);
+
+        await axios.post("https://monutinbackend-production.up.railway.app/api/seguimiento", {
           usuario_id: usuario.id,
-          equipo_id: parseInt(id),
-        },
-      });
+          equipo_id: equipo.id,
+        });
 
-    } else {
-      // Agregar al seguimiento
-      const nuevoEquipo = {
-        id: parseInt(id),
-        nombre: equipo.nombre_equipo,
-        marca: equipo.marca,
-        modelo: equipo.modelo,
-        ubicacion: equipo.ubicacion,
-        tipo: "incubadora",
-      };
-
-      lista.push(nuevoEquipo);
-      setEnSeguimiento(true);
-
-      // 🧩 Guardar también en backend
-      await axios.post("https://monutinbackend-production.up.railway.app/api/seguimiento", {
-        usuario_id: usuario.id,
-        equipo_id: equipo.id,
-      });
+        alert("✅ Ventilador agregado al seguimiento.");
+      }
+    } catch (error) {
+      console.error("❌ Error en seguimiento:", error);
+      alert("Hubo un error al actualizar el seguimiento del ventilador.");
     }
+  };
 
-    localStorage.setItem("equipos_en_seguimiento", JSON.stringify(lista));
-  } catch (error) {
-    console.error("❌ Error en seguimiento:", error);
-    alert("Hubo un error al actualizar el seguimiento del equipo.");
-  }
-};
-
-
-  // 🆕 === GENERAR Y DESCARGAR CÓDIGO QR ===
+  // 🔹 Generar y descargar código QR
   const generarQR = async () => {
     try {
-      // URL del ventilador actual
       const url = `https://danielsaavc.github.io/Monutin/#/ventiladores/${id}`;
-
-      // Generar QR
       const qr = await QRCode.toDataURL(url, {
         errorCorrectionLevel: "H",
         width: 350,
@@ -120,36 +120,32 @@ useEffect(() => {
 
       setQrImage(qr);
 
-      // Descargar automáticamente
       const link = document.createElement("a");
       link.href = qr;
       link.download = `QR_Ventilador_${id}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-
-      console.log("✅ QR generado y descargado:", url);
     } catch (err) {
       console.error("❌ Error al generar QR:", err);
       alert("Error al generar el código QR.");
     }
   };
 
-  if (!equipo) {
+  if (!equipo)
     return (
       <div className="menu-container">
         <Header />
         <h2>💨 Cargando datos del ventilador...</h2>
       </div>
     );
-  }
 
   return (
     <div className="menu-container">
       <Header />
       <h2>💨 {equipo.nombre_equipo || `Ventilador ${id}`}</h2>
 
-      {/* 📈 Botón de seguimiento */}
+      {/* 📈 Botón seguimiento */}
       <div className="seguimiento-boton-container">
         <button
           onClick={toggleSeguimiento}
@@ -159,7 +155,7 @@ useEffect(() => {
         </button>
       </div>
 
-      {/* 🆕 Botón Generar QR */}
+      {/* 🔳 Botón QR */}
       <div style={{ marginTop: "15px", textAlign: "center" }}>
         <button
           onClick={generarQR}
@@ -177,7 +173,6 @@ useEffect(() => {
           🔳 Generar QR
         </button>
 
-        {/* Mostrar QR si existe */}
         {qrImage && (
           <div style={{ marginTop: "20px" }}>
             <img
@@ -199,7 +194,7 @@ useEffect(() => {
         )}
       </div>
 
-      {/* 📸 Imagen del equipo */}
+      {/* 📸 Imagen */}
       <div className="equipo-detalle-imagen">
         {equipo.imagen_base64 ? (
           <img
@@ -232,9 +227,9 @@ useEffect(() => {
         )}
       </div>
 
-      {/* 📋 Información del equipo */}
+      {/* 📋 Información */}
       <div className="equipo-detalle-info">
-        <h3>🔧 Información del Equipo</h3>
+        <h3>🔧 Información del Ventilador</h3>
         <p><b>Marca:</b> {equipo.marca || "N/A"}</p>
         <p><b>Modelo:</b> {equipo.modelo || "N/A"}</p>
         <p><b>Serie:</b> {equipo.serie || "N/A"}</p>
@@ -242,11 +237,11 @@ useEffect(() => {
         <p><b>Ubicación:</b> {equipo.ubicacion || "N/A"}</p>
 
         <h3>🧩 Accesorios</h3>
-        {equipo.accesorios && equipo.accesorios.length > 0 ? (
+        {equipo.accesorios?.length ? (
           <ul>
-            {equipo.accesorios.map((acc, i) => (
+            {equipo.accesorios.map((a, i) => (
               <li key={i}>
-                <b>{acc.funcion}:</b> {acc.info}
+                <b>{a.funcion}:</b> {a.info}
               </li>
             ))}
           </ul>
@@ -255,7 +250,7 @@ useEffect(() => {
         )}
 
         <h3>⚙️ Datos Técnicos</h3>
-        {equipo.datos_tecnicos && equipo.datos_tecnicos.length > 0 ? (
+        {equipo.datos_tecnicos?.length ? (
           <ul>
             {equipo.datos_tecnicos.map((dt, i) => (
               <li key={i}>
@@ -268,7 +263,7 @@ useEffect(() => {
         )}
       </div>
 
-      {/* === Gráficos simulados === */}
+      {/* 📊 Gráficos simulados */}
       <div className="chart-box">
         <h4>🌬️ Flujo (L/min) vs 💨 Presión (cmH₂O)</h4>
         <ResponsiveContainer width="100%" height={250}>
