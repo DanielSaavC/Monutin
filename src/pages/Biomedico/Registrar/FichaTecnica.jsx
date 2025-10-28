@@ -170,6 +170,7 @@ const generarFichaPDF = async () => {
           ) : (
             <div className="foto-opciones">
               <button type="button" className="btn-camara">
+                 onClick={() => setMostrarCamara(true)} 
                 📷 Tomar Foto
               </button>
               <label className="btn-upload">
