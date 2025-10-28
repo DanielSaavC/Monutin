@@ -1,4 +1,3 @@
-// src/pages/Biomedico/Equipos/Incubadoras.jsx
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "../../../components/Header";
@@ -12,15 +11,26 @@ export default function Incubadoras() {
     axios
       .get("https://monutinbackend-production.up.railway.app/api/equipos")
       .then((res) => {
-        // ✅ Filtrar solo equipos que incluyan "incubadora" en su nombre, marca o modelo
+        // ✅ Palabras clave para detectar incubadoras
+        const palabrasClave = [
+          "incubadora",
+          "incubadoras",
+          "incubadora neonatal",
+          "neonatal incubadora",
+          "cuna incubadora",
+        ];
+
+        // ✅ Filtrar solo incubadoras que NO estén en mantenimiento
         const filtradas = res.data.filter((eq) => {
           const texto = `${eq.nombre_equipo} ${eq.marca} ${eq.modelo}`.toLowerCase();
-          return texto.includes("incubadora",
-            "incubadoras",
-            "incubadora neonatal",
-            "neonatal incubadora",
-            "cuna incubadora",);
+          const esIncubadora = palabrasClave.some((palabra) => texto.includes(palabra));
+
+          // Si no hay estado guardado aún, se asume que está operativo
+          const estado = eq.estado || "bueno";
+
+          return esIncubadora && estado !== "mantenimiento";
         });
+
         setIncubadoras(filtradas);
       })
       .catch((err) => console.error("❌ Error al cargar incubadoras:", err));
@@ -34,7 +44,7 @@ export default function Incubadoras() {
       <div className="grid-menu">
         {incubadoras.length === 0 ? (
           <p style={{ color: "#00796b", marginTop: "40px" }}>
-            No hay incubadoras registradas.
+            No hay incubadoras disponibles actualmente.
           </p>
         ) : (
           incubadoras.map((eq) => (

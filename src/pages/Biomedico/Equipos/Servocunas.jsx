@@ -11,14 +11,25 @@ export default function Servocunas() {
     axios
       .get("https://monutinbackend-production.up.railway.app/api/equipos")
       .then((res) => {
+        // ✅ Palabras clave para reconocer servocunas
+        const palabrasClave = [
+          "servocuna",
+          "servo cuna",
+          "cuna térmica",
+          "cuna de calor",
+          "cuna radiante",
+          "servo-cuna",
+        ];
+
+        // ✅ Filtrar equipos que coincidan y no estén en mantenimiento
         const filtradas = res.data.filter((eq) => {
           const texto = `${eq.nombre_equipo} ${eq.marca} ${eq.modelo}`.toLowerCase();
-          return texto.includes( "servocuna",
-            "servo cuna",
-            "cuna térmica",
-            "cuna de calor",
-            "cuna radiante",);
+          const esServocuna = palabrasClave.some((palabra) => texto.includes(palabra));
+
+          const estado = eq.estado || "bueno"; // estado por defecto
+          return esServocuna && estado !== "mantenimiento";
         });
+
         setServocunas(filtradas);
       })
       .catch((err) => console.error("❌ Error al cargar servocunas:", err));
@@ -32,7 +43,7 @@ export default function Servocunas() {
       <div className="grid-menu">
         {servocunas.length === 0 ? (
           <p style={{ color: "#00796b", marginTop: "40px" }}>
-            No hay servocunas registradas.
+            No hay servocunas disponibles actualmente.
           </p>
         ) : (
           servocunas.map((eq) => (
@@ -76,6 +87,7 @@ export default function Servocunas() {
                   🛏️
                 </div>
               )}
+
               <span style={{ fontWeight: "bold", color: "#00796b" }}>
                 {eq.nombre_equipo}
               </span>

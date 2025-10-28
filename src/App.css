@@ -1373,4 +1373,45 @@ textarea {
 .btn-seguimiento.activo:hover {
   background-color: #00d4b4;
 }
+/* ======= BOTONES DE CONTROL (SEGUIMIENTO) ======= */
+.botones-seguimiento {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.btn-control {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+  width: 200px;
+}
+
+.btn-control:hover {
+  transform: scale(1.03);
+}
+
+.btn-control.rojo {
+  background-color: #e53935;
+}
+
+.btn-control.verde {
+  background-color: #00bfa6;
+}
+
+.btn-control.gris {
+  background-color: #9e9e9e;
+}
+
+.btn-control:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 /* ===== TARJETA DE PRESENTACIÓN ===== */

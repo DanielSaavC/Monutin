@@ -11,20 +11,29 @@ export default function Ventiladores() {
     axios
       .get("https://monutinbackend-production.up.railway.app/api/equipos")
       .then((res) => {
-      const filtrados = res.data.filter((eq) => {
-        const texto = `${eq.nombre_equipo} ${eq.marca} ${eq.modelo}`.toLowerCase();
-        // Coincidencias amplias (palabras relacionadas)
-        return (
-          texto.includes("ventilador") ||
-          texto.includes("ventiladores") ||
-          texto.includes("vent.") ||
-          texto.includes("vent neonatal") ||
-          texto.includes("neonatal ventilador")
-        );
-      });
-      setVentiladores(filtrados);
-    })
+        // ✅ Palabras clave relacionadas con ventiladores
+        const palabrasClave = [
+          "ventilador",
+          "ventiladores",
+          "vent.",
+          "vent neonatal",
+          "neonatal ventilador",
+          "ventilador neonatal",
+          "respirador",
+          "respirador neonatal",
+        ];
 
+        // ✅ Filtrar equipos por palabra clave y estado
+        const filtrados = res.data.filter((eq) => {
+          const texto = `${eq.nombre_equipo} ${eq.marca} ${eq.modelo}`.toLowerCase();
+          const esVentilador = palabrasClave.some((palabra) => texto.includes(palabra));
+
+          const estado = eq.estado || "bueno"; // Si no tiene estado aún, se asume operativo
+          return esVentilador && estado !== "mantenimiento";
+        });
+
+        setVentiladores(filtrados);
+      })
       .catch((err) => console.error("❌ Error al cargar ventiladores:", err));
   }, []);
 
@@ -36,7 +45,7 @@ export default function Ventiladores() {
       <div className="grid-menu">
         {ventiladores.length === 0 ? (
           <p style={{ color: "#00796b", marginTop: "40px" }}>
-            No hay ventiladores registrados.
+            No hay ventiladores disponibles actualmente.
           </p>
         ) : (
           ventiladores.map((eq) => (
