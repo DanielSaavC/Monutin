@@ -7,6 +7,7 @@ import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
 import PDFDocument from "pdfkit";
+import { Table } from "pdfkit-table";
 
 // ================== CONFIGURACIÓN ==================
 const app = express();
@@ -330,108 +331,235 @@ app.post("/api/fichatecnica", (req, res) => {
 });
 
 // ================== DESCARGA DIRECTA DE PDF ==================
-app.post("/api/fichatecnica/pdf", (req, res) => {
+app.post("/api/fichatecnica/pdf", async (req, res) => {
   try {
-    const { proveedor, datosTecnicos, accesorios, observaciones, manuales, estado, frecuencia, nombreElaboracion, imagenBase64 } = req.body;
+    const {
+      proveedor,
+      datosTecnicos,
+      accesorios,
+      observaciones,
+      manuales,
+      estado,
+      frecuencia,
+      nombreElaboracion,
+      imagenBase64,
+      nombreEquipo,
+      marca,
+      modelo,
+      serie,
+      codigo,
+      servicio,
+      ubicacion,
+      garantia,
+      procedencia,
+      fechaCompra
+    } = req.body;
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=FichaTecnica_${(proveedor?.nombre || "sin_nombre").replace(/\s+/g, "_")}.pdf`
+      `attachment; filename=FichaTecnica_${(nombreEquipo || "equipo").replace(/\s+/g, "_")}.pdf`
     );
 
-    const doc = new PDFDocument({ size: "LETTER", margin: 30 });
-    doc.pipe(res); // 🚀 se envía directamente al navegador
+    const doc = new PDFDocument({ size: "LETTER", margin: 40 });
+    doc.pipe(res);
 
-    // ===== ENCABEZADO =====
-    doc.font("Helvetica-Bold").fontSize(14).text("FICHA TÉCNICA", { align: "left" });
-    doc.text("HOSPITAL UNIVALLE", { align: "center" });
+    // === LOGO Y ENCABEZADO ===
     const logoPath = path.join(process.cwd(), "HOSP.png");
-    if (fs.existsSync(logoPath)) doc.image(logoPath, 460, 30, { width: 80 });
-    doc.moveDown(2);
+    if (fs.existsSync(logoPath)) doc.image(logoPath, 470, 30, { width: 90 });
 
-    // ===== DATOS GENERALES DEL EQUIPO =====
-    doc.font("Helvetica-Bold").fontSize(12).text("DATOS GENERALES DEL EQUIPO:");
-    doc.font("Helvetica").fontSize(10);
-    doc.text(`Equipo: ${req.body.nombreEquipo || "N/A"}`);
-    doc.text(`Marca: ${req.body.marca || "N/A"}`);
-    doc.text(`Modelo: ${req.body.modelo || "N/A"}`);
-    doc.text(`Serie: ${req.body.serie || "N/A"}`);
-    doc.text(`Código: ${req.body.codigo || "N/A"}`);
-    doc.text(`Servicio: ${req.body.servicio || "N/A"}`);
-    doc.text(`Ubicación: ${req.body.ubicacion || "N/A"}`);
-    doc.text(`Garantía: ${req.body.garantia || "N/A"}`);
-    doc.text(`Procedencia: ${req.body.procedencia || "N/A"}`);
-    doc.text(`Fecha de compra: ${req.body.fechaCompra || "N/A"}`);
+    doc.font("Helvetica-Bold").fontSize(16).text("FICHA TÉCNICA DEL EQUIPO MÉDICO", { align: "center" });
+    doc.font("Helvetica").fontSize(12).text("HOSPITAL UNIVALLE", { align: "center" });
+    doc.moveDown(1.2);
+
+    doc.moveTo(40, doc.y).lineTo(570, doc.y).strokeColor("#00796B").lineWidth(2).stroke();
+    doc.moveDown(1.2);
+
+    // === TABLA 1: DATOS GENERALES ===
+    const datosGenerales = [
+      ["Equipo", nombreEquipo || "N/A"],
+      ["Marca", marca || "N/A"],
+      ["Modelo", modelo || "N/A"],
+      ["Serie", serie || "N/A"],
+      ["Código", codigo || "N/A"],
+      ["Servicio", servicio || "N/A"],
+      ["Ubicación", ubicacion || "N/A"],
+      ["Garantía", garantia || "N/A"],
+      ["Procedencia", procedencia || "N/A"],
+      ["Fecha de compra", fechaCompra || "N/A"],
+    ];
+
+    await doc.table({
+      title: "1. DATOS GENERALES DEL EQUIPO",
+      headers: ["Campo", "Información"],
+      rows: datosGenerales,
+    }, {
+      prepareHeader: () => doc.font("Helvetica-Bold").fontSize(11).fillColor("#00796B"),
+      prepareRow: () => doc.font("Helvetica").fontSize(10).fillColor("black"),
+      columnSpacing: 10,
+      divider: { header: { width: 1, opacity: 0.8 }, horizontal: { width: 0.5 } },
+      width: 500,
+    });
+
     doc.moveDown(1);
 
-    // ===== DATOS DEL PROVEEDOR =====
-    doc.font("Helvetica-Bold").fontSize(12).text("DATOS DEL PROVEEDOR:");
-    doc.font("Helvetica").fontSize(10)
-      .text(`Nombre: ${proveedor?.nombre || "N/A"}`)
-      .text(`Dirección: ${proveedor?.direccion || "N/A"}`)
-      .text(`Teléfono: ${proveedor?.telefono || "N/A"}`)
-      .text(`Correo: ${proveedor?.correo || "N/A"}`);
-    doc.moveDown();
+    // === TABLA 2: DATOS DEL PROVEEDOR ===
+    const datosProveedor = [
+      ["Nombre", proveedor?.nombre || "N/A"],
+      ["Dirección", proveedor?.direccion || "N/A"],
+      ["Teléfono", proveedor?.telefono || "N/A"],
+      ["Correo", proveedor?.correo || "N/A"],
+    ];
 
-    // ===== DATOS TÉCNICOS =====
-    doc.font("Helvetica-Bold").text("DATOS TÉCNICOS:");
-    datosTecnicos?.forEach(dt => doc.font("Helvetica").text(`• ${dt.funcion}: ${dt.info}`));
-    doc.moveDown();
+    await doc.table({
+      title: "2. DATOS DEL PROVEEDOR",
+      headers: ["Campo", "Información"],
+      rows: datosProveedor,
+    }, {
+      prepareHeader: () => doc.font("Helvetica-Bold").fontSize(11).fillColor("#00796B"),
+      prepareRow: () => doc.font("Helvetica").fontSize(10),
+      columnSpacing: 10,
+      width: 500,
+    });
 
-    // ===== IMAGEN CAPTURADA =====
+    doc.moveDown(1);
+
+    // === TABLA 3: DATOS TÉCNICOS ===
+    const datosTec = datosTecnicos?.length
+      ? datosTecnicos.map((dt) => [dt.funcion, dt.info])
+      : [["Sin registros", "N/A"]];
+
+    await doc.table({
+      title: "3. DATOS TÉCNICOS",
+      headers: ["Parámetro", "Descripción"],
+      rows: datosTec,
+    }, {
+      prepareHeader: () => doc.font("Helvetica-Bold").fontSize(11).fillColor("#00796B"),
+      prepareRow: () => doc.font("Helvetica").fontSize(10),
+      columnSpacing: 10,
+      width: 500,
+    });
+
+    doc.moveDown(1);
+
+    // === IMAGEN ===
+    doc.font("Helvetica-Bold").fontSize(12).fillColor("#00796B").text("4. IMAGEN DEL EQUIPO");
+    doc.moveDown(0.5);
     if (imagenBase64) {
       try {
         const imageBuffer = Buffer.from(imagenBase64.split(",")[1], "base64");
-        doc.image(imageBuffer, { fit: [150, 150], align: "center" });
+        doc.image(imageBuffer, { fit: [200, 200], align: "center", valign: "center" });
       } catch {
-        doc.text("⚠️ No se pudo insertar imagen.");
+        doc.font("Helvetica").fillColor("black").text("⚠️ No se pudo insertar imagen.");
       }
-      doc.moveDown();
+    } else {
+      doc.font("Helvetica").fillColor("black").text("Sin imagen adjunta.");
     }
+    doc.moveDown(1.5);
 
-    // ===== ACCESORIOS =====
-    doc.font("Helvetica-Bold").text("ACCESORIOS:");
-    accesorios?.forEach(a => doc.font("Helvetica").text(`• ${a.funcion}: ${a.info}`));
-    doc.moveDown();
+    // === TABLA 4: ACCESORIOS ===
+    const datosAcc = accesorios?.length
+      ? accesorios.map((a) => [a.funcion, a.info])
+      : [["Sin accesorios", "N/A"]];
 
-    // ===== MANUALES =====
-    doc.font("Helvetica-Bold").text("MANUALES:");
-    doc.font("Helvetica").text(
-      `Operación: ${manuales?.operacion || "N/A"} | Instalación: ${manuales?.instalacion || "N/A"} | Servicio: ${manuales?.servicio || "N/A"}`
-    );
-    doc.moveDown();
+    await doc.table({
+      title: "5. ACCESORIOS",
+      headers: ["Accesorio", "Descripción"],
+      rows: datosAcc,
+    }, {
+      prepareHeader: () => doc.font("Helvetica-Bold").fontSize(11).fillColor("#00796B"),
+      prepareRow: () => doc.font("Helvetica").fontSize(10),
+      width: 500,
+    });
 
-    // ===== OBSERVACIONES =====
-    doc.font("Helvetica-Bold").text("OBSERVACIONES:");
-    observaciones?.forEach(o => doc.font("Helvetica").text(`• ${o.funcion}: ${o.info}`));
-    doc.moveDown();
-
-    // ===== ESTADO Y FRECUENCIA =====
-    doc.font("Helvetica-Bold").text("ESTADO DEL EQUIPO:");
-    doc.font("Helvetica").text(
-      `Nuevo: ${estado?.nuevo ? "Sí" : "No"} | Bueno: ${estado?.bueno ? "Sí" : "No"} | Reparable: ${
-        estado?.reparable ? "Sí" : "No"
-      } | Descartable: ${estado?.descartable ? "Sí" : "No"}`
-    );
-    doc.moveDown();
-    doc.font("Helvetica-Bold").text(`FRECUENCIA DE MANTENIMIENTO: ${frecuencia || "N/A"}`);
-    doc.moveDown(2);
-
-    // ===== ELABORACIÓN =====
-    doc.font("Helvetica-Bold").text("REGISTRO DE ELABORACIÓN:");
-    doc.font("Helvetica").text(`Elaborado por: ${nombreElaboracion || "N/A"}`);
-    doc.text(`Fecha: ${new Date().toISOString().split("T")[0]}`);
     doc.moveDown(1);
-    doc.text("Firma: ___________________________");
 
-    doc.end(); // 🚀 Envía el PDF al navegador (sin guardarlo)
+    // === TABLA 5: MANUALES ===
+    const datosManuales = [
+      ["Operación", manuales?.operacion || "N/A"],
+      ["Instalación", manuales?.instalacion || "N/A"],
+      ["Servicio", manuales?.servicio || "N/A"],
+    ];
+
+    await doc.table({
+      title: "6. MANUALES",
+      headers: ["Tipo", "Disponibilidad"],
+      rows: datosManuales,
+    }, {
+      prepareHeader: () => doc.font("Helvetica-Bold").fontSize(11).fillColor("#00796B"),
+      prepareRow: () => doc.font("Helvetica").fontSize(10),
+      width: 500,
+    });
+
+    doc.moveDown(1);
+
+    // === TABLA 6: OBSERVACIONES ===
+    const datosObs = observaciones?.length
+      ? observaciones.map((o) => [o.funcion, o.info])
+      : [["Sin observaciones", "N/A"]];
+
+    await doc.table({
+      title: "7. OBSERVACIONES",
+      headers: ["Aspecto", "Detalle"],
+      rows: datosObs,
+    }, {
+      prepareHeader: () => doc.font("Helvetica-Bold").fontSize(11).fillColor("#00796B"),
+      prepareRow: () => doc.font("Helvetica").fontSize(10),
+      width: 500,
+    });
+
+    doc.moveDown(1);
+
+    // === TABLA 7: ESTADO Y FRECUENCIA ===
+    const estadoEquipo = [
+      ["Nuevo", estado?.nuevo ? "Sí" : "No"],
+      ["Bueno", estado?.bueno ? "Sí" : "No"],
+      ["Reparable", estado?.reparable ? "Sí" : "No"],
+      ["Descartable", estado?.descartable ? "Sí" : "No"],
+      ["Frecuencia de mantenimiento", frecuencia || "N/A"],
+    ];
+
+    await doc.table({
+      title: "8. ESTADO Y FRECUENCIA",
+      headers: ["Condición", "Estado"],
+      rows: estadoEquipo,
+    }, {
+      prepareHeader: () => doc.font("Helvetica-Bold").fontSize(11).fillColor("#00796B"),
+      prepareRow: () => doc.font("Helvetica").fontSize(10),
+      width: 500,
+    });
+
+    doc.moveDown(1.2);
+
+    // === REGISTRO DE ELABORACIÓN ===
+    const datosElaboracion = [
+      ["Elaborado por", nombreElaboracion || "N/A"],
+      ["Fecha", new Date().toISOString().split("T")[0]],
+      ["Firma", "___________________________"],
+    ];
+
+    await doc.table({
+      title: "9. REGISTRO DE ELABORACIÓN",
+      headers: ["Campo", "Detalle"],
+      rows: datosElaboracion,
+    }, {
+      prepareHeader: () => doc.font("Helvetica-Bold").fontSize(11).fillColor("#00796B"),
+      prepareRow: () => doc.font("Helvetica").fontSize(10),
+      width: 500,
+    });
+
+    // === PIE DE PÁGINA ===
+    doc.moveDown(2);
+    doc.fontSize(8).fillColor("gray").text("Documento generado automáticamente por el sistema MONUTIN.", {
+      align: "center",
+    });
+
+    doc.end();
   } catch (err) {
     console.error("❌ Error al generar PDF:", err);
     res.status(500).json({ error: "Error al generar PDF" });
   }
 });
-
 
 // ================== ROOT ==================
 app.get("/", (_, res) => res.send("🚀 Backend Monutin activo en Railway (better-sqlite3)"));
@@ -475,6 +603,41 @@ app.post("/api/notificar", async (req, res) => {
   } catch (err) {
     console.error("❌ Error al enviar notificación:", err);
     res.status(500).json({ error: "Error enviando notificaciones" });
+  }
+});
+// ================== ENDPOINTS PROVEEDORES ==================
+
+// Listar proveedores
+app.get("/api/proveedores", (req, res) => {
+  try {
+    const rows = db.prepare("SELECT * FROM proveedores ORDER BY id DESC").all();
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: "Error al obtener proveedores" });
+  }
+});
+
+// Agregar nuevo proveedor
+app.post("/api/proveedores", (req, res) => {
+  try {
+    const { nombre, direccion, telefono, correo } = req.body;
+    const stmt = db.prepare("INSERT INTO proveedores (nombre, direccion, telefono, correo) VALUES (?, ?, ?, ?)");
+    const info = stmt.run(nombre, direccion || "", telefono || "", correo || "");
+    res.json({ message: "✅ Proveedor registrado", id: info.lastInsertRowid });
+  } catch (err) {
+    res.status(500).json({ error: "Error al registrar proveedor" });
+  }
+});
+
+// Eliminar proveedor
+app.delete("/api/proveedores/:id", (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = db.prepare("DELETE FROM proveedores WHERE id = ?").run(id);
+    if (!result.changes) return res.status(404).json({ error: "Proveedor no encontrado" });
+    res.json({ message: "🗑️ Proveedor eliminado correctamente" });
+  } catch {
+    res.status(500).json({ error: "Error al eliminar proveedor" });
   }
 });
 
