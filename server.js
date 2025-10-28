@@ -213,6 +213,38 @@ app.get("/api/sensores", (_, res) => {
     res.status(500).json({ error: "Error al consultar sensores" });
   }
 });
+// ================== NUEVO ENDPOINT: LISTAR EQUIPOS ==================
+app.get("/api/equipos", (req, res) => {
+  try {
+    const rows = db.prepare(`
+      SELECT 
+        id,
+        nombre_equipo,
+        marca,
+        modelo,
+        serie,
+        servicio,
+        ubicacion,
+        datos_tecnicos,
+        accesorios,
+        imagen_base64
+      FROM fichas_tecnicas
+      ORDER BY fecha_registro DESC
+    `).all();
+
+    // Convertir campos JSON a objetos reales
+    const equipos = rows.map(eq => ({
+      ...eq,
+      datos_tecnicos: JSON.parse(eq.datos_tecnicos || "[]"),
+      accesorios: JSON.parse(eq.accesorios || "[]")
+    }));
+
+    res.json(equipos);
+  } catch (err) {
+    console.error("❌ Error al obtener equipos:", err);
+    res.status(500).json({ error: "Error al consultar equipos" });
+  }
+});
 
 // ================== ENDPOINTS FICHAS TÉCNICAS ==================
 app.post("/api/fichatecnica", (req, res) => {
@@ -317,7 +349,7 @@ app.post("/api/fichatecnica/pdf", (req, res) => {
     const logoPath = path.join(process.cwd(), "HOSP.png");
     if (fs.existsSync(logoPath)) doc.image(logoPath, 460, 30, { width: 80 });
     doc.moveDown(2);
-    
+
     // ===== DATOS GENERALES DEL EQUIPO =====
     doc.font("Helvetica-Bold").fontSize(12).text("DATOS GENERALES DEL EQUIPO:");
     doc.font("Helvetica").fontSize(10);
