@@ -140,18 +140,19 @@ app.post("/api/seguimiento", (req, res) => {
     res.status(500).json({ error: "Error interno al agregar a seguimiento" });
   }
 });
-
-// 🔹 Eliminar un equipo del seguimiento
-app.delete("/api/seguimiento", (req, res) => {
-  const { usuario_id, equipo_id } = req.body;
+  
+// 🔹 Eliminar un equipo del seguimiento por usuario y equipo
+app.delete("/api/seguimiento/:usuario_id/:equipo_id", (req, res) => {
+  const { usuario_id, equipo_id } = req.params;
 
   try {
-    const result = db.prepare(`
-      DELETE FROM seguimiento WHERE usuario_id = ? AND equipo_id = ?
-    `).run(usuario_id, equipo_id);
+    const result = db
+      .prepare("DELETE FROM seguimiento WHERE usuario_id = ? AND equipo_id = ?")
+      .run(usuario_id, equipo_id);
 
-    if (!result.changes)
+    if (!result.changes) {
       return res.status(404).json({ error: "No estaba en seguimiento" });
+    }
 
     res.json({ message: "🗑️ Equipo eliminado del seguimiento" });
   } catch (err) {
@@ -159,6 +160,7 @@ app.delete("/api/seguimiento", (req, res) => {
     res.status(500).json({ error: "Error al quitar equipo del seguimiento" });
   }
 });
+
 
 // 🔹 Obtener lista de seguimiento de un usuario
 app.get("/api/seguimiento/:usuario_id", (req, res) => {
@@ -570,170 +572,3 @@ app.post("/api/sensores", async (req, res) => {
 });
 // ================== SERVIDOR ==================
 app.listen(PORT, "0.0.0.0", () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
-// ================== GENERAR PDF DE FICHA TÉCNICA ==================
-app.post("/api/fichatecnica/pdf", async (req, res) => {
-  const {
-    proveedor,
-    datosTecnicos,
-    accesorios,
-    observaciones,
-    manuales,
-    estado,
-    frecuencia,
-    nombreElaboracion,
-    imagenBase64,
-  } = req.body;
-
-  const doc = new PDFDocument({
-    size: "LETTER",
-    margin: 40,
-  });
-
-  doc.pipe(res);
-
-  try {
-    // === LOGO Y ENCABEZADO ===
-    const logoPath = path.join(process.cwd(), "HOSP.png");
-    if (fs.existsSync(logoPath)) {
-      doc.image(logoPath, 450, 30, { width: 90 });
-    }
-
-    doc
-      .font("Helvetica-Bold")
-      .fontSize(16)
-      .text("FICHA TÉCNICA DEL EQUIPO MÉDICO", { align: "center" });
-    doc.font("Helvetica").fontSize(12).text("HOSPITAL UNIVALLE", { align: "center" });
-    doc.moveDown(1.5);
-
-    // ====== SEPARADOR VISUAL ======
-    doc
-      .moveTo(40, doc.y)
-      .lineTo(570, doc.y)
-      .strokeColor("#00796B")
-      .lineWidth(2)
-      .stroke();
-    doc.moveDown(1.5);
-
-    // === 1️⃣ DATOS GENERALES DEL EQUIPO ===
-    doc.font("Helvetica-Bold").fontSize(13).fillColor("#00796B").text("1. DATOS GENERALES DEL EQUIPO");
-    doc.moveDown(0.5);
-    doc.font("Helvetica").fillColor("black").fontSize(10);
-
-    const datosGenerales = [
-      ["Equipo", req.body.nombreEquipo],
-      ["Marca", req.body.marca],
-      ["Modelo", req.body.modelo],
-      ["Serie", req.body.serie],
-      ["Código", req.body.codigo],
-      ["Servicio", req.body.servicio],
-      ["Ubicación", req.body.ubicacion],
-      ["Garantía", req.body.garantia],
-      ["Procedencia", req.body.procedencia],
-      ["Fecha de compra", req.body.fechaCompra],
-    ];
-
-    datosGenerales.forEach(([campo, valor]) => {
-      doc.text(`${campo}: `, { continued: true }).font("Helvetica-Bold").text(valor || "N/A");
-      doc.font("Helvetica");
-    });
-
-    doc.moveDown(1);
-
-    // === 2️⃣ DATOS DEL PROVEEDOR ===
-    doc.font("Helvetica-Bold").fontSize(13).fillColor("#00796B").text("2. DATOS DEL PROVEEDOR");
-    doc.moveDown(0.5);
-    doc.font("Helvetica").fillColor("black");
-    doc.text(`Nombre: ${proveedor?.nombre || "N/A"}`);
-    doc.text(`Dirección: ${proveedor?.direccion || "N/A"}`);
-    doc.text(`Teléfono: ${proveedor?.telefono || "N/A"}`);
-    doc.text(`Correo: ${proveedor?.correo || "N/A"}`);
-    doc.moveDown(1);
-
-    // === 3️⃣ DATOS TÉCNICOS ===
-    doc.font("Helvetica-Bold").fontSize(13).fillColor("#00796B").text("3. DATOS TÉCNICOS");
-    doc.moveDown(0.5);
-    doc.font("Helvetica").fillColor("black");
-    if (datosTecnicos?.length) {
-      datosTecnicos.forEach((dt) => doc.text(`• ${dt.funcion}: ${dt.info}`));
-    } else {
-      doc.text("N/A");
-    }
-    doc.moveDown(1);
-
-    // === 4️⃣ IMAGEN DEL EQUIPO ===
-    doc.font("Helvetica-Bold").fontSize(13).fillColor("#00796B").text("4. IMAGEN DEL EQUIPO");
-    doc.moveDown(0.5);
-    if (imagenBase64) {
-      try {
-        const imageBuffer = Buffer.from(imagenBase64.split(",")[1], "base64");
-        doc.image(imageBuffer, { fit: [200, 200], align: "center", valign: "center" });
-      } catch {
-        doc.font("Helvetica").fillColor("black").text("⚠️ No se pudo insertar imagen.");
-      }
-    } else {
-      doc.font("Helvetica").fillColor("black").text("Sin imagen adjunta.");
-    }
-    doc.moveDown(1.5);
-
-    // === 5️⃣ ACCESORIOS ===
-    doc.font("Helvetica-Bold").fontSize(13).fillColor("#00796B").text("5. ACCESORIOS");
-    doc.moveDown(0.5);
-    doc.font("Helvetica").fillColor("black");
-    if (accesorios?.length) {
-      accesorios.forEach((a) => doc.text(`• ${a.funcion}: ${a.info}`));
-    } else {
-      doc.text("N/A");
-    }
-    doc.moveDown(1);
-
-    // === 6️⃣ MANUALES ===
-    doc.font("Helvetica-Bold").fontSize(13).fillColor("#00796B").text("6. MANUALES");
-    doc.moveDown(0.5);
-    doc.font("Helvetica").fillColor("black");
-    doc.text(
-      `Operación: ${manuales?.operacion || "N/A"} | Instalación: ${manuales?.instalacion || "N/A"} | Servicio: ${manuales?.servicio || "N/A"}`
-    );
-    doc.moveDown(1);
-
-    // === 7️⃣ OBSERVACIONES ===
-    doc.font("Helvetica-Bold").fontSize(13).fillColor("#00796B").text("7. OBSERVACIONES");
-    doc.moveDown(0.5);
-    doc.font("Helvetica").fillColor("black");
-    if (observaciones?.length) {
-      observaciones.forEach((o) => doc.text(`• ${o.funcion}: ${o.info}`));
-    } else {
-      doc.text("N/A");
-    }
-    doc.moveDown(1);
-
-    // === 8️⃣ ESTADO Y FRECUENCIA ===
-    doc.font("Helvetica-Bold").fontSize(13).fillColor("#00796B").text("8. ESTADO Y FRECUENCIA");
-    doc.moveDown(0.5);
-    doc.font("Helvetica").fillColor("black");
-    doc.text(
-      `Nuevo: ${estado?.nuevo ? "Sí" : "No"} | Bueno: ${estado?.bueno ? "Sí" : "No"} | Reparable: ${estado?.reparable ? "Sí" : "No"} | Descartable: ${estado?.descartable ? "Sí" : "No"}`
-    );
-    doc.text(`Frecuencia de mantenimiento: ${frecuencia || "N/A"}`);
-    doc.moveDown(1.5);
-
-    // === 9️⃣ REGISTRO DE ELABORACIÓN ===
-    doc.font("Helvetica-Bold").fontSize(13).fillColor("#00796B").text("9. REGISTRO DE ELABORACIÓN");
-    doc.moveDown(0.5);
-    doc.font("Helvetica").fillColor("black");
-    doc.text(`Elaborado por: ${nombreElaboracion || "N/A"}`);
-    doc.text(`Fecha: ${new Date().toISOString().split("T")[0]}`);
-    doc.moveDown(1);
-    doc.text("Firma: ___________________________");
-
-    // === PIE DE PÁGINA ===
-    doc.moveDown(2);
-    doc.fontSize(8).fillColor("gray").text("Documento generado automáticamente por el sistema MONUTIN.", {
-      align: "center",
-    });
-
-    doc.end();
-  } catch (err) {
-    console.error("❌ Error al generar PDF:", err);
-    res.status(500).json({ error: "Error al generar PDF" });
-  }
-});
