@@ -47,15 +47,7 @@ import RegistrarEquipo from "./pages/Biomedico/Registrar/RegistrarEquipo.jsx";
 
 // --- Seguimiento ---
 import VerSeguimiento from "./pages/Biomedico/Seguimiento/VerSeguimiento.jsx";
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 import HojaDeMantenimiento from "./pages/Biomedico/Seguimiento/HojaDeMantenimiento.jsx";
-=======
-import HojaDeMantenimiento from "./pages/Biomedico/Seguimiento/hojaDeMantenimiento.jsx";
->>>>>>> Stashed changes
-=======
-import HojaDeMantenimiento from "./pages/Biomedico/Seguimiento/hojaDeMantenimiento.jsx";
->>>>>>> Stashed changes
 
 // =============================
 // COMPONENTE PRINCIPAL
@@ -180,22 +172,11 @@ function App() {
 
         {/* ---- SEGUIMIENTO ---- */}
         <Route path="/verseguimiento" element={<VerSeguimiento />} />
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
         <Route path="/HojaDeMantenimiento" element={<HojaDeMantenimiento />} />
-=======
-
-        <Route path="/hojaDeMantenimiento/:id" element={<HojaDeMantenimiento />} />
-
->>>>>>> Stashed changes
-=======
-
-        <Route path="/hojaDeMantenimiento/:id" element={<HojaDeMantenimiento />} />
-
->>>>>>> Stashed changes
       </Routes>
     </>
   );
 }
 
 export default AppWrapper;
+  
