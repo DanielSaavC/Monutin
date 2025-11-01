@@ -47,7 +47,7 @@ import RegistrarEquipo from "./pages/Biomedico/Registrar/RegistrarEquipo.jsx";
 
 // --- Seguimiento ---
 import VerSeguimiento from "./pages/Biomedico/Seguimiento/VerSeguimiento.jsx";
-import IniciarSeguimiento from "./pages/Biomedico/Seguimiento/IniciarSeguimiento.jsx";
+import HojaDeMantenimiento from "./pages/Biomedico/Seguimiento/HojaDeMantenimiento.jsx";
 
 // =============================
 // COMPONENTE PRINCIPAL
@@ -172,7 +172,7 @@ function App() {
 
         {/* ---- SEGUIMIENTO ---- */}
         <Route path="/verseguimiento" element={<VerSeguimiento />} />
-        <Route path="/iniciarseguimiento" element={<IniciarSeguimiento />} />
+        <Route path="/HojaDeMantenimiento" element={<HojaDeMantenimiento />} />
       </Routes>
     </>
   );
