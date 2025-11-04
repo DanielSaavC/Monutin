@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom"; // 🔺 Importar useNavigate
 import Header from "../../../components/Header";
 import "../../../App.css";
 import axios from "axios";
@@ -14,10 +15,11 @@ import {
 } from "recharts";
 
 export default function VerSeguimiento() {
-  const [equipos, setEquipos] = useState([]); // Estado inicial como array vacío
+  const [equipos, setEquipos] = useState([]);
   const usuario = JSON.parse(localStorage.getItem("usuario"));
+  const navigate = useNavigate(); // 🔺 Hook para navegar
 
-  // Cargar lista de seguimiento (MODIFICADO)
+  // Cargar lista de seguimiento
   useEffect(() => {
     if (!usuario) return;
 
@@ -26,37 +28,27 @@ export default function VerSeguimiento() {
         `https://monutinbackend-production.up.railway.app/api/seguimiento/${usuario.id}`
       )
       .then((res) => {
-        // 💡 **CORRECCIÓN PANTALLA EN BLANCO**:
-        // Nos aseguramos de que 'equipos' sea SIEMPRE un array.
-        // Si res.data es null, undefined, o un objeto (ej: {data: []}),
-        // lo manejamos y pasamos un array vacío para evitar que .map() falle.
-        const lista = res.data?.data || res.data; // Intenta acceder a .data o usa res.data
-
+        // Corrección: Asegurarse de que sea un array (como en la versión anterior)
+        const lista = res.data?.data || res.data;
         if (Array.isArray(lista)) {
           setEquipos(lista);
         } else {
-          console.warn(
-            "La respuesta de la API de seguimiento no era un array:",
-            res.data
-          );
-          setEquipos([]); // <-- Asegura que sea un array
+          console.warn("La respuesta de la API no era un array:", res.data);
+          setEquipos([]);
         }
       })
       .catch((err) => {
         console.error("❌ Error al cargar equipos en seguimiento:", err);
-        setEquipos([]); // <-- Asegura que sea un array incluso en caso de error
+        setEquipos([]);
       });
-  }, [usuario?.id]); // Depender del ID del usuario
-
-  // 🔻 FUNCIÓN ELIMINADA 🔻
-  // const actualizarLocalStorage = (nuevaLista) => { ... };
+  }, [usuario?.id]);
 
   // Apagar alarma (simulado)
   const apagarAlarma = (nombre) => {
     alert(`🔇 Señal enviada para apagar la alarma del equipo: ${nombre}`);
   };
 
-  // Cambiar estado (MODIFICADO)
+  // Cambiar estado (MODIFICADO para usar query params)
   const toggleEstado = async (id) => {
     const equipo = equipos.find((eq) => eq.id === id);
     if (!equipo) return;
@@ -64,28 +56,23 @@ export default function VerSeguimiento() {
     const nuevoEstado = equipo.estado === "bueno" ? "mantenimiento" : "bueno";
 
     try {
-      // ✅ Actualiza en el backend
-      // (NOTA: Asumimos que este POST sabe cómo cambiar el estado en el backend)
+      // 🔺 Usamos query params para el POST (si el backend lo prefiere así)
+      // O mantenemos el body, pero aseguramos que el DELETE use query params
+      // Vamos a mantener el POST con body, ya que suele funcionar bien.
       await axios.post(
         "https://monutinbackend-production.up.railway.app/api/seguimiento",
         {
           usuario_id: usuario.id,
           equipo_id: equipo.id,
-          // Idealmente, aquí enviarías el nuevo estado:
-          // estado: nuevoEstado
+          // estado: nuevoEstado // (Idealmente enviarías esto al backend)
         }
       );
 
-      // ✅ Actualiza localmente (Optimistic UI)
+      // Actualiza localmente
       const nuevaLista = equipos.map((eq) =>
         eq.id === id ? { ...eq, estado: nuevoEstado } : eq
       );
-
       setEquipos(nuevaLista);
-
-      // 🔻 LÍNEA ELIMINADA 🔻
-      // localStorage.setItem("equipos_en_seguimiento", JSON.stringify(nuevaLista));
-
       alert(`✅ Estado del equipo cambiado a "${nuevoEstado}".`);
     } catch (error) {
       console.error("❌ Error al actualizar estado:", error);
@@ -93,7 +80,7 @@ export default function VerSeguimiento() {
     }
   };
 
-  // Quitar del seguimiento (MODIFICADO)
+  // Quitar del seguimiento (MODIFICADO - ¡ESTA ES LA SOLUCIÓN AL ERROR!)
   const quitar = async (id) => {
     const equipo = equipos.find((eq) => eq.id === id);
     if (equipo.estado === "mantenimiento") {
@@ -102,27 +89,50 @@ export default function VerSeguimiento() {
     }
 
     try {
-      // 🔺 1. Llamar al backend para eliminar
+      // 🔺 SOLUCIÓN: Usar Query Params en lugar de 'data' (body) para DELETE.
+      // El backend (API) a menudo no lee el 'body' en peticiones DELETE.
       await axios.delete(
-        "https://monutinbackend-production.up.railway.app/api/seguimiento",
-        {
-          data: { usuario_id: usuario.id, equipo_id: id },
-        }
+        `https://monutinbackend-production.up.railway.app/api/seguimiento?usuario_id=${usuario.id}&equipo_id=${id}`
       );
 
-      // 🔺 2. Actualizar el estado local (Optimistic UI)
+      // Actualizar el estado local (Optimistic UI)
       const nuevaLista = equipos.filter((eq) => eq.id !== id);
       setEquipos(nuevaLista);
 
-      // 🔻 LÍNEA ELIMINADA 🔻
-      // actualizarLocalStorage(nuevaLista);
-
       alert("🗑️ Equipo eliminado del seguimiento.");
     } catch (error) {
+      // Este error ocurre si la API falla (ej: 404, 500, o si la URL está mal)
       console.error("❌ Error al quitar equipo:", error);
       alert("Error al quitar el equipo del seguimiento.");
     }
   };
+
+  // --- 🔺 NUEVAS FUNCIONES DE BOTONES ---
+
+  const descargarFicha = (id) => {
+    // Lógica para descargar:
+    // 1. Llamar a un endpoint de la API, ej: /api/equipos/${id}/ficha
+    // 2. Ese endpoint debe devolver un archivo (PDF, etc.)
+    // 3. El navegador iniciará la descarga.
+    alert(`📥 Iniciando descarga de ficha técnica del equipo ${id}...`);
+    // Ejemplo de cómo forzar una descarga (si tienes la URL del archivo):
+    // window.open(`https://.../api/equipos/${id}/ficha.pdf`, '_blank');
+  };
+
+  const descargarMantenimiento = (id) => {
+    alert(`📥 Iniciando descarga de hoja de mantenimiento del equipo ${id}...`);
+    // window.open(`https://.../api/equipos/${id}/mantenimiento.pdf`, '_blank');
+  };
+
+  const actualizarMantenimiento = (id) => {
+    // Esto probablemente debería navegar a una nueva página o abrir un modal
+    // para subir un archivo o llenar un formulario.
+    alert(`🛠️ Abriendo editor de mantenimiento para equipo ${id}...`);
+    // Ejemplo de navegación:
+    // navigate(`/equipos/${id}/actualizar-mantenimiento`);
+  };
+
+  // --- Fin Nuevas Funciones ---
 
   // Función de datos simulados (sin cambios)
   const generarDatosSensores = () => {
@@ -135,7 +145,6 @@ export default function VerSeguimiento() {
     }));
   };
 
-  // RENDER (Sin cambios en el JSX)
   return (
     <div>
       <Header />
@@ -157,18 +166,41 @@ export default function VerSeguimiento() {
               }}
             >
               <h2 style={{ color: "#00796b" }}>{eq.nombre}</h2>
-              <p>
-                <b>Marca:</b> {eq.marca}
-              </p>
-              <p>
-                <b>Modelo:</b> {eq.modelo}
-              </p>
-              <p>
-                <b>Ubicación:</b> {eq.ubicacion}
-              </p>
-              <p>
-                <b>Tipo:</b> {eq.tipo}
-              </p>
+              
+              {/* 🔺 SOLUCIÓN IMAGEN: Cambiado de eq.imagen a eq.imagen_base64 */}
+              {/* Tu API (GET /api/seguimiento/:id) DEBE devolver este campo */}
+              {eq.imagen_base64 ? (
+                <img
+                  src={eq.imagen_base64} 
+                  alt={eq.nombre}
+                  style={{
+                    width: "250px",
+                    height: "150px",
+                    borderRadius: "8px",
+                    objectFit: "cover",
+                    marginBottom: "10px",
+                  }}
+                />
+              ) : (
+                <div style={{
+                  width: "250px",
+                  height: "150px",
+                  background: "#e0f2f1",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#00796b",
+                  borderRadius: "8px",
+                  marginBottom: "10px"
+                }}>
+                  📷 Sin imagen
+                </div>
+              )}
+
+              <p><b>Marca:</b> {eq.marca}</p>
+              <p><b>Modelo:</b> {eq.modelo}</p>
+              <p><b>Ubicación:</b> {eq.ubicacion}</p>
+              <p><b>Tipo:</b> {eq.tipo}</p>
               <p>
                 <b>Estado:</b>{" "}
                 <span
@@ -184,21 +216,8 @@ export default function VerSeguimiento() {
                 </span>
               </p>
 
-              {eq.imagen && (
-                <img
-                  src={eq.imagen}
-                  alt={eq.nombre}
-                  style={{
-                    width: "250px",
-                    height: "150px",
-                    borderRadius: "8px",
-                    objectFit: "cover",
-                    marginBottom: "10px",
-                  }}
-                />
-              )}
-
               <div className="botones-seguimiento">
+                {/* Botones de Control */}
                 <button
                   className="btn-control rojo"
                   onClick={() => apagarAlarma(eq.nombre)}
@@ -223,6 +242,32 @@ export default function VerSeguimiento() {
                   ❌ Quitar del seguimiento
                 </button>
               </div>
+
+              {/* 🔺 NUEVOS BOTONES (DOCUMENTOS) 🔺 */}
+              <div className="botones-seguimiento" style={{ marginTop: "10px" }}>
+                <button
+                  className="btn-control azul" // Necesitarás CSS para .azul
+                  onClick={() => descargarFicha(eq.id)}
+                >
+                  📄 Descargar Ficha Técnica
+                </button>
+
+                <button
+                  className="btn-control azul"
+                  onClick={() => descargarMantenimiento(eq.id)}
+                >
+                  📥 Descargar Hoja Mantenimiento
+                </button>
+
+                <button
+                  className="btn-control naranja" // Necesitarás CSS para .naranja
+                  onClick={() => actualizarMantenimiento(eq.id)}
+                >
+                  📤 Actualizar Hoja Mantenimiento
+                </button>
+              </div>
+
+
               <div className="chart-box" style={{ marginTop: "20px" }}>
                 <h4>🌡️ Temp Externa (°C) vs 💧 Humedad (%)</h4>
                 <ResponsiveContainer width="100%" height={200}>
@@ -247,7 +292,7 @@ export default function VerSeguimiento() {
                 </ResponsiveContainer>
               </div>
 
-              {/* 🔍 Información extra */}
+              {/* Información extra (sin cambios) */}
               <div style={{ marginTop: "10px" }}>
                 <h4>⚙️ Datos Técnicos</h4>
                 {Array.isArray(eq.datos_tecnicos) &&
