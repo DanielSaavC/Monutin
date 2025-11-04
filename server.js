@@ -324,6 +324,111 @@ app.get("/api/equipos", (req, res) => {
     res.status(500).json({ error: "Error al consultar equipos" });
   }
 });
+// ================== ENDPOINTS FICHAS TÉCNICAS (Añadir esto) ==================
+
+// 🔹 Obtener una ficha específica por ID (para el PDF)
+app.get("/api/fichatecnica/:id", (req, res) => {
+  try {
+    const { id } = req.params;
+    const row = db.prepare("SELECT * FROM fichas_tecnicas WHERE id = ?").get(id);
+
+    if (!row) {
+      return res.status(404).json({ error: "Ficha técnica no encontrada" });
+    }
+    
+    // Convertir campos JSON a objetos
+    const ficha = {
+      ...row,
+      datos_tecnicos: JSON.parse(row.datos_tecnicos || "[]"),
+      accesorios: JSON.parse(row.accesorios || "[]"),
+      observaciones: JSON.parse(row.observaciones || "[]"),
+    };
+
+    res.json(ficha);
+  } catch (err) {
+    console.error("❌ Error al obtener ficha:", err);
+    res.status(500).json({ error: "Error al consultar ficha técnica" });
+  }
+});
+
+
+// 🔹 Generar y descargar PDF de una ficha técnica
+app.get("/api/fichatecnica/:id/pdf", (req, res) => {
+  try {
+    const { id } = req.params;
+    const ficha = db.prepare("SELECT * FROM fichas_tecnicas WHERE id = ?").get(id);
+
+    if (!ficha) {
+      return res.status(404).send("Ficha no encontrada");
+    }
+
+    // Parsear los datos JSON
+    const datosTecnicos = JSON.parse(ficha.datos_tecnicos || "[]");
+    const accesorios = JSON.parse(ficha.accesorios || "[]");
+
+    // Configurar PDFKit
+    const doc = new PDFDocument({ margin: 50, size: 'A4' });
+
+    // Configurar cabeceras para que el navegador descargue el archivo
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=Ficha_Tecnica_${ficha.codigo || id}.pdf`);
+
+    // Enviar el PDF al cliente (response)
+    doc.pipe(res);
+
+    // --- Contenido del PDF ---
+
+    // Título
+    doc.fontSize(20).font('Helvetica-Bold').text('FICHA TÉCNICA DE EQUIPO', { align: 'center' });
+    doc.moveDown(2);
+
+    // Datos Principales
+    doc.fontSize(14).font('Helvetica-Bold').text('1. Información General');
+    doc.fontSize(12).font('Helvetica');
+    doc.text(`Nombre Equipo: ${ficha.nombre_equipo || 'N/A'}`);
+    doc.text(`Marca: ${ficha.marca || 'N/A'}`);
+    doc.text(`Modelo: ${ficha.modelo || 'N/A'}`);
+    doc.text(`Serie: ${ficha.serie || 'N/A'}`);
+    doc.text(`Código: ${ficha.codigo || 'N/A'}`);
+    doc.text(`Ubicación: ${ficha.ubicacion || 'N/A'}`);
+    doc.text(`Servicio: ${ficha.servicio || 'N/A'}`);
+    doc.moveDown();
+
+    // Datos Técnicos (usando un bucle simple)
+    doc.fontSize(14).font('Helvetica-Bold').text('2. Datos Técnicos');
+    doc.fontSize(12).font('Helvetica');
+    if (datosTecnicos.length > 0) {
+      datosTecnicos.forEach(dt => {
+        doc.text(`- ${dt.funcion || 'Dato'}: ${dt.info || 'N/A'}`);
+      });
+    } else {
+      doc.text('No hay datos técnicos registrados.');
+    }
+    doc.moveDown();
+
+    // Accesorios
+    doc.fontSize(14).font('Helvetica-Bold').text('3. Accesorios');
+    doc.fontSize(12).font('Helvetica');
+    if (accesorios.length > 0) {
+      accesorios.forEach(acc => {
+        doc.text(`- ${acc.funcion || 'Accesorio'}: ${acc.info || 'N/A'}`);
+      });
+    } else {
+      doc.text('No hay accesorios registrados.');
+    }
+    doc.moveDown();
+    
+    // (Puedes agregar el resto de campos: observaciones, manuales, etc.)
+
+    // Finalizar el PDF
+    doc.end();
+    console.log(`✅ PDF generado para Ficha ID: ${id}`);
+    
+  } catch (err) {
+    console.error("❌ Error generando PDF:", err);
+    res.status(500).send("Error al generar el PDF");
+  }
+});
 
 // ================== ENDPOINTS FICHAS TÉCNICAS ==================
 app.post("/api/fichatecnica", (req, res) => {
