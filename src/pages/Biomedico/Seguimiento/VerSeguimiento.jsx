@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom"; // 🔺 Importar useNavigate
 import Header from "../../../components/Header";
+import React, { useEffect, useState } from "react";
 import "../../../App.css";
 import axios from "axios";
 // ====== GRAFICOS (Recharts) ======
@@ -13,7 +13,81 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+// 🔔 --- INICIO CÓDIGO DE NOTIFICACIONES PUSH --- 🔔
 
+// 🗝️ Tu Clave VAPID Pública (del backend)
+const VAPID_PUBLIC_KEY =
+  "BPa9Ypp_D-5nqP2NvdMWAlJvz5z9IpZHHFUZdtVRDgf4Grx1Txr4h8Bzi1ljCimbK2zFgnqfkZ6VaPLHf7dwA3M";
+
+/**
+ * Convierte la clave VAPID de Base64 (URL-safe) a un Uint8Array.
+ */
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding)
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+/**
+ * Envía la suscripción al backend.
+ * @param {number} usuario_id - ID del usuario a asociar.
+ * @param {PushSubscription} subscription - El objeto de suscripción.
+ */
+const sendSubscriptionToBackend = (usuario_id, subscription) => {
+  return axios
+    .post(
+      "https://monutinbackend-production.up.railway.app/api/suscribir",
+      {
+        usuario_id: usuario_id, // ID del usuario
+        subscription: subscription, // Objeto de suscripción
+      }
+    )
+    .then((res) => {
+      console.log("✅ Suscripción guardada en el backend.");
+    })
+    .catch((err) => {
+      console.error("❌ Error al guardar suscripción en backend:", err);
+    });
+};
+
+/**
+ * Suscribe al usuario a las notificaciones push.
+ * @param {number} usuario_id - ID del usuario logueado.
+ */
+const subscribeUserToPush = (usuario_id) => {
+  navigator.serviceWorker.ready
+    .then((registration) => {
+      // Opciones de suscripción
+      const subscribeOptions = {
+        userVisibleOnly: true, // Requerido
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      };
+      
+      // Intentar suscribir
+      return registration.pushManager.subscribe(subscribeOptions);
+    })
+    .then((pushSubscription) => {
+      console.log("Recibida PushSubscription: ", pushSubscription);
+      
+      // Enviar al backend para guardar
+      sendSubscriptionToBackend(usuario_id, pushSubscription);
+    })
+    .catch((err) => {
+      // Manejar errores comunes
+      if (Notification.permission === 'denied') {
+        console.warn('Permiso de notificaciones denegado por el usuario.');
+      } else {
+        console.error("❌ Falló la suscripción push: ", err);
+      }
+    });
+};
 export default function VerSeguimiento() {
   const [equipos, setEquipos] = useState([]);
   const usuario = JSON.parse(localStorage.getItem("usuario"));
@@ -42,6 +116,28 @@ export default function VerSeguimiento() {
         setEquipos([]);
       });
   }, [usuario?.id]);
+  // 🔔 --- useEffect para pedir permiso de Notificación --- 🔔
+  useEffect(() => {
+    // Solo se ejecuta si tenemos un usuario logueado
+    if (usuario && usuario.id) {
+      // 1. Verificar si el navegador soporta Service Worker y Push
+      if ("serviceWorker" in navigator && "PushManager" in window) {
+        
+        // 2. Pedir permiso al usuario
+        Notification.requestPermission().then((permission) => {
+          if (permission === "granted") {
+            console.log("Permiso de notificación concedido.");
+            // 3. Suscribir al usuario
+            subscribeUserToPush(usuario.id);
+          } else {
+            console.warn("Permiso de notificación denegado.");
+          }
+        });
+      } else {
+        console.warn("Push Notifications no son soportadas en este navegador.");
+      }
+    }
+  }, [usuario]); // Depende del objeto 'usuario'
 
   // Apagar alarma (simulado)
   const apagarAlarma = (nombre) => {
@@ -52,31 +148,18 @@ export default function VerSeguimiento() {
   const toggleEstado = async (id) => {
     const equipo = equipos.find((eq) => eq.id === id);
     if (!equipo) return;
-
-    const nuevoEstado = equipo.estado === "bueno" ? "mantenimiento" : "bueno";
+const nuevoEstado = equipo.estado === "bueno" ? "mantenimiento" : "bueno";
 
     try {
-      // 🔺 Usamos query params para el POST (si el backend lo prefiere así)
-      // O mantenemos el body, pero aseguramos que el DELETE use query params
-      // Vamos a mantener el POST con body, ya que suele funcionar bien.
-      await axios.post(
-        "https://monutinbackend-production.up.railway.app/api/seguimiento",
-        {
-          usuario_id: usuario.id,
-          equipo_id: equipo.id,
-          // estado: nuevoEstado // (Idealmente enviarías esto al backend)
-        }
+      await axios.put(
+        `https://monutinbackend-production.up.railway.app/api/equipos/${id}`,
+        { estado: nuevoEstado } // Envía el nuevo estado en el body
       );
 
-      // Actualiza localmente
-      const nuevaLista = equipos.map((eq) =>
-        eq.id === id ? { ...eq, estado: nuevoEstado } : eq
-      );
-      setEquipos(nuevaLista);
-      alert(`✅ Estado del equipo cambiado a "${nuevoEstado}".`);
+      const nuevaLista = equipos.map((eq) => eq.id === id ? { ...eq, estado: nuevoEstado } : eq);setEquipos(nuevaLista);alert(`✅ Estado del equipo cambiado a "${nuevoEstado}".`);
+
     } catch (error) {
-      console.error("❌ Error al actualizar estado:", error);
-      alert("Error al actualizar el estado del equipo.");
+      console.error("❌ Error al actualizar estado:", error);alert("Error al actualizar el estado del equipo.");
     }
   };
 
@@ -91,9 +174,7 @@ export default function VerSeguimiento() {
     try {
       // 🔺 SOLUCIÓN: Usar Query Params en lugar de 'data' (body) para DELETE.
       // El backend (API) a menudo no lee el 'body' en peticiones DELETE.
-      await axios.delete(
-        `https://monutinbackend-production.up.railway.app/api/seguimiento?usuario_id=${usuario.id}&equipo_id=${id}`
-      );
+      await axios.delete(`https://monutinbackend-production.up.railway.app/api/seguimiento/${usuario.id}/${id}`);
 
       // Actualizar el estado local (Optimistic UI)
       const nuevaLista = equipos.filter((eq) => eq.id !== id);
@@ -109,15 +190,14 @@ export default function VerSeguimiento() {
 
   // --- 🔺 NUEVAS FUNCIONES DE BOTONES ---
 
-  const descargarFicha = (id) => {
-    // Lógica para descargar:
-    // 1. Llamar a un endpoint de la API, ej: /api/equipos/${id}/ficha
-    // 2. Ese endpoint debe devolver un archivo (PDF, etc.)
-    // 3. El navegador iniciará la descarga.
-    alert(`📥 Iniciando descarga de ficha técnica del equipo ${id}...`);
-    // Ejemplo de cómo forzar una descarga (si tienes la URL del archivo):
-    // window.open(`https://.../api/equipos/${id}/ficha.pdf`, '_blank');
-  };
+const descargarFicha = (id) => {
+    console.log(`Solicitando PDF para equipo ID: ${id}`);
+    
+    // ⬇️ ESTA ES LA LÍNEA CLAVE ⬇️
+    // Llama directamente a la URL del backend. El navegador gestionará la descarga.
+    const url = `https://monutinbackend-production.up.railway.app/api/fichatecnica/${id}/pdf`;
+    window.open(url, '_blank');
+  };
 
   const descargarMantenimiento = (id) => {
     alert(`📥 Iniciando descarga de hoja de mantenimiento del equipo ${id}...`);
