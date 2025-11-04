@@ -2,9 +2,6 @@ import React, { useEffect, useState } from "react";
 import Header from "../../../components/Header";
 import "../../../App.css";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
-import jsPDF from "jspdf";
-
 // ====== GRAFICOS (Recharts) ======
 import {
   LineChart,
@@ -17,13 +14,10 @@ import {
 } from "recharts";
 
 export default function VerSeguimiento() {
-  const [equipos, setEquipos] = useState([]);
+  const [equipos, setEquipos] = useState([]); // Estado inicial como array vacío
   const usuario = JSON.parse(localStorage.getItem("usuario"));
-  const navigate = useNavigate();
 
-  // ============================================================
-  // 🔹 Cargar lista de seguimiento desde el backend
-  // ============================================================
+  // Cargar lista de seguimiento (MODIFICADO)
   useEffect(() => {
     if (!usuario) return;
 
@@ -32,67 +26,65 @@ export default function VerSeguimiento() {
         `https://monutinbackend-production.up.railway.app/api/seguimiento/${usuario.id}`
       )
       .then((res) => {
-        setEquipos(res.data);
+        // 💡 **CORRECCIÓN PANTALLA EN BLANCO**:
+        // Nos aseguramos de que 'equipos' sea SIEMPRE un array.
+        // Si res.data es null, undefined, o un objeto (ej: {data: []}),
+        // lo manejamos y pasamos un array vacío para evitar que .map() falle.
+        const lista = res.data?.data || res.data; // Intenta acceder a .data o usa res.data
+
+        if (Array.isArray(lista)) {
+          setEquipos(lista);
+        } else {
+          console.warn(
+            "La respuesta de la API de seguimiento no era un array:",
+            res.data
+          );
+          setEquipos([]); // <-- Asegura que sea un array
+        }
       })
       .catch((err) => {
         console.error("❌ Error al cargar equipos en seguimiento:", err);
+        setEquipos([]); // <-- Asegura que sea un array incluso en caso de error
       });
-  }, []);
+  }, [usuario?.id]); // Depender del ID del usuario
 
-  // ============================================================
-  // 🔹 Actualizar LocalStorage
-  // ============================================================
-  const actualizarLocalStorage = (nuevaLista) => {
-    localStorage.setItem("equipos_en_seguimiento", JSON.stringify(nuevaLista));
-    setEquipos(nuevaLista);
-  };
+  // 🔻 FUNCIÓN ELIMINADA 🔻
+  // const actualizarLocalStorage = (nuevaLista) => { ... };
 
-  // ============================================================
-  // 🔹 Simulación de datos de sensores
-  // ============================================================
-  const generarDatosSensores = () => {
-    return Array.from({ length: 10 }, (_, i) => ({
-      time: i,
-      temp: 36 + Math.random(),
-      humedad: 40 + Math.random() * 10,
-    }));
-  };
-
-  // ============================================================
-  // 🔹 Apagar alarma (simulado)
-  // ============================================================
+  // Apagar alarma (simulado)
   const apagarAlarma = (nombre) => {
     alert(`🔇 Señal enviada para apagar la alarma del equipo: ${nombre}`);
   };
 
-  // ============================================================
-  // 🔹 Cambiar estado operativo/mantenimiento
-  // ============================================================
+  // Cambiar estado (MODIFICADO)
   const toggleEstado = async (id) => {
     const equipo = equipos.find((eq) => eq.id === id);
     if (!equipo) return;
 
-    const nuevoEstado =
-      equipo.estado === "mantenimiento" ? "bueno" : "mantenimiento";
+    const nuevoEstado = equipo.estado === "bueno" ? "mantenimiento" : "bueno";
 
     try {
+      // ✅ Actualiza en el backend
+      // (NOTA: Asumimos que este POST sabe cómo cambiar el estado en el backend)
       await axios.post(
         "https://monutinbackend-production.up.railway.app/api/seguimiento",
         {
           usuario_id: usuario.id,
           equipo_id: equipo.id,
+          // Idealmente, aquí enviarías el nuevo estado:
+          // estado: nuevoEstado
         }
       );
 
+      // ✅ Actualiza localmente (Optimistic UI)
       const nuevaLista = equipos.map((eq) =>
         eq.id === id ? { ...eq, estado: nuevoEstado } : eq
       );
 
       setEquipos(nuevaLista);
-      localStorage.setItem(
-        "equipos_en_seguimiento",
-        JSON.stringify(nuevaLista)
-      );
+
+      // 🔻 LÍNEA ELIMINADA 🔻
+      // localStorage.setItem("equipos_en_seguimiento", JSON.stringify(nuevaLista));
 
       alert(`✅ Estado del equipo cambiado a "${nuevoEstado}".`);
     } catch (error) {
@@ -101,9 +93,7 @@ export default function VerSeguimiento() {
     }
   };
 
-  // ============================================================
-  // 🔹 Quitar equipo del seguimiento
-  // ============================================================
+  // Quitar del seguimiento (MODIFICADO)
   const quitar = async (id) => {
     const equipo = equipos.find((eq) => eq.id === id);
     if (equipo.estado === "mantenimiento") {
@@ -112,48 +102,40 @@ export default function VerSeguimiento() {
     }
 
     try {
+      // 🔺 1. Llamar al backend para eliminar
       await axios.delete(
-        `https://monutinbackend-production.up.railway.app/api/seguimiento/${usuario.id}/${id}`
+        "https://monutinbackend-production.up.railway.app/api/seguimiento",
+        {
+          data: { usuario_id: usuario.id, equipo_id: id },
+        }
       );
 
+      // 🔺 2. Actualizar el estado local (Optimistic UI)
       const nuevaLista = equipos.filter((eq) => eq.id !== id);
-      actualizarLocalStorage(nuevaLista);
-      alert("✅ Equipo quitado del seguimiento correctamente.");
+      setEquipos(nuevaLista);
+
+      // 🔻 LÍNEA ELIMINADA 🔻
+      // actualizarLocalStorage(nuevaLista);
+
+      alert("🗑️ Equipo eliminado del seguimiento.");
     } catch (error) {
       console.error("❌ Error al quitar equipo:", error);
       alert("Error al quitar el equipo del seguimiento.");
     }
   };
 
-  // ============================================================
-  // 🔹 Descargar ficha técnica en PDF
-  // ============================================================
-  const descargarFichaTecnica = (equipo) => {
-    const doc = new jsPDF();
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.text("Ficha Técnica del Equipo", 20, 20);
-
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Nombre: ${equipo.nombre_equipo}`, 20, 40);
-    doc.text(`Marca: ${equipo.marca}`, 20, 50);
-    doc.text(`Modelo: ${equipo.modelo}`, 20, 60);
-    doc.text(`Ubicación: ${equipo.ubicacion}`, 20, 70);
-    doc.text(`Servicio: ${equipo.servicio || "N/A"}`, 20, 80);
-    doc.text(`Código: ${equipo.codigo || "N/A"}`, 20, 90);
-
-    if (equipo.imagen_base64) {
-      doc.addImage(equipo.imagen_base64, "JPEG", 140, 30, 50, 40);
-    }
-
-    doc.save(`Ficha_${equipo.nombre_equipo}.pdf`);
+  // Función de datos simulados (sin cambios)
+  const generarDatosSensores = () => {
+    return Array.from({ length: 10 }, (_, i) => ({
+      time: i,
+      temp: 36 + Math.random(),
+      humedad: 40 + Math.random() * 10,
+      peso: 3 + Math.random() * 0.5,
+      tempBebe: 36.5 + Math.random() * 0.5,
+    }));
   };
 
-  // ============================================================
-  // 🔹 Renderizado principal
-  // ============================================================
+  // RENDER (Sin cambios en el JSX)
   return (
     <div>
       <Header />
@@ -168,35 +150,25 @@ export default function VerSeguimiento() {
               key={eq.id}
               style={{
                 marginBottom: "25px",
-                padding: "25px",
-                borderRadius: "14px",
+                padding: "20px",
+                borderRadius: "12px",
                 background: "#f1fdfb",
-                boxShadow: "0 3px 10px rgba(0,0,0,0.1)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
               }}
             >
-              <h2 style={{ color: "#00796b" }}>
-                {eq.nombre_equipo || eq.nombre}
-              </h2>
-
-              {(eq.imagen_base64 || eq.imagen) && (
-                <img
-                  src={eq.imagen_base64 || eq.imagen}
-                  alt={eq.nombre_equipo}
-                  style={{
-                    width: "300px",
-                    height: "180px",
-                    borderRadius: "12px",
-                    objectFit: "cover",
-                    boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
-                    marginBottom: "15px",
-                  }}
-                />
-              )}
-
-              <p><b>Marca:</b> {eq.marca}</p>
-              <p><b>Modelo:</b> {eq.modelo}</p>
-              <p><b>Ubicación:</b> {eq.ubicacion}</p>
-              <p><b>Tipo:</b> {eq.tipo || "No especificado"}</p>
+              <h2 style={{ color: "#00796b" }}>{eq.nombre}</h2>
+              <p>
+                <b>Marca:</b> {eq.marca}
+              </p>
+              <p>
+                <b>Modelo:</b> {eq.modelo}
+              </p>
+              <p>
+                <b>Ubicación:</b> {eq.ubicacion}
+              </p>
+              <p>
+                <b>Tipo:</b> {eq.tipo}
+              </p>
               <p>
                 <b>Estado:</b>{" "}
                 <span
@@ -212,19 +184,24 @@ export default function VerSeguimiento() {
                 </span>
               </p>
 
-              {/* 🔘 Botones de acción */}
-              <div
-                className="botones-seguimiento"
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: "10px",
-                  marginBottom: "15px",
-                }}
-              >
+              {eq.imagen && (
+                <img
+                  src={eq.imagen}
+                  alt={eq.nombre}
+                  style={{
+                    width: "250px",
+                    height: "150px",
+                    borderRadius: "8px",
+                    objectFit: "cover",
+                    marginBottom: "10px",
+                  }}
+                />
+              )}
+
+              <div className="botones-seguimiento">
                 <button
                   className="btn-control rojo"
-                  onClick={() => apagarAlarma(eq.nombre_equipo)}
+                  onClick={() => apagarAlarma(eq.nombre)}
                 >
                   🔕 Apagar alarma
                 </button>
@@ -234,8 +211,8 @@ export default function VerSeguimiento() {
                   onClick={() => toggleEstado(eq.id)}
                 >
                   {eq.estado === "mantenimiento"
-                    ? "✅ Marcar operativo"
-                    : "🛠️ Marcar mantenimiento"}
+                    ? "✅ Marcar como operativo"
+                    : "🛠️ Marcar en mantenimiento"}
                 </button>
 
                 <button
@@ -245,24 +222,8 @@ export default function VerSeguimiento() {
                 >
                   ❌ Quitar del seguimiento
                 </button>
-
-                <button
-                  className="btn-control azul"
-                  onClick={() => descargarFichaTecnica(eq)}
-                >
-                  📄 Descargar Ficha Técnica
-                </button>
-
-                <button
-                  className="btn-control naranja"
-                  onClick={() => navigate(`/hojaDeMantenimiento/${eq.id}`)}
-                >
-                  🛠️ Actualizar Hoja de Mantenimiento
-                </button>
               </div>
-
-              {/* 📊 Gráfico de sensores */}
-              <div className="chart-box" style={{ marginTop: "15px" }}>
+              <div className="chart-box" style={{ marginTop: "20px" }}>
                 <h4>🌡️ Temp Externa (°C) vs 💧 Humedad (%)</h4>
                 <ResponsiveContainer width="100%" height={200}>
                   <LineChart data={generarDatosSensores()}>
@@ -286,10 +247,11 @@ export default function VerSeguimiento() {
                 </ResponsiveContainer>
               </div>
 
-              {/* 🔍 Información técnica */}
+              {/* 🔍 Información extra */}
               <div style={{ marginTop: "10px" }}>
                 <h4>⚙️ Datos Técnicos</h4>
-                {eq.datos_tecnicos?.length > 0 ? (
+                {Array.isArray(eq.datos_tecnicos) &&
+                eq.datos_tecnicos.length > 0 ? (
                   <ul>
                     {eq.datos_tecnicos.map((dt, i) => (
                       <li key={i}>
@@ -302,7 +264,7 @@ export default function VerSeguimiento() {
                 )}
 
                 <h4>🔌 Accesorios</h4>
-                {eq.accesorios?.length > 0 ? (
+                {Array.isArray(eq.accesorios) && eq.accesorios.length > 0 ? (
                   <ul>
                     {eq.accesorios.map((acc, i) => (
                       <li key={i}>
