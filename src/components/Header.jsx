@@ -18,24 +18,51 @@ export default function Header() {
       return () => clearInterval(intervalo);
     }
   }, [usuario]);
+
+// === REGISTRAR SERVICE WORKER ===
+useEffect(() => {
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker
+      .register("/service-worker.js")
+      .then((registration) => {
+        console.log("✅ Service Worker registrado:", registration.scope);
+      })
+      .catch((error) => {
+        console.error("❌ Error al registrar el Service Worker:", error);
+      });
+  }
+}, []);
+
 useEffect(() => {
   if ("serviceWorker" in navigator && "PushManager" in window) {
-    navigator.serviceWorker.ready.then((registration) => {
-      registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(
-          "BPa9Ypp_D-5nqP2NvdMWAlJvz5z9IpZHHFUZdtVRDgf4Grx1Txr4h8Bzi1ljCimbK2zFgnqfkZ6VaPLHf7dwA3M"
-        ),
-      })
-      .then((subscription) => {
-        // Registrar en backend
-        axios.post("https://monutinbackend-production.up.railway.app/api/suscribir", subscription);
-        console.log("✅ Suscripción push registrada");
-      })
-      .catch((err) => console.error("❌ Error suscripción:", err));
+    Notification.requestPermission().then((permission) => {
+      if (permission === "granted") {
+        navigator.serviceWorker.ready.then((registration) => {
+          registration.pushManager
+            .subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(
+                "BPa9Ypp_D-5nqP2NvdMWAlJvz5z9IpZHHFUZdtVRDgf4Grx1Txr4h8Bzi1ljCimbK2zFgnqfkZ6VaPLHf7dwA3M"
+              ),
+            })
+            .then((subscription) => {
+              axios.post(
+                "https://monutinbackend-production.up.railway.app/api/suscribir",
+                subscription
+              );
+              console.log("✅ Suscripción push registrada en backend");
+            })
+            .catch((err) =>
+              console.error("❌ Error al suscribirse al Push:", err)
+            );
+        });
+      } else {
+        console.warn("⚠️ Permiso de notificación denegado o no aceptado.");
+      }
     });
   }
 }, []);
+
 function urlBase64ToUint8Array(base64String) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding)
@@ -146,7 +173,7 @@ function urlBase64ToUint8Array(base64String) {
                     >
                       {n.mensaje}
                       <span className="notif-fecha">
-                        {new Date(n.fecha).toLocaleString("es-BO")}
+                        {new Date(n.fecha).toLocaleString("es-BO", { timeZone: "America/La_Paz" })}
                       </span>
                     </div>
                   ))
