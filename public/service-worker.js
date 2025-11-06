@@ -38,15 +38,41 @@ self.addEventListener("fetch", (event) => {
 // =============================
 // 🔔 Notificaciones Push
 // =============================
+// =============================
+// 🔔 Notificaciones Push mejoradas
+// =============================
 self.addEventListener("push", (event) => {
   const data = event.data ? event.data.json() : {};
-  const title = data.title || "Alerta Monutin";
+  const title = data.title || "🔔 Notificación Monutin";
   const options = {
-    body: data.body || "Nuevo evento detectado",
-    icon: "/icons/icon-192.png",
+    body: data.body || "Nuevo evento detectado en el sistema.",
+    icon: data.icon || "/icons/icon-192.png",
     badge: "/icons/icon-192.png",
-    vibrate: [100, 50, 100],
-    sound: "/alerta.mp3" // opcional
+    vibrate: data.vibrate || [200, 100, 200, 100, 300],
+    requireInteraction: true, // 🔹 La notificación permanece visible
+    data: {
+      url: data.url || "/", // Redirigir al hacer clic
+    },
   };
-  event.waitUntil(self.registration.showNotification(title, options));
+
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  );
+});
+
+// 🔹 Redirigir al hacer clic
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || "/";
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true })
+      .then((clientList) => {
+        for (const client of clientList) {
+          if (client.url.includes(targetUrl) && "focus" in client) {
+            return client.focus();
+          }
+        }
+        if (clients.openWindow) return clients.openWindow(targetUrl);
+      })
+  );
 });

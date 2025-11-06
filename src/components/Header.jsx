@@ -18,6 +18,36 @@ export default function Header() {
       return () => clearInterval(intervalo);
     }
   }, [usuario]);
+useEffect(() => {
+  if ("serviceWorker" in navigator && "PushManager" in window) {
+    navigator.serviceWorker.ready.then((registration) => {
+      registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(
+          "BPa9Ypp_D-5nqP2NvdMWAlJvz5z9IpZHHFUZdtVRDgf4Grx1Txr4h8Bzi1ljCimbK2zFgnqfkZ6VaPLHf7dwA3M"
+        ),
+      })
+      .then((subscription) => {
+        // Registrar en backend
+        axios.post("https://monutinbackend-production.up.railway.app/api/suscribir", subscription);
+        console.log("✅ Suscripción push registrada");
+      })
+      .catch((err) => console.error("❌ Error suscripción:", err));
+    });
+  }
+}, []);
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding)
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
 
   const obtenerNotificaciones = async () => {
     try {
