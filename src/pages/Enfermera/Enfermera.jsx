@@ -67,14 +67,14 @@ export default function Enfermera() {
         {!verHistorial ? (
           <div className="form-reporte">
             <h3>📋 Crear nuevo reporte</h3>
-            <select value={equipo} onChange={e => setEquipo(e.target.value)}>
-              <option value="">Seleccione un equipo</option>
-              {equipos.map(eq => (
-                <option key={eq.id} value={eq.nombre}>
-                  {eq.nombre}
-                </option>
-              ))}
-            </select>
+              <select value={equipo} onChange={e => setEquipo(e.target.value)}>
+                <option value="">Seleccione un equipo</option>
+                {equipos.map(eq => (
+                  <option key={eq.id} value={eq.nombre_equipo}>
+                    {eq.nombre_equipo} — {eq.marca} {eq.modelo}
+                  </option>
+                ))}
+              </select>
 
             <textarea
               placeholder="Describa el problema (ej: cable pelado, pantalla dañada...)"
