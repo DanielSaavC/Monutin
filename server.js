@@ -300,22 +300,49 @@ app.delete("/deleteUser/:id", (req, res) => {
 // ================== ENDPOINTS REPORTES ==================
 
 // 🩺 ENVIAR REPORTE (desde Enfermera.jsx)
-app.post("/api/reportes", (req, res) => {
+// ================== ENDPOINT REPORTES (con notificación push) ==================
+app.post("/api/reportes", upload.single("foto"), async (req, res) => {
   try {
-    const { id_enfermera, nombre_enfermera, equipo, descripcion, foto_base64 } = req.body;
+    const { id_enfermera, nombre_enfermera, equipo, descripcion } = req.body;
+    const foto = req.file ? `/uploads/${req.file.filename}` : null;
 
+    // Guardar reporte en BD
     db.prepare(`
       INSERT INTO reportes (id_enfermera, nombre_enfermera, equipo, descripcion, foto, estado)
       VALUES (?, ?, ?, ?, ?, 'pendiente')
-    `).run(id_enfermera, nombre_enfermera, equipo, descripcion, foto_base64 || null);
+    `).run(id_enfermera, nombre_enfermera, equipo, descripcion, foto);
 
+    // Crear notificación interna
     const mensaje = `La enfermera ${nombre_enfermera} reportó un problema en ${equipo}`;
     db.prepare(`
       INSERT INTO notificaciones (mensaje, rol_destino, estado)
       VALUES (?, 'biomedico', 'no_leido')
     `).run(mensaje);
 
-    res.json({ success: true, message: "✅ Reporte guardado correctamente (Base64)" });
+    // 📢 Enviar notificación push a todos los suscritos
+    if (suscripciones.length > 0) {
+        title: "🚨 Nuevo reporte de enfermería",
+        body: `La enfermera ${nombre_enfermera} reportó un problema en ${equipo}`,
+        icon: "/icons/icon-192.png",
+        vibrate: [200, 100, 200, 100, 300],
+        url: "/biomedico", // opcional: a dónde redirigir si toca
+      });
+
+      await Promise.all(
+        suscripciones.map((sub) =>
+          webpush.sendNotification(sub, payload).catch((err) => {
+            if (err.statusCode === 410 || err.statusCode === 404) {
+              console.log("🗑️ Eliminando suscripción inválida");
+              suscripciones = suscripciones.filter((s) => s.endpoint !== sub.endpoint);
+            } else {
+              console.error("❌ Error al enviar notificación push:", err);
+            }
+          })
+        )
+      );
+    }
+
+    res.json({ success: true, message: "✅ Reporte guardado y notificación enviada" });
   } catch (error) {
     console.error("❌ Error al guardar reporte:", error);
     res.status(500).json({ error: "Error al guardar el reporte" });
