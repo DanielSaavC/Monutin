@@ -300,29 +300,28 @@ app.delete("/deleteUser/:id", (req, res) => {
 // ================== ENDPOINTS REPORTES ==================
 
 // 🩺 ENVIAR REPORTE (desde Enfermera.jsx)
-app.post("/api/reportes", upload.single("foto"), (req, res) => {
+app.post("/api/reportes", (req, res) => {
   try {
-    const { id_enfermera, nombre_enfermera, equipo, descripcion } = req.body;
-    const foto = req.file ? `/uploads/${req.file.filename}` : null;
+    const { id_enfermera, nombre_enfermera, equipo, descripcion, foto_base64 } = req.body;
 
     db.prepare(`
       INSERT INTO reportes (id_enfermera, nombre_enfermera, equipo, descripcion, foto, estado)
       VALUES (?, ?, ?, ?, ?, 'pendiente')
-    `).run(id_enfermera, nombre_enfermera, equipo, descripcion, foto);
+    `).run(id_enfermera, nombre_enfermera, equipo, descripcion, foto_base64 || null);
 
-    // Crear notificación para el biomédico
     const mensaje = `La enfermera ${nombre_enfermera} reportó un problema en ${equipo}`;
     db.prepare(`
       INSERT INTO notificaciones (mensaje, rol_destino, estado)
       VALUES (?, 'biomedico', 'no_leido')
     `).run(mensaje);
 
-    res.json({ success: true, message: "✅ Reporte guardado correctamente" });
+    res.json({ success: true, message: "✅ Reporte guardado correctamente (Base64)" });
   } catch (error) {
     console.error("❌ Error al guardar reporte:", error);
     res.status(500).json({ error: "Error al guardar el reporte" });
   }
 });
+
 
 // 📋 HISTORIAL DE REPORTES DE UNA ENFERMERA
 app.get("/api/reportes/enfermera/:id", (req, res) => {
