@@ -1417,3 +1417,139 @@ textarea {
   cursor: not-allowed;
 }
 /* ===== TARJETA DE PRESENTACIÓN ===== */
+.panel-enfermera {
+  padding: 20px;
+  font-family: 'Segoe UI', sans-serif;
+  color: #004d40;
+}
+
+.acciones {
+  margin-bottom: 20px;
+}
+
+.acciones button {
+  margin-right: 10px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  background-color: #00bfa6;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.acciones button:hover {
+  background-color: #009688;
+}
+
+.form-reporte, .historial {
+  background: #f9f9f9;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+}
+
+.form-reporte select,
+.form-reporte textarea,
+.form-reporte input[type="file"] {
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.form-reporte button {
+  background-color: #00bfa6;
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.reporte-item {
+  border-bottom: 1px solid #ccc;
+  padding: 10px 0;
+}
+
+.foto-reporte {
+  max-width: 200px;
+  border-radius: 10px;
+  margin-top: 8px;
+}
+
+.mensaje {
+  margin-top: 10px;
+  color: #00796b;
+  font-weight: bold;
+}
+/* ===== NOTIFICACIONES ===== */
+.notif-container {
+  position: relative;
+  margin-right: 20px;
+  cursor: pointer;
+}
+
+.notif-icon {
+  font-size: 1.6em;
+}
+
+.notif-count {
+  position: absolute;
+  top: -5px;
+  right: -8px;
+  background: #ff3d00;
+  color: white;
+  font-size: 0.75em;
+  font-weight: bold;
+  border-radius: 50%;
+  padding: 2px 6px;
+}
+
+.notif-dropdown {
+  position: absolute;
+  top: 32px;
+  right: 0;
+  width: 280px;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+  z-index: 999;
+}
+
+.notif-item {
+  padding: 10px;
+  font-size: 0.9em;
+  border-bottom: 1px solid #eee;
+  transition: background 0.2s;
+}
+
+.notif-item:hover {
+  background: #f1fdfb;
+}
+
+.notif-item.no_leido {
+  font-weight: 600;
+  color: #00796B;
+}
+
+.notif-item.leido {
+  color: #555;
+}
+
+.notif-fecha {
+  display: block;
+  font-size: 0.75em;
+  color: #999;
+  margin-top: 4px;
+}
+
+.notif-empty {
+  padding: 15px;
+  text-align: center;
+  color: #888;
+}
