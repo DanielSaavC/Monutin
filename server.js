@@ -321,11 +321,12 @@ app.post("/api/reportes", upload.single("foto"), async (req, res) => {
 
     // 📢 Enviar notificación push a todos los suscritos
     if (suscripciones.length > 0) {
-        title: "🚨 Nuevo reporte de enfermería",
-        body: `La enfermera ${nombre_enfermera} reportó un problema en ${equipo}`,
-        icon: "/icons/icon-192.png",
-        vibrate: [200, 100, 200, 100, 300],
-        url: "/biomedico", // opcional: a dónde redirigir si toca
+      const payload = JSON.stringify({
+          title: "🚨 Nuevo reporte de enfermería",
+          body: `La enfermera ${nombre_enfermera} reportó un problema en ${equipo}`,
+          icon: "/icons/icon-192.png",
+          vibrate: [200, 100, 200, 100, 300],
+          url: "/biomedico", // opcional: a dónde redirigir si toca
       });
 
       await Promise.all(
