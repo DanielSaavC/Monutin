@@ -8,6 +8,7 @@ import path from "path";
 import fs from "fs";
 import PDFDocument from "pdfkit";
 import pkg from "pdfkit-table";
+import multer from "multer";
 const { default: PDFTable } = pkg;
 
 
@@ -38,6 +39,16 @@ try {
   process.exit(1);
 }
 
+// === Configurar almacenamiento para fotos de reportes ===
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, "uploads/"),
+  filename: (req, file, cb) =>
+    cb(null, Date.now() + "_" + file.originalname)
+});
+const upload = multer({ storage });
+
+// === Servir imágenes ===
+app.use("/uploads", express.static("uploads"));
 // ================== CREACIÓN DE TABLAS ==================
 const crearTablas = [
   `CREATE TABLE IF NOT EXISTS usuarios (
@@ -106,6 +117,24 @@ const crearTablas = [
     imagen_base64 TEXT,
     fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (proveedor_id) REFERENCES proveedores(id)
+  )`,
+  `CREATE TABLE IF NOT EXISTS reportes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_enfermera INTEGER,
+    nombre_enfermera TEXT,
+    equipo TEXT,
+    descripcion TEXT,
+    foto TEXT,
+    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    estado TEXT DEFAULT 'pendiente'
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS notificaciones (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    mensaje TEXT,
+    rol_destino TEXT,
+    estado TEXT DEFAULT 'no_leido',
+    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`
 ];
 crearTablas.forEach(sql => db.prepare(sql).run());
@@ -268,7 +297,74 @@ app.delete("/deleteUser/:id", (req, res) => {
     res.status(500).json({ error: "Error al eliminar usuario" });
   }
 });
+// ================== ENDPOINTS REPORTES ==================
 
+// 🩺 ENVIAR REPORTE (desde Enfermera.jsx)
+app.post("/api/reportes", upload.single("foto"), (req, res) => {
+  try {
+    const { id_enfermera, nombre_enfermera, equipo, descripcion } = req.body;
+    const foto = req.file ? `/uploads/${req.file.filename}` : null;
+
+    db.prepare(`
+      INSERT INTO reportes (id_enfermera, nombre_enfermera, equipo, descripcion, foto, estado)
+      VALUES (?, ?, ?, ?, ?, 'pendiente')
+    `).run(id_enfermera, nombre_enfermera, equipo, descripcion, foto);
+
+    // Crear notificación para el biomédico
+    const mensaje = `La enfermera ${nombre_enfermera} reportó un problema en ${equipo}`;
+    db.prepare(`
+      INSERT INTO notificaciones (mensaje, rol_destino, estado)
+      VALUES (?, 'biomedico', 'no_leido')
+    `).run(mensaje);
+
+    res.json({ success: true, message: "✅ Reporte guardado correctamente" });
+  } catch (error) {
+    console.error("❌ Error al guardar reporte:", error);
+    res.status(500).json({ error: "Error al guardar el reporte" });
+  }
+});
+
+// 📋 HISTORIAL DE REPORTES DE UNA ENFERMERA
+app.get("/api/reportes/enfermera/:id", (req, res) => {
+  try {
+    const { id } = req.params;
+    const reportes = db
+      .prepare("SELECT * FROM reportes WHERE id_enfermera = ? ORDER BY fecha DESC")
+      .all(id);
+    res.json(reportes);
+  } catch (error) {
+    console.error("❌ Error al obtener reportes:", error);
+    res.status(500).json({ error: "Error al obtener reportes" });
+  }
+});
+
+// ================== ENDPOINTS NOTIFICACIONES ==================
+
+// 🔔 OBTENER NOTIFICACIONES POR ROL
+app.get("/api/notificaciones", (req, res) => {
+  try {
+    const { rol } = req.query;
+    const result = db
+      .prepare("SELECT * FROM notificaciones WHERE rol_destino = ? ORDER BY fecha DESC")
+      .all(rol);
+    res.json(result);
+  } catch (error) {
+    console.error("❌ Error al obtener notificaciones:", error);
+    res.status(500).json({ error: "Error al obtener notificaciones" });
+  }
+});
+
+// 🔔 MARCAR NOTIFICACIÓN COMO LEÍDA
+app.put("/api/notificaciones/:id/leida", (req, res) => {
+  try {
+    const { id } = req.params;
+    db.prepare("UPDATE notificaciones SET estado = 'leido' WHERE id = ?").run(id);
+    res.json({ success: true });
+  } catch (error) {
+    console.error("❌ Error al marcar notificación:", error);
+    res.status(500).json({ error: "Error al actualizar notificación" });
+  }
+}); 
 // ================== ENDPOINTS SENSORES ==================
 app.post("/api/sensores", (req, res) => {
   try {
