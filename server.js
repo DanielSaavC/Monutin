@@ -138,10 +138,10 @@ const crearTablas = [
   )`, 
   // En tu array 'crearTablas' en server.js
 `CREATE TABLE IF NOT EXISTS suscripciones_push (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  subscription_json TEXT NOT NULL,
-  usuario_id INTEGER,
-  FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  subscription_json TEXT NOT NULL,
+  usuario_id INTEGER,
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 )`
 ];
 crearTablas.forEach(sql => db.prepare(sql).run());
@@ -332,7 +332,7 @@ try {
   const suscripcionesBiomedico = db.prepare(`
     SELECT s.subscription_json
     FROM suscripciones_push s
-    JOIN usuarios u ON s.usuario_id = u.id
+   JOIN usuarios u ON s.usuario_id = u.id
     WHERE u.tipo = 'biomedico'
   `).all();
 
