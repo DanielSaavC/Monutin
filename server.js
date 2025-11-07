@@ -793,11 +793,16 @@ let suscripciones = [];
 // En server.js, reemplaza el app.post("/api/suscribir")
 // REEMPLAZA tu app.post("/api/suscribir") con esto:
 app.post("/api/suscribir", (req, res) => {
-  try {
-    const { subscription, usuario_id } = req.body;
+try {
+    // --- NUEVO LOG PARA DEPURAR ---
+    console.log("--- NUEVA SOLICITUD A /api/suscribir ---");
+    console.log("BODY RECIBIDO:", JSON.stringify(req.body, null, 2));
+    // ---------------------------------
 
-    // 1. Validar que la suscripción es correcta
-    if (!subscription || !subscription.endpoint) {
+    const { subscription, usuario_id } = req.body;
+
+    // 1. Validar que la suscripción es correcta
+    if (!subscription || !subscription.endpoint) {
       console.error("❌ Suscripción inválida recibida:", req.body);
       return res.status(400).json({ error: "Suscripción inválida" });
     }
