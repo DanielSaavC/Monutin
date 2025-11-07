@@ -507,7 +507,7 @@ app.post("/api/sensores", async (req, res) => {
       }
     }
 
-    // Respuesta normal
+    // Respuesta normalf
     res.json({ message: "✅ Datos guardados y analizados", id: info.lastInsertRowid });
   
   } catch (err) {
