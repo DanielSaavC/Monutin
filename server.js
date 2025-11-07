@@ -135,7 +135,14 @@ const crearTablas = [
     rol_destino TEXT,
     estado TEXT DEFAULT 'no_leido',
     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  )`
+  )`, 
+  // En tu array 'crearTablas' en server.js
+`CREATE TABLE IF NOT EXISTS suscripciones_push (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  subscription_json TEXT NOT NULL,
+  usuario_id INTEGER,
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+)`
 ];
 crearTablas.forEach(sql => db.prepare(sql).run());
 console.log("✅ Tablas listas");
@@ -320,28 +327,45 @@ app.post("/api/reportes", upload.single("foto"), async (req, res) => {
     `).run(mensaje);
 
     // 📢 Enviar notificación push a todos los suscritos
-    if (suscripciones.length > 0) {
-      const payload = JSON.stringify({
-          title: "🚨 Nuevo reporte de enfermería",
-          body: `La enfermera ${nombre_enfermera} reportó un problema en ${equipo}`,
-          icon: "/icons/icon-192.png",
-          vibrate: [200, 100, 200, 100, 300],
-          url: "/biomedico", // opcional: a dónde redirigir si toca
-      });
+try {
+  // 1. Buscar solo las suscripciones de los 'biomedico'
+  const suscripcionesBiomedico = db.prepare(`
+    SELECT s.subscription_json
+    FROM suscripciones_push s
+    JOIN usuarios u ON s.usuario_id = u.id
+    WHERE u.tipo = 'biomedico'
+  `).all();
 
-      await Promise.all(
-        suscripciones.map((sub) =>
-          webpush.sendNotification(sub, payload).catch((err) => {
-            if (err.statusCode === 410 || err.statusCode === 404) {
-              console.log("🗑️ Eliminando suscripción inválida");
-              suscripciones = suscripciones.filter((s) => s.endpoint !== sub.endpoint);
-            } else {
-              console.error("❌ Error al enviar notificación push:", err);
-            }
-          })
-        )
-      );
-    }
+  if (suscripcionesBiomedico.length > 0) {
+    const payload = JSON.stringify({
+      title: "🚨 Nuevo reporte de enfermería",
+      body: `La enfermera ${nombre_enfermera} reportó un problema en ${equipo}`,
+      icon: "/icons/icon-192.png",
+      vibrate: [200, 100, 200, 100, 300],
+      url: "/biomedico",
+    });
+
+    // 2. Parsear el JSON y enviar
+    await Promise.all(
+      suscripcionesBiomedico.map((row) => {
+        const sub = JSON.parse(row.subscription_json); // ⬅️ Convertir de texto a objeto
+        return webpush.sendNotification(sub, payload).catch((err) => {
+          // 3. (Importante) Borrar suscripciones que ya no existen
+          if (err.statusCode === 410 || err.statusCode === 404) {
+            console.log("🗑️ Eliminando suscripción inválida de la BD");
+            db.prepare(
+              "DELETE FROM suscripciones_push WHERE subscription_json LIKE ?"
+            ).run(`%"endpoint":"${sub.endpoint}"%`);
+          } else {
+            console.error("❌ Error al enviar notificación push:", err);
+          }
+        });
+      })
+    );
+  }
+} catch (pushError) {
+  console.error("❌ Error en la lógica de envío push:", pushError);
+}
 
     res.json({ success: true, message: "✅ Reporte guardado y notificación enviada" });
   } catch (error) {
@@ -681,13 +705,35 @@ webpush.setVapidDetails(
 let suscripciones = [];
 
 // Endpoint para registrar suscripciones
+// En server.js, reemplaza el app.post("/api/suscribir")
 app.post("/api/suscribir", (req, res) => {
-  const subscription = req.body;
-  // Evita duplicados
-  const existe = suscripciones.find((s) => s.endpoint === subscription.endpoint);
-  if (!existe) suscripciones.push(subscription);
-  console.log("✅ Suscripción guardada:", subscription.endpoint);
-  res.status(201).json({ message: "Suscripción registrada correctamente" });
+  try {
+    // Ahora recibimos un objeto { subscription, usuario_id }
+    const { subscription, usuario_id } = req.body; 
+
+    // Convertimos el objeto de suscripción a texto para guardarlo
+    const sub_json = JSON.stringify(subscription);
+
+    // Evitar duplicados por 'endpoint'
+    const existe = db.prepare(
+      "SELECT * FROM suscripciones_push WHERE subscription_json LIKE ?"
+    ).get(`%"endpoint":"${subscription.endpoint}"%`);
+
+    if (!existe) {
+      db.prepare(
+        "INSERT INTO suscripciones_push (subscription_json, usuario_id) VALUES (?, ?)"
+      ).run(sub_json, usuario_id);
+      console.log("✅ Suscripción guardada en BD:", subscription.endpoint);
+    } else {
+      console.log("ℹ️ Suscripción ya existía:", subscription.endpoint);
+    }
+
+    res.status(201).json({ message: "Suscripción registrada correctamente" });
+
+  } catch (err) {
+    console.error("❌ Error al guardar suscripción:", err);
+    res.status(500).json({ error: "Error guardando suscripción" });
+  }
 });
 
 // Endpoint manual para enviar notificación (por si la necesitas probar)
