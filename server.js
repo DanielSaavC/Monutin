@@ -351,13 +351,13 @@ app.post("/api/reportes", upload.single("foto"), async (req, res) => {
 
     // 📢 Enviar notificación push a todos los suscritos
 try {
-  // 1. Buscar solo las suscripciones de los 'biomedico'
-  const suscripcionesBiomedico = db.prepare(`
-    SELECT s.subscription_json
-    FROM suscripciones_push s
-   JOIN usuarios u ON s.usuario_id = u.id
-    WHERE u.tipo = 'biomedico'
-  `).all();
+// 1. Buscar solo las suscripciones de los 'biomedico'
+const suscripcionesBiomedico = db.prepare(`
+  SELECT s.subscription_json, s.endpoint
+  FROM suscripciones_push s
+  JOIN usuarios u ON s.usuario_id = u.id
+  WHERE u.tipo = 'biomedico'
+`).all();
 
   if (suscripcionesBiomedico.length > 0) {
     const payload = JSON.stringify({
@@ -367,25 +367,25 @@ try {
       vibrate: [200, 100, 200, 100, 300],
       url: "/biomedico",
     });
-
-    // 2. Parsear el JSON y enviar
-    await Promise.all(
-      suscripcionesBiomedico.map((row) => {
-        const sub = JSON.parse(row.subscription_json); // ⬅️ Convertir de texto a objeto
-        return webpush.sendNotification(sub, payload).catch((err) => {
-          // 3. (Importante) Borrar suscripciones que ya no existen
-          if (err.statusCode === 410 || err.statusCode === 404) {
-            console.log("🗑️ Eliminando suscripción inválida de la BD");
-// Reemplaza la línea de borrado con esto:
-                db.prepare(
-                  "DELETE FROM suscripciones_push WHERE endpoint = ?"
-                ).run(sub.endpoint);
-          } else {
-            console.error("❌ Error al enviar notificación push:", err);
-          }
-        });
-      })
-    );
+// 2. Enviar notificaciones
+await Promise.all(
+  suscripcionesBiomedico.map((row) => {
+    // 🔹 PARSEAR el JSON string → objeto
+    const sub = JSON.parse(row.subscription_json);
+    
+    return webpush.sendNotification(sub, payload).catch((err) => {
+      if (err.statusCode === 410 || err.statusCode === 404) {
+        console.log("🗑️ Eliminando suscripción inválida");
+        // 🔹 Usar el endpoint de 'row' (string), no de 'sub'
+        db.prepare(
+          "DELETE FROM suscripciones_push WHERE endpoint = ?"
+        ).run(row.endpoint); // ⬅️ Correcto
+      } else {
+        console.error("❌ Error push:", err);
+      }
+    });
+  })
+);
   }
 } catch (pushError) {
   console.error("❌ Error en la lógica de envío push:", pushError);
