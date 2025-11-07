@@ -4,7 +4,7 @@
 
 // 🧱 Cache básico (para offline)
 const CACHE_NAME = "monutin-cache-v1";
-const urlsToCache = ["/", "/index.html", "/manifest.json"];
+const urlsToCache = ["./", "./index.html", "./manifest.json"];
 
 // Instalar SW
 self.addEventListener("install", (event) => {
