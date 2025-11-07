@@ -144,9 +144,32 @@ const crearTablas = [
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 )`
 ];
+// ... (tu código)
 crearTablas.forEach(sql => db.prepare(sql).run());
 console.log("✅ Tablas listas");
 
+// ====================================================
+// 🚀 MIGRACIÓN DE BD (Solo se ejecuta si es necesario)
+// ====================================================
+try {
+  // 1. Intenta añadir la nueva columna 'endpoint'
+  db.prepare("ALTER TABLE suscripciones_push ADD COLUMN endpoint TEXT").run();
+  console.log("✅ Migración: Columna 'endpoint' añadida.");
+
+  // 2. Añade un índice único a esa columna
+  db.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_endpoint ON suscripciones_push (endpoint)").run();
+  console.log("✅ Migración: Índice 'endpoint' creado.");
+
+} catch (e) {
+  if (e.message.includes("duplicate column name")) {
+    console.log("ℹ️ Migración: Columna 'endpoint' ya existe.");
+  } else {
+    console.error("❌ Error en migración de BD:", e.message);
+  }
+}
+// ====================================================
+
+// ... (resto de tu server.js)
 // ================== FUNCIONES AUXILIARES ==================
 const findUserByUsername = usuario =>
   db.prepare("SELECT * FROM usuarios WHERE usuario = ?").get(usuario.toLowerCase());
@@ -353,9 +376,10 @@ try {
           // 3. (Importante) Borrar suscripciones que ya no existen
           if (err.statusCode === 410 || err.statusCode === 404) {
             console.log("🗑️ Eliminando suscripción inválida de la BD");
-            db.prepare(
-              "DELETE FROM suscripciones_push WHERE subscription_json LIKE ?"
-            ).run(`%"endpoint":"${sub.endpoint}"%`);
+// Reemplaza la línea de borrado con esto:
+                db.prepare(
+                  "DELETE FROM suscripciones_push WHERE endpoint = ?"
+                ).run(sub.endpoint);
           } else {
             console.error("❌ Error al enviar notificación push:", err);
           }
@@ -417,16 +441,77 @@ app.put("/api/notificaciones/:id/leida", (req, res) => {
   }
 }); 
 // ================== ENDPOINTS SENSORES ==================
-app.post("/api/sensores", (req, res) => {
+// REEMPLAZA el endpoint /api/sensores completo con esto
+
+app.post("/api/sensores", async (req, res) => {
   try {
     const { device, temperatura, humedad, ambtemp, objtemp, peso } = req.body;
+
+    // 1. Guardar en la base de datos (igual que antes)
     const stmt = db.prepare(`
       INSERT INTO sensores (device, temperatura, humedad, ambtemp, objtemp, peso)
       VALUES (?, ?, ?, ?, ?, ?)
     `);
     const info = stmt.run(device, temperatura, humedad, ambtemp, objtemp, peso);
-    res.json({ message: "✅ Datos guardados", id: info.lastInsertRowid });
-  } catch {
+
+    // 2. 🚨 Detectar condiciones críticas
+    let alertas = [];
+    if (temperatura > 37.5) {
+      alertas.push(`Temp. externa alta: ${temperatura.toFixed(1)} °C`);
+    }
+    if (humedad < 40) {
+      alertas.push(`Humedad baja: ${humedad.toFixed(1)} %`);
+    }
+    if (objtemp > 37.5) {
+      alertas.push(`Temp. paciente alta: ${objtemp.toFixed(1)} °C`);
+    }
+
+    // 3. Si hay alertas → Enviar notificación push (LEYENDO DE LA BD)
+    if (alertas.length > 0) {
+      
+      // 3.1. Buscar solo suscripciones de 'biomedico'
+      const suscripcionesBiomedico = db.prepare(`
+        SELECT s.subscription_json, s.endpoint
+        FROM suscripciones_push s
+        JOIN usuarios u ON s.usuario_id = u.id
+        WHERE u.tipo = 'biomedico'
+      `).all();
+
+      if (suscripcionesBiomedico.length > 0) {
+        const payload = JSON.stringify({
+          title: "⚠️ Alerta Monutin",
+          body: alertas.join(" | "),
+        });
+
+        // 3.2. Enviar a todos los biomédicos suscritos
+        await Promise.all(
+          suscripcionesBiomedico.map((row) => {
+            const sub = JSON.parse(row.subscription_json); // Convertir de texto a objeto
+            
+            return webpush.sendNotification(sub, payload).catch((err) => {
+              
+              // 3.3. ¡AQUÍ ESTÁ EL DELETE!
+              // Si falla (410 o 404), borra la suscripción de la BD
+              if (err.statusCode === 410 || err.statusCode === 404) {
+                console.log("🗑️ Eliminando suscripción inválida de la BD (desde sensores)");
+                db.prepare(
+                  "DELETE FROM suscripciones_push WHERE endpoint = ?"
+                ).run(row.endpoint); // ⬅️ Lógica de borrado
+              } else {
+                console.error("❌ Error push (sensores):", err);
+              }
+            });
+          })
+        );
+        console.log("📢 Notificación automática enviada:", alertas.join(" | "));
+      }
+    }
+
+    // Respuesta normal
+    res.json({ message: "✅ Datos guardados y analizados", id: info.lastInsertRowid });
+  
+  } catch (err) {
+    console.error("❌ Error en /api/sensores:", err);
     res.status(500).json({ error: "Error al guardar datos de sensor" });
   }
 });
@@ -706,34 +791,44 @@ let suscripciones = [];
 
 // Endpoint para registrar suscripciones
 // En server.js, reemplaza el app.post("/api/suscribir")
+// REEMPLAZA tu app.post("/api/suscribir") con esto:
 app.post("/api/suscribir", (req, res) => {
-  try {
-    // Ahora recibimos un objeto { subscription, usuario_id }
-    const { subscription, usuario_id } = req.body; 
+  try {
+    const { subscription, usuario_id } = req.body;
 
-    // Convertimos el objeto de suscripción a texto para guardarlo
-    const sub_json = JSON.stringify(subscription);
+    // 1. Validar que la suscripción es correcta
+    if (!subscription || !subscription.endpoint) {
+      console.error("❌ Suscripción inválida recibida:", req.body);
+      return res.status(400).json({ error: "Suscripción inválida" });
+    }
 
-    // Evitar duplicados por 'endpoint'
-    const existe = db.prepare(
-      "SELECT * FROM suscripciones_push WHERE subscription_json LIKE ?"
-    ).get(`%"endpoint":"${subscription.endpoint}"%`);
+    // 2. Extraer los datos
+    const endpoint = subscription.endpoint;
+    const sub_json = JSON.stringify(subscription);
 
-    if (!existe) {
-      db.prepare(
-        "INSERT INTO suscripciones_push (subscription_json, usuario_id) VALUES (?, ?)"
-      ).run(sub_json, usuario_id);
-      console.log("✅ Suscripción guardada en BD:", subscription.endpoint);
-    } else {
-      console.log("ℹ️ Suscripción ya existía:", subscription.endpoint);
-    }
+    // 3. Usar "INSERT ... ON CONFLICT"
+    // Esto inserta solo si el 'endpoint' (que es UNIQUE) no existe.
+    // Es mucho más seguro y rápido que un SELECT + INSERT.
+    const stmt = db.prepare(`
+      INSERT INTO suscripciones_push (endpoint, subscription_json, usuario_id)
+      VALUES (?, ?, ?)
+      ON CONFLICT(endpoint) DO NOTHING
+    `);
+    
+    const info = stmt.run(endpoint, sub_json, usuario_id);
 
-    res.status(201).json({ message: "Suscripción registrada correctamente" });
+    if (info.changes > 0) {
+      console.log("✅ Suscripción guardada en BD:", endpoint);
+    } else {
+      console.log("ℹ️ Suscripción ya existía:", endpoint);
+    }
 
-  } catch (err) {
-    console.error("❌ Error al guardar suscripción:", err);
-    res.status(500).json({ error: "Error guardando suscripción" });
-  }
+    res.status(201).json({ message: "Suscripción registrada" });
+
+  } catch (err) {
+    console.error("❌ Error al guardar suscripción:", err.message);
+    res.status(500).json({ error: "Error guardando suscripción", details: err.message });
+  }
 });
 
 // Endpoint manual para enviar notificación (por si la necesitas probar)
