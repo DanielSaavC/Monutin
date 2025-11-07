@@ -200,7 +200,7 @@ export default function Header() {
       />
 
       <div className="header-right">
-        {/* 🔔 Notificaciones (solo biomédico) */}
+        {/* 🔔 Notificaciones (solo biomédicdo) */}
         {usuario.tipo === "biomedico" && (
           <div className="notif-container">
             <span
