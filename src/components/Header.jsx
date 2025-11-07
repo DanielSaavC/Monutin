@@ -84,7 +84,7 @@ export default function Header() {
     } else {
       console.warn("⚠️ Push API no soportada en este navegador");
     }
-  }, [usuario]); // ⬅️ Se ejecuta cuando cambia el usuario
+  }, [usuario?.tipo, usuario?.id]);// ⬅️ Se ejecuta cuando cambia el usuario
 
   // Función auxiliar para convertir clave VAPID
   function urlBase64ToUint8Array(base64String) {
