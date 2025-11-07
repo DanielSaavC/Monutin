@@ -11,13 +11,21 @@ export default function Header() {
   const [verNotificaciones, setVerNotificaciones] = useState(false);
 
   // === 🔔 Cargar notificaciones solo si es biomédico ===
-  useEffect(() => {
-    if (usuario?.tipo === "biomedico") {
-      obtenerNotificaciones();
-      const intervalo = setInterval(obtenerNotificaciones, 10000); // cada 10s
-      return () => clearInterval(intervalo);
-    }
-  }, [usuario]);
+// En Header.jsx
+
+useEffect(() => {
+  // ⚠️ AÑADE ESTA CONDICIÓN ⚠️
+  if (usuario?.tipo !== "biomedico") {
+    console.log("ℹ️ No es biomédico, no se suscribe a push.");
+    return; // ⬅️ Salir temprano si no es biomédico
+  }
+
+  if ("serviceWorker" in navigator && "PushManager" in window) {
+    Notification.requestPermission().then((permission) => {
+      // ... (el resto de tu código de suscripción)
+    });
+  }
+}, [usuario]); // ⬅️ Añade 'usuario' a las dependencias
 
 // === REGISTRAR SERVICE WORKER ===
 useEffect(() => {
@@ -46,11 +54,15 @@ useEffect(() => {
               ),
             })
             .then((subscription) => {
-              axios.post(
-                "https://monutinbackend-production.up.railway.app/api/suscribir",
-                subscription
-              );
-              console.log("✅ Suscripción push registrada en backend");
+              // ⚠️ CAMBIO AQUÍ: Envía la suscripción Y el ID del usuario
+              axios.post(
+                "https://monutinbackend-production.up.railway.app/api/suscribir",
+                { 
+                  subscription: subscription,
+                  usuario_id: usuario.id // ⬅️ AÑADE ESTO
+                } 
+              );
+              console.log("✅ Suscripción push registrada en backend");
             })
             .catch((err) =>
               console.error("❌ Error al suscribirse al Push:", err)
