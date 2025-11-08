@@ -20,6 +20,56 @@ export default function Enfermera() {
 
   // ✅ Enviar reporte al backend
 
+const enviarReporte = async () => {
+  if (!equipo || !descripcion) {
+    return setMensaje("⚠️ Complete todos los campos.");
+  }
+
+  const usuario = JSON.parse(localStorage.getItem("usuario"));
+
+  // 🔹 PASO 1: Crear FormData (no JSON)
+  const formData = new FormData();
+  formData.append("id_enfermera", usuario.id);
+  formData.append("nombre_enfermera", usuario.nombre);
+  formData.append("equipo", equipo);
+  formData.append("descripcion", descripcion);
+  
+  // 🔹 PASO 2: Agregar el archivo tal cual (no base64)
+  if (foto) {
+    formData.append("foto", foto); // ⬅️ archivo File original
+  }
+
+  try {
+    await axios.post(
+      "https://monutinbackend-production.up.railway.app/api/reportes",
+      formData,
+      {
+        // 🔹 PASO 3: Cabecera correcta
+        headers: { "Content-Type": "multipart/form-data" }
+      }
+    );
+
+    setMensaje("✅ Reporte enviado correctamente.");
+    // Limpiar formulario
+    setEquipo("");
+    setDescripcion("");
+    setFoto(null);
+    document.querySelector('input[type="file"]').value = "";
+    
+  } catch (error) {
+    console.error("❌ Error:", error);
+    setMensaje("❌ Error al enviar el reporte.");
+  }
+};
+// Función auxiliar
+const toBase64 = (file) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+  reader.onload = () => resolve(reader.result);
+  reader.onerror = reject;
+});
+
+
 
   // ✅ Consultar reportes anteriores
   const cargarHistorial = async () => {
