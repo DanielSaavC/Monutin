@@ -19,30 +19,6 @@ export default function Enfermera() {
   }, []);
 
   // ✅ Enviar reporte al backend
-const enviarReporte = async () => {
-  if (!equipo || !descripcion) return setMensaje("⚠️ Complete todos los campos.");
-
-  const usuario = JSON.parse(localStorage.getItem("usuario"));
-  const base64 = foto ? await toBase64(foto) : null;
-
-  await axios.post("https://monutinbackend-production.up.railway.app/api/reportes", {
-    id_enfermera: usuario.id,
-    nombre_enfermera: usuario.nombre,
-    equipo,
-    descripcion,
-    foto_base64: base64
-  });
-
-  setMensaje("✅ Reporte enviado correctamente.");
-};
-
-// Función auxiliar
-const toBase64 = (file) => new Promise((resolve, reject) => {
-  const reader = new FileReader();
-  reader.readAsDataURL(file);
-  reader.onload = () => resolve(reader.result);
-  reader.onerror = reject;
-});
 
 
   // ✅ Consultar reportes anteriores
