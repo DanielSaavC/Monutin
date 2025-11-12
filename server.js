@@ -69,7 +69,6 @@ const crearTablas = [
     humedad REAL,
     ambtemp REAL,
     objtemp REAL,
-    peso REAL,
     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`,
   
@@ -359,14 +358,14 @@ const suscripcionesBiomedico = db.prepare(`
   WHERE u.tipo = 'biomedico'
 `).all();
 
-  if (suscripcionesBiomedico.length > 0) {
-    const payload = JSON.stringify({
-      title: "🚨 Nuevo reporte de enfermería",
-      body: `La enfermera ${nombre_enfermera} reportó un problema en ${equipo}`,
-      icon: "/icons/icon-192.png",
-      vibrate: [200, 100, 200, 100, 300],
-      url: "/biomedico",
-    });
+  if (suscripcionesBiomedico.length > 0) {
+    const payload = JSON.stringify({
+      title: "🚨 Nuevo reporte de enfermería",
+      body: `La enfermera ${nombre_enfermera} reportó un problema en ${equipo}`,
+      icon: "/icons/icon-192.png",
+      vibrate: [200, 100, 200, 100, 300],
+      url: "/biomedico",
+    });
 // 2. Enviar notificaciones
 await Promise.all(
   suscripcionesBiomedico.map((row) => {
@@ -386,9 +385,9 @@ await Promise.all(
     });
   })
 );
-  }
+  }
 } catch (pushError) {
-  console.error("❌ Error en la lógica de envío push:", pushError);
+  console.error("❌ Error en la lógica de envío push:", pushError);
 }
 
     res.json({ success: true, message: "✅ Reporte guardado y notificación enviada" });
@@ -440,19 +439,18 @@ app.put("/api/notificaciones/:id/leida", (req, res) => {
     res.status(500).json({ error: "Error al actualizar notificación" });
   }
 }); 
-// ================== ENDPOINTS SENSORES ==================
-// REEMPLAZA el endpoint /api/sensores completo con esto
+// ================== ENDPOINTS SENSORES (SIN PESO) ==================
 
 app.post("/api/sensores", async (req, res) => {
   try {
-    const { device, temperatura, humedad, ambtemp, objtemp, peso } = req.body;
+    const { device, temperatura, humedad, ambtemp, objtemp } = req.body;
 
-    // 1. Guardar en la base de datos (igual que antes)
+    // 1. Guardar en la base de datos (sin peso)
     const stmt = db.prepare(`
-      INSERT INTO sensores (device, temperatura, humedad, ambtemp, objtemp, peso)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO sensores (device, temperatura, humedad, ambtemp, objtemp)
+      VALUES (?, ?, ?, ?, ?)
     `);
-    const info = stmt.run(device, temperatura, humedad, ambtemp, objtemp, peso);
+    const info = stmt.run(device, temperatura, humedad, ambtemp, objtemp);
 
     // 2. 🚨 Detectar condiciones críticas
     let alertas = [];
@@ -490,13 +488,12 @@ app.post("/api/sensores", async (req, res) => {
             
             return webpush.sendNotification(sub, payload).catch((err) => {
               
-              // 3.3. ¡AQUÍ ESTÁ EL DELETE!
-              // Si falla (410 o 404), borra la suscripción de la BD
+              // 3.3. Si falla (410 o 404), borra la suscripción de la BD
               if (err.statusCode === 410 || err.statusCode === 404) {
                 console.log("🗑️ Eliminando suscripción inválida de la BD (desde sensores)");
                 db.prepare(
                   "DELETE FROM suscripciones_push WHERE endpoint = ?"
-                ).run(row.endpoint); // ⬅️ Lógica de borrado
+                ).run(row.endpoint);
               } else {
                 console.error("❌ Error push (sensores):", err);
               }
@@ -507,7 +504,7 @@ app.post("/api/sensores", async (req, res) => {
       }
     }
 
-    // Respuesta normalf
+    // Respuesta normal
     res.json({ message: "✅ Datos guardados y analizados", id: info.lastInsertRowid });
   
   } catch (err) {
@@ -790,8 +787,6 @@ webpush.setVapidDetails(
 let suscripciones = [];
 
 // Endpoint para registrar suscripciones
-// En server.js, reemplaza el app.post("/api/suscribir")
-// REEMPLAZA tu app.post("/api/suscribir") con esto:
 app.post("/api/suscribir", (req, res) => {
 try {
     // --- NUEVO LOG PARA DEPURAR ---
@@ -799,10 +794,10 @@ try {
     console.log("BODY RECIBIDO:", JSON.stringify(req.body, null, 2));
     // ---------------------------------
 
-    const { subscription, usuario_id } = req.body;
+    const { subscription, usuario_id } = req.body;
 
-    // 1. Validar que la suscripción es correcta
-    if (!subscription || !subscription.endpoint) {
+    // 1. Validar que la suscripción es correcta
+    if (!subscription || !subscription.endpoint) {
       console.error("❌ Suscripción inválida recibida:", req.body);
       return res.status(400).json({ error: "Suscripción inválida" });
     }
@@ -886,63 +881,5 @@ app.delete("/api/proveedores/:id", (req, res) => {
   }
 });
 
-// ================== ALERTAS AUTOMÁTICAS SEGÚN SENSORES ==================
-// Cuando llega un nuevo dato del sensor, verificamos si hay valores críticos.
-const oldPostSensor = app._router.stack.find(r => r.route && r.route.path === "/api/sensores")?.route.stack[0].handle;
-
-app.post("/api/sensores", async (req, res) => {
-  try {
-    const { device, temperatura, humedad, ambtemp, objtemp, peso } = req.body;
-
-    // Guardar en la base de datos (igual que antes)
-    const stmt = db.prepare(`
-      INSERT INTO sensores (device, temperatura, humedad, ambtemp, objtemp, peso)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `);
-    const info = stmt.run(device, temperatura, humedad, ambtemp, objtemp, peso);
-
-    // 🚨 Detectar condiciones críticas
-    let alertas = [];
-
-    if (temperatura > 37.5) {
-      alertas.push(`Temperatura externa elevada: ${temperatura.toFixed(1)} °C`);
-    }
-    if (humedad < 40) {
-      alertas.push(`Humedad baja: ${humedad.toFixed(1)} %`);
-    }
-    if (objtemp > 37.5) {
-      alertas.push(`Temperatura del paciente elevada: ${objtemp.toFixed(1)} °C`);
-    }
-
-    // Si hay alertas → enviar notificación push
-    if (alertas.length > 0 && suscripciones.length > 0) {
-      const payload = JSON.stringify({
-        title: "⚠️ Alerta Monutin",
-        body: alertas.join(" | "),
-      });
-
-      await Promise.all(
-        suscripciones.map((sub) =>
-          webpush.sendNotification(sub, payload).catch((err) => {
-            if (err.statusCode === 410 || err.statusCode === 404) {
-              console.log("🗑️ Eliminando suscripción inválida");
-              suscripciones = suscripciones.filter((s) => s.endpoint !== sub.endpoint);
-            } else {
-              console.error("❌ Error push:", err);
-            }
-          })
-        )
-      );
-
-      console.log("📢 Notificación automática enviada:", alertas.join(" | "));
-    }
-
-    // Respuesta normal
-    res.json({ message: "✅ Datos guardados y analizados", id: info.lastInsertRowid });
-  } catch (err) {
-    console.error("❌ Error en /api/sensores:", err);
-    res.status(500).json({ error: "Error al guardar datos de sensor" });
-  }
-});
 // ================== SERVIDOR ==================
 app.listen(PORT, "0.0.0.0", () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
