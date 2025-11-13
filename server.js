@@ -582,74 +582,264 @@ app.get("/api/fichatecnica/:id", (req, res) => {
 
 
 // 🔹 Generar y descargar PDF de una ficha técnica
+// 🔹 Generar y descargar PDF de una ficha técnica (VERSIÓN MEJORADA)
 app.get("/api/fichatecnica/:id/pdf", (req, res) => {
   try {
     const { id } = req.params;
     const ficha = db.prepare("SELECT * FROM fichas_tecnicas WHERE id = ?").get(id);
-
+    
     if (!ficha) {
       return res.status(404).send("Ficha no encontrada");
     }
 
-    // Parsear los datos JSON
+    // Parsear datos JSON
     const datosTecnicos = JSON.parse(ficha.datos_tecnicos || "[]");
     const accesorios = JSON.parse(ficha.accesorios || "[]");
+    const observaciones = JSON.parse(ficha.observaciones || "[]");
 
     // Configurar PDFKit
-    const doc = new PDFDocument({ margin: 50, size: 'A4' });
+    const doc = new PDFDocument({ 
+      margin: 40, 
+      size: 'A4',
+      bufferPages: true
+    });
 
-    // Configurar cabeceras para que el navegador descargue el archivo
+    // Configurar cabeceras
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=Ficha_Tecnica_${ficha.codigo || id}.pdf`);
 
-    // Enviar el PDF al cliente (response)
     doc.pipe(res);
 
-    // --- Contenido del PDF ---
-
-    // Título
-    doc.fontSize(20).font('Helvetica-Bold').text('FICHA TÉCNICA DE EQUIPO', { align: 'center' });
-    doc.moveDown(2);
-
-    // Datos Principales
-    doc.fontSize(14).font('Helvetica-Bold').text('1. Información General');
-    doc.fontSize(12).font('Helvetica');
-    doc.text(`Nombre Equipo: ${ficha.nombre_equipo || 'N/A'}`);
-    doc.text(`Marca: ${ficha.marca || 'N/A'}`);
-    doc.text(`Modelo: ${ficha.modelo || 'N/A'}`);
-    doc.text(`Serie: ${ficha.serie || 'N/A'}`);
-    doc.text(`Código: ${ficha.codigo || 'N/A'}`);
-    doc.text(`Ubicación: ${ficha.ubicacion || 'N/A'}`);
-    doc.text(`Servicio: ${ficha.servicio || 'N/A'}`);
-    doc.moveDown();
-
-    // Datos Técnicos (usando un bucle simple)
-    doc.fontSize(14).font('Helvetica-Bold').text('2. Datos Técnicos');
-    doc.fontSize(12).font('Helvetica');
-    if (datosTecnicos.length > 0) {
-      datosTecnicos.forEach(dt => {
-        doc.text(`- ${dt.funcion || 'Dato'}: ${dt.info || 'N/A'}`);
-      });
-    } else {
-      doc.text('No hay datos técnicos registrados.');
-    }
-    doc.moveDown();
-
-    // Accesorios
-    doc.fontSize(14).font('Helvetica-Bold').text('3. Accesorios');
-    doc.fontSize(12).font('Helvetica');
-    if (accesorios.length > 0) {
-      accesorios.forEach(acc => {
-        doc.text(`- ${acc.funcion || 'Accesorio'}: ${acc.info || 'N/A'}`);
-      });
-    } else {
-      doc.text('No hay accesorios registrados.');
-    }
-    doc.moveDown();
+    // ==================== ENCABEZADO ====================
+    const headerHeight = 80;
     
-    // (Puedes agregar el resto de campos: observaciones, manuales, etc.)
+    // Rectángulo azul para el encabezado
+    doc.rect(40, 40, 515, headerHeight)
+       .fillAndStroke('#1e3a8a', '#1e3a8a');
 
-    // Finalizar el PDF
+    // Título en blanco
+    doc.fontSize(22)
+       .fillColor('#ffffff')
+       .font('Helvetica-Bold')
+       .text('FICHA TÉCNICA DE MAQUINARIA', 50, 65, { align: 'left' });
+
+    // Logo/Nombre empresa (esquina derecha)
+    doc.fontSize(16)
+       .fillColor('#ffffff')
+       .font('Helvetica-Bold')
+       .text('MELAINE', 450, 65)
+       .fontSize(10)
+       .font('Helvetica')
+       .text('ENGINEERING', 450, 85);
+
+    doc.fillColor('#000000'); // Resetear color
+
+    let yPosition = headerHeight + 60;
+
+    // ==================== INFORMACIÓN PRINCIPAL ====================
+    // Tabla de información básica
+    const drawInfoTable = (y) => {
+      const cellHeight = 25;
+      const col1Width = 130;
+      const col2Width = 180;
+      const col3Width = 130;
+      const col4Width = 75;
+
+      // Fila 1: REALIZADO POR y FECHA
+      doc.rect(40, y, col1Width, cellHeight).stroke();
+      doc.rect(40 + col1Width, y, col2Width, cellHeight).stroke();
+      doc.rect(40 + col1Width + col2Width, y, col3Width, cellHeight).stroke();
+      doc.rect(40 + col1Width + col2Width + col3Width, y, col4Width, cellHeight).stroke();
+
+      doc.fontSize(9).font('Helvetica-Bold')
+         .text('REALIZADO POR:', 45, y + 8);
+      doc.fontSize(10).font('Helvetica')
+         .text(ficha.elaborado_por || 'N/A', 45 + col1Width, y + 8);
+      
+      doc.fontSize(9).font('Helvetica-Bold')
+         .text('Fecha:', 45 + col1Width + col2Width, y + 8);
+      doc.fontSize(10).font('Helvetica')
+         .text(ficha.fecha_compra || new Date().toLocaleDateString('es-ES'), 45 + col1Width + col2Width + col3Width, y + 8);
+
+      y += cellHeight;
+
+      // Fila 2: MÁQUINA-EQUIPO y UBICACIÓN
+      doc.rect(40, y, col1Width, cellHeight).stroke();
+      doc.rect(40 + col1Width, y, col2Width, cellHeight).stroke();
+      doc.rect(40 + col1Width + col2Width, y, col3Width, cellHeight).stroke();
+      doc.rect(40 + col1Width + col2Width + col3Width, y, col4Width, cellHeight).stroke();
+
+      doc.fontSize(9).font('Helvetica-Bold')
+         .text('MÁQUINA-EQUIPO', 45, y + 8);
+      doc.fontSize(10).font('Helvetica')
+         .text(ficha.nombre_equipo || 'N/A', 45 + col1Width, y + 8);
+      
+      doc.fontSize(9).font('Helvetica-Bold')
+         .text('UBICACIÓN', 45 + col1Width + col2Width, y + 8);
+      doc.fontSize(10).font('Helvetica')
+         .text(ficha.ubicacion || 'N/A', 45 + col1Width + col2Width + col3Width, y + 8);
+
+      y += cellHeight;
+
+      // Fila 3: FABRICANTE y SECCIÓN
+      doc.rect(40, y, col1Width, cellHeight).stroke();
+      doc.rect(40 + col1Width, y, col2Width, cellHeight).stroke();
+      doc.rect(40 + col1Width + col2Width, y, col3Width, cellHeight).stroke();
+      doc.rect(40 + col1Width + col2Width + col3Width, y, col4Width, cellHeight).stroke();
+
+      doc.fontSize(9).font('Helvetica-Bold')
+         .text('FABRICANTE', 45, y + 8);
+      doc.fontSize(10).font('Helvetica')
+         .text(ficha.marca || 'N/A', 45 + col1Width, y + 8);
+      
+      doc.fontSize(9).font('Helvetica-Bold')
+         .text('SECCIÓN', 45 + col1Width + col2Width, y + 8);
+      doc.fontSize(10).font('Helvetica')
+         .text(ficha.servicio || 'N/A', 45 + col1Width + col2Width + col3Width, y + 8);
+
+      y += cellHeight;
+
+      // Fila 4: MODELO y CÓDIGO INVENTARIO
+      doc.rect(40, y, col1Width, cellHeight).stroke();
+      doc.rect(40 + col1Width, y, col2Width, cellHeight).stroke();
+      doc.rect(40 + col1Width + col2Width, y, col3Width, cellHeight).stroke();
+      doc.rect(40 + col1Width + col2Width + col3Width, y, col4Width, cellHeight).stroke();
+
+      doc.fontSize(9).font('Helvetica-Bold')
+         .text('MODELO', 45, y + 8);
+      doc.fontSize(10).font('Helvetica')
+         .text(ficha.modelo || 'N/A', 45 + col1Width, y + 8);
+      
+      doc.fontSize(9).font('Helvetica-Bold')
+         .text('CÓDIGO INVENTARIO', 45 + col1Width + col2Width, y + 8);
+      doc.fontSize(10).font('Helvetica')
+         .text(ficha.codigo || 'N/A', 45 + col1Width + col2Width + col3Width, y + 8);
+
+      return y + cellHeight;
+    };
+
+    yPosition = drawInfoTable(yPosition);
+    yPosition += 20;
+
+    // ==================== CARACTERÍSTICAS GENERALES ====================
+    doc.fontSize(11).font('Helvetica-Bold')
+       .fillColor('#1e3a8a')
+       .text('CARACTERÍSTICAS GENERALES', 40, yPosition);
+    
+    yPosition += 25;
+
+    // Tabla de dimensiones
+    const dimHeight = 30;
+    const dimCellWidth = 515 / 6;
+
+    // Encabezados
+    doc.rect(40, yPosition, dimCellWidth, dimHeight).fillAndStroke('#e5e7eb', '#000000');
+    doc.rect(40 + dimCellWidth, yPosition, dimCellWidth, dimHeight).fillAndStroke('#ffffff', '#000000');
+    doc.rect(40 + dimCellWidth * 2, yPosition, dimCellWidth, dimHeight).fillAndStroke('#e5e7eb', '#000000');
+    doc.rect(40 + dimCellWidth * 3, yPosition, dimCellWidth, dimHeight).fillAndStroke('#ffffff', '#000000');
+    doc.rect(40 + dimCellWidth * 4, yPosition, dimCellWidth, dimHeight).fillAndStroke('#e5e7eb', '#000000');
+    doc.rect(40 + dimCellWidth * 5, yPosition, dimCellWidth, dimHeight).fillAndStroke('#ffffff', '#000000');
+
+    doc.fontSize(9).font('Helvetica-Bold').fillColor('#000000')
+       .text('PESO', 45, yPosition + 10)
+       .text('XXX', 45 + dimCellWidth + 20, yPosition + 10)
+       .text('ALTURA', 45 + dimCellWidth * 2 + 10, yPosition + 10)
+       .text('XXX mm', 45 + dimCellWidth * 3 + 15, yPosition + 10)
+       .text('ANCHO', 45 + dimCellWidth * 4 + 10, yPosition + 10)
+       .text('XXX mm', 45 + dimCellWidth * 5 + 15, yPosition + 10);
+
+    yPosition += dimHeight + 20;
+
+    // ==================== SECCIÓN CON IMAGEN Y DATOS TÉCNICOS ====================
+    const sectionY = yPosition;
+    const imageWidth = 200;
+    const textColumnX = 60 + imageWidth;
+
+    // Título de sección
+    doc.fontSize(11).font('Helvetica-Bold')
+       .fillColor('#1e3a8a')
+       .text('CARACTERÍSTICAS TÉCNICAS', 40, yPosition);
+
+    yPosition += 25;
+
+    // Dibujar borde de la sección
+    const sectionHeight = 250;
+    doc.rect(40, yPosition, 515, sectionHeight).stroke();
+
+    // Insertar imagen si existe
+    if (ficha.imagen_base64) {
+      try {
+        const imageBuffer = Buffer.from(ficha.imagen_base64.replace(/^data:image\/\w+;base64,/, ""), 'base64');
+        doc.image(imageBuffer, 300, yPosition + 20, { 
+          width: 180,
+          height: 200,
+          align: 'center'
+        });
+      } catch (err) {
+        console.error("Error insertando imagen:", err);
+      }
+    }
+
+    // Datos técnicos (columna izquierda)
+    let textY = yPosition + 20;
+    doc.fontSize(10).font('Helvetica-Bold').fillColor('#000000')
+       .text('Especificaciones:', 50, textY);
+    
+    textY += 20;
+    doc.fontSize(9).font('Helvetica');
+
+    if (datosTecnicos.length > 0) {
+      datosTecnicos.slice(0, 6).forEach(dt => {
+        doc.text(`• ${dt.funcion || 'Dato'}: ${dt.info || 'N/A'}`, 50, textY, {
+          width: 220
+        });
+        textY += 20;
+      });
+    } else {
+      doc.text('No hay datos técnicos registrados.', 50, textY);
+    }
+
+    yPosition += sectionHeight + 20;
+
+    // ==================== FUNCIÓN ====================
+    doc.fontSize(11).font('Helvetica-Bold')
+       .fillColor('#1e3a8a')
+       .text('FUNCIÓN', 40, yPosition);
+    
+    yPosition += 20;
+
+    doc.fontSize(9).font('Helvetica').fillColor('#000000');
+    const funcionTexto = observaciones.length > 0 
+      ? observaciones.map(obs => `• ${obs.funcion || ''}: ${obs.info || ''}`).join('\n')
+      : 'Equipo especializado para el desarrollo de operaciones técnicas.';
+    
+    doc.text(funcionTexto, 50, yPosition, { width: 500 });
+
+    yPosition += 60;
+
+    // ==================== ACCESORIOS ====================
+    if (accesorios.length > 0) {
+      doc.fontSize(11).font('Helvetica-Bold')
+         .fillColor('#1e3a8a')
+         .text('ACCESORIOS', 40, yPosition);
+      
+      yPosition += 20;
+      doc.fontSize(9).font('Helvetica').fillColor('#000000');
+      
+      accesorios.forEach(acc => {
+        doc.text(`• ${acc.funcion || 'Accesorio'}: ${acc.info || 'N/A'}`, 50, yPosition);
+        yPosition += 15;
+      });
+
+      yPosition += 10;
+    }
+
+    // ==================== FECHA DE MANTENIMIENTO ====================
+    doc.fontSize(10).font('Helvetica-Bold')
+       .fillColor('#000000')
+       .text(`FECHA DE MANTENIMIENTO: ${ficha.frecuencia || 'N/A'}`, 40, yPosition);
+
+    // Finalizar PDF
     doc.end();
     console.log(`✅ PDF generado para Ficha ID: ${id}`);
     
