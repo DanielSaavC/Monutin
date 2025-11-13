@@ -391,7 +391,6 @@ app.post("/api/delegar", (req, res) => {
   try {
     const { notificacion_id, tecnico_id, biomedico_id } = req.body;
 
-    // Validar datos básicos
     if (!notificacion_id || !tecnico_id || !biomedico_id) {
       return res.status(400).json({ message: "Faltan datos para delegar" });
     }
@@ -401,11 +400,16 @@ app.post("/api/delegar", (req, res) => {
       "INSERT INTO delegaciones (notificacion_id, tecnico_id, biomedico_id) VALUES (?, ?, ?)"
     ).run(notificacion_id, tecnico_id, biomedico_id);
 
-    // Crear notificación para el técnico
-    const mensaje = "Se te ha delegado un equipo para revisión.";
+    // ✅ Obtener el mensaje original para incluirlo
+    const notifOriginal = db.prepare(
+      "SELECT mensaje FROM notificaciones WHERE id = ?"
+    ).get(notificacion_id);
+
+    // ✅ Crear notificación CON usuario_id
+    const mensaje = `Se te ha delegado un equipo para revisión: ${notifOriginal?.mensaje || ''}`;
     db.prepare(
-      "INSERT INTO notificaciones (mensaje, rol_destino, estado) VALUES (?, ?, 'no_leido')"
-    ).run(mensaje, "tecnico");
+      "INSERT INTO notificaciones (mensaje, rol_destino, estado, usuario_id) VALUES (?, ?, 'no_leido', ?)"
+    ).run(mensaje, "tecnico", tecnico_id); // ⬅️ Agregar tecnico_id aquí
 
     res.json({ message: "Delegación registrada y notificación enviada" });
   } catch (error) {
