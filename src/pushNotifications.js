@@ -208,8 +208,8 @@ function iniciarSistemaDePolling(usuario_id, registration) {
   // Primera verificación inmediata
   verificarNotificaciones();
 
-  // Polling cada 15 segundos
-  pollingInterval = setInterval(verificarNotificaciones, 15000);
+  // Polling cada 10 segundos para alertas de sensores
+  pollingInterval = setInterval(verificarNotificaciones, 10000);
 }
 
 // ============================================
