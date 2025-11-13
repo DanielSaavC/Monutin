@@ -165,7 +165,8 @@ const crearTablas = [
   pdf_path TEXT, 
   FOREIGN KEY (equipo_id) REFERENCES fichas_tecnicas(id),
   FOREIGN KEY (tecnico_id) REFERENCES usuarios(id)
-)`
+)`,
+
 
 
 
@@ -395,28 +396,35 @@ app.post("/api/delegar", (req, res) => {
       return res.status(400).json({ message: "Faltan datos para delegar" });
     }
 
+    // Validar que la notificación exista
+    const notifOriginal = db.prepare(
+      "SELECT mensaje FROM notificaciones WHERE id = ?"
+    ).get(notificacion_id);
+
+    if (!notifOriginal) {
+      return res.status(400).json({ message: "Notificación no encontrada" });
+    }
+
     // Registrar delegación
     db.prepare(
       "INSERT INTO delegaciones (notificacion_id, tecnico_id, biomedico_id) VALUES (?, ?, ?)"
     ).run(notificacion_id, tecnico_id, biomedico_id);
 
-    // ✅ Obtener el mensaje original para incluirlo
-    const notifOriginal = db.prepare(
-      "SELECT mensaje FROM notificaciones WHERE id = ?"
-    ).get(notificacion_id);
+    // Crear mensaje para el técnico
+    const mensaje = `Se te ha delegado un equipo para revisión: ${notifOriginal.mensaje}`;
 
-    // ✅ Crear notificación CON usuario_id
-    const mensaje = `Se te ha delegado un equipo para revisión: ${notifOriginal?.mensaje || ''}`;
     db.prepare(
       "INSERT INTO notificaciones (mensaje, rol_destino, estado, usuario_id) VALUES (?, ?, 'no_leido', ?)"
-    ).run(mensaje, "tecnico", tecnico_id); // ⬅️ Agregar tecnico_id aquí
+    ).run(mensaje, "tecnico", tecnico_id);
 
     res.json({ message: "Delegación registrada y notificación enviada" });
+
   } catch (error) {
     console.error("❌ Error al delegar:", error.message);
     res.status(500).json({ message: "Error al delegar equipo" });
   }
 });
+
 // ================== ENDPOINT: Crear notificación ==================
 app.post("/api/notificaciones", (req, res) => {
   try {
