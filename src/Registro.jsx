@@ -13,7 +13,7 @@ export default function Registro() {
     password: "",
     confirmPassword: "",
     email: "",
-    tipo: "natural",
+    tipo: "enfermera",
     codigo: "",
   });
 
