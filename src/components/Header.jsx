@@ -90,9 +90,6 @@ useEffect(() => {
     // === Redirección al inicio según tipo ===
     const irInicio = () => {
       switch (usuario?.tipo) {
-        case "medico":
-          navigate("/medico");
-          break;
         case "enfermera":
           navigate("/enfermera");
           break;
@@ -101,9 +98,6 @@ useEffect(() => {
           break;
         case "biomedico":
           navigate("/biomedico");
-          break;
-        case "natural":
-          navigate("/natural");
           break;
         default:
           navigate("/");
@@ -119,9 +113,6 @@ useEffect(() => {
     // === Prefijo según tipo ===
     let prefijo = "";
     switch (usuario?.tipo) {
-      case "medico":
-        prefijo = "Dr.";
-        break;
       case "enfermera":
         prefijo = "Enf.";
         break;
@@ -131,8 +122,6 @@ useEffect(() => {
       case "biomedico":
         prefijo = "Ing.";
         break;
-      default:
-        prefijo = "";
     }
 
     // Si no hay usuario, solo muestra el logo
