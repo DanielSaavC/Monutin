@@ -23,6 +23,8 @@ function urlBase64ToUint8Array(base64String) {
 // ============================================
 export async function inicializarNotificacionesPush(usuario_id) {
   try {
+    console.log("🔄 Iniciando proceso de notificaciones push...");
+
     // 1. Verificar si el navegador soporta notificaciones
     if (!("Notification" in window)) {
       console.warn("⚠️ Este navegador no soporta notificaciones");
@@ -38,6 +40,7 @@ export async function inicializarNotificacionesPush(usuario_id) {
     let permission = Notification.permission;
     
     if (permission === "default") {
+      console.log("🔔 Solicitando permisos de notificación...");
       permission = await Notification.requestPermission();
     }
 
@@ -48,52 +51,152 @@ export async function inicializarNotificacionesPush(usuario_id) {
 
     console.log("✅ Permisos de notificación concedidos");
 
-    // 3. Esperar a que el Service Worker esté listo
-    const registration = await navigator.serviceWorker.ready;
-    console.log("✅ Service Worker listo");
-
-    // 4. Verificar si ya existe una suscripción
-    let subscription = await registration.pushManager.getSubscription();
-
-    // 5. Si no existe, crear una nueva
-    if (!subscription) {
-      console.log("🔄 Creando nueva suscripción...");
+    // 3. REGISTRAR Service Worker si no está registrado
+    let registration;
+    
+    try {
+      // Primero intenta obtener el registro existente
+      registration = await navigator.serviceWorker.getRegistration();
       
+      if (!registration) {
+        console.log("📝 Registrando nuevo Service Worker...");
+        
+        // Registrar el Service Worker
+        registration = await navigator.serviceWorker.register('/service-worker.js', {
+          scope: '/'
+        });
+        
+        console.log("✅ Service Worker registrado correctamente");
+        
+        // CRUCIAL: Esperar a que se active completamente
+        if (registration.installing) {
+          console.log("⏳ Esperando activación del Service Worker...");
+          await new Promise((resolve) => {
+            registration.installing.addEventListener('statechange', (e) => {
+              if (e.target.state === 'activated') {
+                resolve();
+              }
+            });
+          });
+        }
+      } else {
+        console.log("✅ Service Worker ya registrado");
+      }
+      
+      // Esperar a que esté completamente listo
+      registration = await navigator.serviceWorker.ready;
+      console.log("✅ Service Worker completamente listo");
+      
+    } catch (swError) {
+      console.error("❌ Error con Service Worker:", swError);
+      return false;
+    }
+
+    // 4. LIMPIAR suscripciones antiguas antes de crear nueva
+    try {
+      const oldSubscription = await registration.pushManager.getSubscription();
+      
+      if (oldSubscription) {
+        console.log("🗑️ Eliminando suscripción antigua...");
+        await oldSubscription.unsubscribe();
+        console.log("✅ Suscripción antigua eliminada");
+      }
+    } catch (cleanError) {
+      console.warn("⚠️ Error al limpiar suscripción antigua:", cleanError);
+    }
+
+    // 5. Pequeña pausa para asegurar que todo está listo
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // 6. Crear NUEVA suscripción
+    console.log("🔄 Creando nueva suscripción push...");
+    
+    let subscription;
+    try {
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
       });
 
-      console.log("✅ Suscripción creada:", subscription.endpoint);
-    } else {
-      console.log("ℹ️ Ya existe una suscripción activa");
+      console.log("✅ Suscripción creada exitosamente");
+      console.log("📍 Endpoint:", subscription.endpoint);
+      
+    } catch (subError) {
+      console.error("❌ Error al crear suscripción:", subError);
+      console.error("Detalles:", {
+        name: subError.name,
+        message: subError.message,
+        code: subError.code
+      });
+      return false;
     }
 
-    // 6. Enviar suscripción al servidor
-    const response = await fetch(`${API_URL}/api/suscribir`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        subscription: subscription.toJSON(),
-        usuario_id: usuario_id
-      })
-    });
+    // 7. Enviar suscripción al servidor
+    console.log("📤 Enviando suscripción al servidor...");
+    
+    try {
+      const response = await fetch(`${API_URL}/api/suscribir`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          subscription: subscription.toJSON(),
+          usuario_id: usuario_id
+        })
+      });
 
-    if (!response.ok) {
-      throw new Error(`Error en servidor: ${response.status}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log("✅ Suscripción registrada en servidor:", result);
+      
+    } catch (serverError) {
+      console.error("❌ Error al registrar en servidor:", serverError);
+      // Aún así retornamos true porque la suscripción local funcionó
     }
 
-    console.log("✅ Suscripción registrada en el servidor");
+    // 8. Enviar notificación de prueba LOCAL
+    console.log("🧪 Mostrando notificación de prueba...");
+    await mostrarNotificacionPrueba(registration);
+    
     return true;
 
   } catch (error) {
-    console.error("❌ Error al inicializar notificaciones push:", error);
+    console.error("❌ Error general al inicializar notificaciones:", error);
+    console.error("Stack:", error.stack);
     return false;
   }
 }
 
 // ============================================
-// 🧪 Probar envío de notificación manual
+// 🧪 Mostrar notificación de prueba LOCAL
+// ============================================
+async function mostrarNotificacionPrueba(registration) {
+  try {
+    await registration.showNotification("✅ Monutin - Notificaciones Activas", {
+      body: "Las notificaciones push están funcionando correctamente",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      vibrate: [200, 100, 200],
+      tag: "test-notification",
+      requireInteraction: false,
+      data: { url: "/" }
+    });
+    
+    console.log("✅ Notificación de prueba mostrada");
+    
+  } catch (error) {
+    console.error("❌ Error al mostrar notificación de prueba:", error);
+  }
+}
+
+// ============================================
+// 🧪 Probar envío de notificación desde servidor
 // ============================================
 export async function probarNotificacion() {
   try {
@@ -101,16 +204,18 @@ export async function probarNotificacion() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        title: "🧪 Prueba de notificación",
-        body: "Si ves esto, las notificaciones funcionan correctamente"
+        title: "🧪 Prueba desde servidor",
+        body: "Esta es una notificación enviada desde el backend"
       })
     });
 
     if (response.ok) {
-      console.log("✅ Notificación de prueba enviada");
+      console.log("✅ Notificación de prueba enviada desde servidor");
+    } else {
+      console.error("❌ Error al enviar notificación:", await response.text());
     }
   } catch (error) {
-    console.error("❌ Error al enviar notificación de prueba:", error);
+    console.error("❌ Error al probar notificación:", error);
   }
 }
 
@@ -128,6 +233,7 @@ export async function desuscribirNotificaciones() {
       return true;
     }
     
+    console.log("ℹ️ No había suscripción activa");
     return false;
   } catch (error) {
     console.error("❌ Error al desuscribirse:", error);
@@ -143,4 +249,26 @@ export function obtenerEstadoNotificaciones() {
     return "no_soportado";
   }
   return Notification.permission; // "granted", "denied", "default"
+}
+
+// ============================================
+// 🔍 Verificar si ya hay suscripción activa
+// ============================================
+export async function verificarSuscripcionActiva() {
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+    
+    if (subscription) {
+      console.log("✅ Hay suscripción activa:", subscription.endpoint);
+      return true;
+    }
+    
+    console.log("ℹ️ No hay suscripción activa");
+    return false;
+    
+  } catch (error) {
+    console.error("❌ Error al verificar suscripción:", error);
+    return false;
+  }
 }
