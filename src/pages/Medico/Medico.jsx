@@ -5,7 +5,7 @@ export default function Medico() {
     <div>
       <Header /> 
       <h2>👨‍⚕️ Panel del Médico</h2>
-      <p>Aquí irán las opciones exclusivas para médicos.</p>
+      <p>médicos.</p>
     </div>
   );
 }

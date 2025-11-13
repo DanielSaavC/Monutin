@@ -32,12 +32,6 @@ export default function Login() {
         } else {
           // 🔹 Comportamiento normal según tipo de usuario
           switch (data.user.tipo) {
-            case "natural":
-              navigate("/natural");
-              break;
-            case "medico":
-              navigate("/medico");
-              break;
             case "enfermera":
               navigate("/enfermera");
               break;

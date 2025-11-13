@@ -5,7 +5,7 @@ export default function Tecnico() {
     <div>
       <Header /> 
       <h2>👨‍⚕️ Panel del Tecnico</h2>
-      <p>Aquí irán las opciones exclusivas para médicos.</p>
+      <p>tecnico</p>
     </div>
   );
 }
