@@ -1289,11 +1289,12 @@ app.put("/api/equipos/:id", (req, res) => {
 app.get("/", (_, res) => res.send("🚀 Backend Monutin activo en Railway (better-sqlite3)"));
 
 // ================== NOTIFICACIONES PUSH (PWA) ==================
+// ================== NOTIFICACIONES PUSH (PWA) ==================
 import webpush from "web-push";
 
-// 🗝️ Claves VAPID generadas (NO cambian nunca)
-const VAPID_PUBLIC_KEY = "BPa9Ypp_D-5nqP2NvdMWAlJvz5z9IpZHHFUZdtVRDgf4Grx1Txr4h8Bzi1ljCimbK2zFgnqfkZ6VaPLHf7dwA3M";
-const VAPID_PRIVATE_KEY = "srq_Qj913_ClF6bNbK5mDksxim_Nhc0upRHjMVNOFYw";
+// 🗝️ NUEVAS CLAVES VAPID (Generadas: 2024)
+const VAPID_PUBLIC_KEY = "BMN46G7i-9iyf2NeePT20JlN8Of4NMR3_r4SW4eMQUXDihuiq2hVNGah-hmAxQDVnBeTf4M7jSuXwl7SlDVH3Dc";
+const VAPID_PRIVATE_KEY = "Fn6L8JOUVRGDuvUmOVCn1SKvxjeT1pStLvyeaiFbiiE";
 
 // Configurar servicio web-push
 webpush.setVapidDetails(
@@ -1302,16 +1303,13 @@ webpush.setVapidDetails(
   VAPID_PRIVATE_KEY
 );
 
-// 📡 Base en memoria para suscripciones (puedes guardar en SQLite más adelante)
-let suscripciones = [];
+console.log("✅ Web-push configurado con nuevas claves VAPID");
 
-// Endpoint para registrar suscripciones
+// 📡 Endpoint para registrar suscripciones
 app.post("/api/suscribir", (req, res) => {
-try {
-    // --- NUEVO LOG PARA DEPURAR ---
+  try {
     console.log("--- NUEVA SOLICITUD A /api/suscribir ---");
     console.log("BODY RECIBIDO:", JSON.stringify(req.body, null, 2));
-    // ---------------------------------
 
     const { subscription, usuario_id } = req.body;
 
@@ -1325,42 +1323,103 @@ try {
     const endpoint = subscription.endpoint;
     const sub_json = JSON.stringify(subscription);
 
-    // 3. Usar "INSERT ... ON CONFLICT"
-    // Esto inserta solo si el 'endpoint' (que es UNIQUE) no existe.
-    // Es mucho más seguro y rápido que un SELECT + INSERT.
+    // 3. Usar "INSERT ... ON CONFLICT" para evitar duplicados
     const stmt = db.prepare(`
       INSERT INTO suscripciones_push (endpoint, subscription_json, usuario_id)
       VALUES (?, ?, ?)
-      ON CONFLICT(endpoint) DO NOTHING
+      ON CONFLICT(endpoint) DO UPDATE SET
+        subscription_json = excluded.subscription_json,
+        usuario_id = excluded.usuario_id
     `);
     
     const info = stmt.run(endpoint, sub_json, usuario_id);
 
     if (info.changes > 0) {
-      console.log("✅ Suscripción guardada en BD:", endpoint);
-    } else {
-      console.log("ℹ️ Suscripción ya existía:", endpoint);
+      console.log("✅ Suscripción guardada/actualizada en BD:", endpoint);
     }
 
-    res.status(201).json({ message: "Suscripción registrada" });
+    res.status(201).json({ 
+      message: "Suscripción registrada exitosamente",
+      success: true 
+    });
 
   } catch (err) {
     console.error("❌ Error al guardar suscripción:", err.message);
-    res.status(500).json({ error: "Error guardando suscripción", details: err.message });
+    res.status(500).json({ 
+      error: "Error guardando suscripción", 
+      details: err.message 
+    });
   }
 });
 
-// Endpoint manual para enviar notificación (por si la necesitas probar)
+// Endpoint manual para enviar notificación de prueba
 app.post("/api/notificar", async (req, res) => {
   const { title, body } = req.body;
-  const payload = JSON.stringify({ title, body });
-
+  
   try {
-    await Promise.all(suscripciones.map((sub) => webpush.sendNotification(sub, payload)));
-    console.log("📨 Notificaciones enviadas manualmente");
-    res.json({ message: "Notificaciones enviadas correctamente" });
+    console.log("📤 Enviando notificación manual:", { title, body });
+
+    // Obtener todas las suscripciones de biomédicos
+    const suscripciones = db.prepare(`
+      SELECT s.subscription_json, s.endpoint, u.tipo, u.nombre
+      FROM suscripciones_push s
+      JOIN usuarios u ON s.usuario_id = u.id
+      WHERE u.tipo = 'biomedico'
+    `).all();
+
+    console.log(`📬 Se encontraron ${suscripciones.length} suscripción(es)`);
+
+    if (suscripciones.length === 0) {
+      return res.status(404).json({ 
+        message: "No hay suscripciones activas" 
+      });
+    }
+
+    const payload = JSON.stringify({ 
+      title: title || "🔔 Monutin",
+      body: body || "Notificación de prueba",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      vibrate: [200, 100, 200],
+    });
+
+    // Enviar a todos
+    const resultados = await Promise.allSettled(
+      suscripciones.map(async (row) => {
+        const sub = JSON.parse(row.subscription_json);
+        
+        try {
+          await webpush.sendNotification(sub, payload);
+          console.log(`✅ Notificación enviada a ${row.nombre}`);
+          return { success: true, endpoint: row.endpoint };
+        } catch (err) {
+          // Si la suscripción expiró (410 Gone), eliminarla
+          if (err.statusCode === 410 || err.statusCode === 404) {
+            console.log(`🗑️ Eliminando suscripción inválida: ${row.endpoint}`);
+            db.prepare("DELETE FROM suscripciones_push WHERE endpoint = ?")
+              .run(row.endpoint);
+          } else {
+            console.error(`❌ Error enviando a ${row.endpoint}:`, err.message);
+          }
+          return { success: false, endpoint: row.endpoint, error: err.message };
+        }
+      })
+    );
+
+    const exitosas = resultados.filter(r => r.value?.success).length;
+    const fallidas = resultados.filter(r => !r.value?.success).length;
+
+    console.log(`📊 Resultado: ${exitosas} exitosas, ${fallidas} fallidas`);
+
+    res.json({ 
+      message: "Notificaciones enviadas",
+      exitosas,
+      fallidas,
+      total: suscripciones.length
+    });
+
   } catch (err) {
-    console.error("❌ Error al enviar notificación:", err);
+    console.error("❌ Error al enviar notificaciones:", err);
     res.status(500).json({ error: "Error enviando notificaciones" });
   }
 });
