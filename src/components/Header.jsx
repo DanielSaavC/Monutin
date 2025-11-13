@@ -9,6 +9,7 @@
     const [menuOpen, setMenuOpen] = useState(false);
     const [notificaciones, setNotificaciones] = useState([]);
     const [verNotificaciones, setVerNotificaciones] = useState(false);
+    const [notificacionSeleccionada, setNotificacionSeleccionada] = useState(null);
 
     // === 🔔 Cargar notificaciones solo si es biomédico ===
     useEffect(() => {
@@ -182,11 +183,14 @@ useEffect(() => {
                     <p className="notif-empty">Sin notificaciones</p>
                   ) : (
                     notificaciones.map((n) => (
-                      <div
-                        key={n.id}
-                        className={`notif-item ${n.estado}`}
-                        onClick={() => marcarLeida(n.id)}
-                      >
+                        <div
+                          key={n.id}
+                          className={`notif-item ${n.estado}`}
+                          onClick={() => {
+                            marcarLeida(n.id);
+                            setNotificacionSeleccionada(n); // 👈 abre el panel con la info de esa notificación
+                          }}
+                        >
                         {n.mensaje}
                         <span className="notif-fecha">
                           {new Date(n.fecha).toLocaleString("es-BO")}
@@ -233,6 +237,128 @@ useEffect(() => {
               🌙
             </button>
           </nav>
+          {/* 🧾 Panel flotante de detalle de notificación */}
+{notificacionSeleccionada && (
+  <div className="notif-panel">
+    <div className="notif-panel-content">
+      <h3>Reporte de enfermería</h3>
+      <p><strong>Mensaje:</strong> {notificacionSeleccionada.mensaje}</p>
+      <p><strong>Fecha:</strong> {new Date(notificacionSeleccionada.fecha).toLocaleString("es-BO")}</p>
+
+      {/* Selector de técnico */}
+      {!notificacionSeleccionada.delegando && (
+        <div className="notif-panel-buttons">
+          <button
+            className="delegar-btn"
+            onClick={async () => {
+              try {
+                // 🔹 Traer lista de técnicos disponibles desde backend
+                const res = await axios.get(
+                  "https://monutinbackend-production.up.railway.app/api/usuarios?rol=tecnico"
+                );
+                setNotificacionSeleccionada({
+                  ...notificacionSeleccionada,
+                  delegando: true,
+                  tecnicos: res.data,
+                });
+              } catch (err) {
+                alert("❌ Error al cargar técnicos: " + err.message);
+              }
+            }}
+          >
+            🧰 Delegar
+          </button>
+
+          <button
+            className="cerrar-btn"
+            onClick={() => setNotificacionSeleccionada(null)}
+          >
+            ❌ Cerrar
+          </button>
+        </div>
+      )}
+
+      {/* Si está seleccionando un técnico */}
+      {notificacionSeleccionada.delegando && (
+        <div className="delegar-panel">
+          <h4>Seleccionar técnico disponible</h4>
+          <select
+            className="delegar-select"
+            onChange={(e) =>
+              setNotificacionSeleccionada({
+                ...notificacionSeleccionada,
+                tecnicoSeleccionado: e.target.value,
+              })
+            }
+          >
+            <option value="">-- Selecciona un técnico --</option>
+            {notificacionSeleccionada.tecnicos.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.nombre} {t.apellidopaterno}
+              </option>
+            ))}
+          </select>
+
+          <div className="notif-panel-buttons">
+            <button
+              className="delegar-btn"
+              onClick={async () => {
+                if (!notificacionSeleccionada.tecnicoSeleccionado) {
+                  alert("⚠️ Debes seleccionar un técnico primero.");
+                  return;
+                }
+
+                try {
+                  // 🔹 Enviamos la delegación al backend
+                  await axios.post(
+                    "https://monutinbackend-production.up.railway.app/api/delegar",
+                    {
+                      notificacion_id: notificacionSeleccionada.id,
+                      tecnico_id: notificacionSeleccionada.tecnicoSeleccionado,
+                      biomedico_id: usuario.id,
+                    }
+                  );
+
+                  alert("✅ Reporte delegado al técnico correctamente.");
+
+                  // 🔹 Crear notificación para el técnico
+                  await axios.post(
+                    "https://monutinbackend-production.up.railway.app/api/notificaciones",
+                    {
+                      mensaje: `Se te ha delegado un equipo para revisión: ${notificacionSeleccionada.mensaje}`,
+                      rol: "tecnico",
+                      usuario_id: notificacionSeleccionada.tecnicoSeleccionado,
+                    }
+                  );
+
+                  setNotificacionSeleccionada(null);
+                  obtenerNotificaciones();
+                } catch (err) {
+                  alert("❌ Error al delegar: " + err.message);
+                }
+              }}
+            >
+              ✅ Confirmar delegación
+            </button>
+
+            <button
+              className="cerrar-btn"
+              onClick={() =>
+                setNotificacionSeleccionada({
+                  ...notificacionSeleccionada,
+                  delegando: false,
+                })
+              }
+            >
+              🔙 Atrás
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+)}
+
         </div>
       </header>
     );

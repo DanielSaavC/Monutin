@@ -135,3 +135,51 @@ body {
     font-size: 1.6em;
   }
 }
+.notif-panel {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  width: 340px;
+  background: #0e1a1a;
+  color: white;
+  border: 2px solid #00bfa6;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 0 15px rgba(0, 191, 166, 0.4);
+  z-index: 999;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.notif-panel-content h3 {
+  margin-top: 0;
+  color: #00bfa6;
+}
+
+.notif-panel-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+.delegar-btn {
+  background: #00bfa6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.cerrar-btn {
+  background: #ff5555;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
