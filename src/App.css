@@ -1553,3 +1553,50 @@ textarea {
   text-align: center;
   color: #888;
 }
+.lista-equipos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.equipo-card {
+  background: #0e1a1a;
+  color: white;
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid #00bfa6;
+  width: 220px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.equipo-card:hover { transform: scale(1.05); }
+
+.detalle-equipo {
+  background: #072b2b;
+  color: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 400px;
+  margin: 20px auto;
+}
+
+.modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7);
+  display: flex; justify-content: center; align-items: center;
+}
+.modal-content {
+  background: #0e1a1a;
+  color: white;
+  border: 2px solid #00bfa6;
+  border-radius: 10px;
+  padding: 20px;
+  width: 400px;
+}
+.botones-modal button {
+  margin: 10px;
+}

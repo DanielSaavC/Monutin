@@ -13,7 +13,7 @@
 
     // === 🔔 Cargar notificaciones solo si es biomédico ===
     useEffect(() => {
-      if (usuario?.tipo === "biomedico") {
+      if (usuario?.tipo === "biomedico" || usuario?.tipo === "tecnico") {
         obtenerNotificaciones();
         const intervalo = setInterval(obtenerNotificaciones, 10000); // cada 10s
         return () => clearInterval(intervalo);
@@ -72,13 +72,14 @@ useEffect(() => {
     const obtenerNotificaciones = async () => {
       try {
         const res = await axios.get(
-          "https://monutinbackend-production.up.railway.app/api/notificaciones?rol=biomedico"
+          `https://mountinbackend-production.up.railway.app/api/notificaciones?rol=${usuario.tipo}`
         );
         setNotificaciones(res.data);
       } catch (error) {
         console.error("Error al cargar notificaciones:", error);
       }
     };
+
 
     // === Función para marcar como leída ===
     const marcarLeida = async (id) => {
@@ -158,7 +159,7 @@ useEffect(() => {
         {/* Contenedor derecho */}
         <div className="header-right">
           {/* 🔔 Notificaciones (solo biomédico) */}
-          {usuario.tipo === "biomedico" && (
+          {(usuario.tipo === "biomedico" || usuario.tipo === "tecnico") && (
             <div className="notif-container">
               <span
                 className="notif-icon"
