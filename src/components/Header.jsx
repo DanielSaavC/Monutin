@@ -2,7 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Header.css";
+// Al inicio del archivo, después de los imports existentes:
+import { inicializarNotificacionesPush } from "../pushNotifications";
 
+// Dentro del componente Header, después del primer useEffect
 export default function Header() {
   const navigate = useNavigate();
   const usuario = JSON.parse(localStorage.getItem("usuario"));
@@ -14,6 +17,7 @@ export default function Header() {
   // ============================
   // 🔔 CARGA DE NOTIFICACIONES
   // ============================
+  
   useEffect(() => {
     if (!usuario) return;
 
@@ -33,7 +37,12 @@ export default function Header() {
 
     // 🔹 Enfermera → no carga nada
   }, [usuario]);
-
+useEffect(() => {
+  // Activar notificaciones push cuando carga el Header
+  if (usuario && (usuario.tipo === "biomedico" || usuario.tipo === "tecnico")) {
+    inicializarNotificacionesPush(usuario.id);
+  }
+}, [usuario]);
   // ============================
   // 📩 FUNCIONES NOTIFICACIONES
   // ============================
