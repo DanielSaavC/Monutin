@@ -162,9 +162,11 @@ const crearTablas = [
   repuestos TEXT,
   observaciones TEXT,
   tipo TEXT,
+  pdf_path TEXT, 
   FOREIGN KEY (equipo_id) REFERENCES fichas_tecnicas(id),
   FOREIGN KEY (tecnico_id) REFERENCES usuarios(id)
 )`
+
 
 
 ];
@@ -283,19 +285,91 @@ app.get("/api/delegaciones/:tecnico_id", (req, res) => {
   }
 });
 // ================== ENDPOINT: Registrar mantenimiento ==================
-app.post("/api/mantenimientos", (req, res) => {
+
+app.post("/api/mantenimientos", async (req, res) => {
   try {
     const { equipo_id, tecnico_id, descripcion, repuestos, observaciones, tipo } = req.body;
 
-    db.prepare(`
+    // 🔹 Obtener datos del técnico y del equipo
+    const tecnico = db.prepare("SELECT nombre, apellidopaterno FROM usuarios WHERE id = ?").get(tecnico_id);
+    const equipo = db.prepare("SELECT nombre_equipo, marca, modelo, codigo FROM fichas_tecnicas WHERE id = ?").get(equipo_id);
+
+    if (!tecnico || !equipo) {
+      return res.status(400).json({ message: "Datos de técnico o equipo no encontrados" });
+    }
+
+    // 🔹 Crear registro en BD
+    const stmt = db.prepare(`
       INSERT INTO mantenimientos (equipo_id, tecnico_id, descripcion, repuestos, observaciones, tipo)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run(equipo_id, tecnico_id, descripcion, repuestos, observaciones, tipo);
+    `);
+    const result = stmt.run(equipo_id, tecnico_id, descripcion, repuestos, observaciones, tipo);
 
-    res.json({ message: "✅ Mantenimiento registrado correctamente" });
+    const mantenimientoId = result.lastInsertRowid;
+
+    // 🔹 Crear carpeta de PDFs si no existe
+    const dir = "uploads/mantenimientos";
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+    // 🔹 Generar PDF
+    const pdfPath = `${dir}/mantenimiento_${mantenimientoId}.pdf`;
+    const doc = new PDFDocument();
+
+    doc.pipe(fs.createWriteStream(pdfPath));
+
+    // === ENCABEZADO ===
+    doc.image("uploads/logo_monutin.png", 50, 30, { width: 60 }).strokeColor("#00BFA6");
+    doc.fontSize(20).fillColor("#00BFA6").text("HOJA DE MANTENIMIENTO", 150, 40);
+    doc.moveDown(2);
+
+    // === DATOS DEL EQUIPO ===
+    doc.fontSize(12).fillColor("black");
+    doc.text(`📅 Fecha: ${new Date().toLocaleString("es-BO")}`);
+    doc.text(`🧾 Código: ${equipo.codigo || "No asignado"}`);
+    doc.text(`🔧 Equipo: ${equipo.nombre_equipo}`);
+    doc.text(`🏷 Marca/Modelo: ${equipo.marca} / ${equipo.modelo}`);
+    doc.text(`👨‍🔧 Técnico: ${tecnico.nombre} ${tecnico.apellidopaterno}`);
+    doc.text(`🛠 Tipo de mantenimiento: ${tipo}`);
+    doc.moveDown(1);
+
+    // === SECCIÓN DESCRIPTIVA ===
+    doc.fontSize(12).fillColor("black");
+    doc.text("Descripción del trabajo:", { underline: true });
+    doc.text(descripcion || "No especificada", { indent: 20, align: "justify" });
+
+    doc.moveDown(1);
+    doc.text("Repuestos utilizados:", { underline: true });
+    doc.text(repuestos || "Ninguno", { indent: 20, align: "justify" });
+
+    doc.moveDown(1);
+    doc.text("Observaciones:", { underline: true });
+    doc.text(observaciones || "Sin observaciones", { indent: 20, align: "justify" });
+
+    doc.end();
+
+    // 🔹 Guardar ruta del PDF
+    db.prepare("UPDATE mantenimientos SET pdf_path = ? WHERE id = ?").run(pdfPath, mantenimientoId);
+
+    res.json({ message: "✅ Mantenimiento registrado y PDF generado", pdf_path: pdfPath });
   } catch (error) {
     console.error("❌ Error al registrar mantenimiento:", error.message);
     res.status(500).json({ message: "Error al registrar mantenimiento" });
+  }
+});
+// ================== ENDPOINT: Descargar hoja de mantenimiento ==================
+app.get("/api/mantenimientos/pdf/:id", (req, res) => {
+  try {
+    const { id } = req.params;
+    const mantenimiento = db.prepare("SELECT pdf_path FROM mantenimientos WHERE id = ?").get(id);
+
+    if (!mantenimiento || !mantenimiento.pdf_path || !fs.existsSync(mantenimiento.pdf_path)) {
+      return res.status(404).json({ message: "PDF no encontrado" });
+    }
+
+    res.download(mantenimiento.pdf_path);
+  } catch (error) {
+    console.error("❌ Error al descargar PDF:", error.message);
+    res.status(500).json({ message: "Error al descargar PDF" });
   }
 });
 
