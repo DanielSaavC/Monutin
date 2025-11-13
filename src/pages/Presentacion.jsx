@@ -21,7 +21,7 @@ export default function Presentacion() {
         <p>
           La plataforma integral para la gestión y seguimiento inteligente de
           equipos médicos hospitalarios. Supervisa, analiza y organiza el
-          mantenimiento con eficiencia y precisión.
+          mantenimiento.
         </p>
         <button
           className="btn-primary"
