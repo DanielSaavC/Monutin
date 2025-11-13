@@ -253,9 +253,8 @@ useEffect(() => {
             onClick={async () => {
               try {
                 // 🔹 Traer lista de técnicos disponibles desde backend
-                const res = await axios.get(
-                  "https://monutinbackend-production.up.railway.app/api/usuarios?rol=tecnico"
-                );
+                const res = await axios.get("https://monutinbackend-production.up.railway.app/api/tecnicos");
+
                 setNotificacionSeleccionada({
                   ...notificacionSeleccionada,
                   delegando: true,
@@ -310,14 +309,12 @@ useEffect(() => {
 
                 try {
                   // 🔹 Enviamos la delegación al backend
-                  await axios.post(
-                    "https://monutinbackend-production.up.railway.app/api/delegar",
-                    {
+                    await axios.post("https://monutinbackend-production.up.railway.app/api/delegar", {
                       notificacion_id: notificacionSeleccionada.id,
                       tecnico_id: notificacionSeleccionada.tecnicoSeleccionado,
                       biomedico_id: usuario.id,
-                    }
-                  );
+                    });
+
 
                   alert("✅ Reporte delegado al técnico correctamente.");
 
