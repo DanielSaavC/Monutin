@@ -1,185 +1,305 @@
-/* ===== HEADER MÉDICO RESPONSIVE ===== */
-.header-container {
-  width: 100%;
-  background: #ffffff;
+/* ===== NOTIFICACIONES ===== */
+
+/* Contenedor de la campana */
+.notif-container {
+  position: relative;
+  display: inline-block;
+  margin-right: 10px;
+}
+
+/* Ícono de campana */
+.notif-icon {
+  font-size: 1.8rem;
+  cursor: pointer;
+  transition: transform 0.2s;
   color: #00796B;
+}
+
+.notif-icon:hover {
+  transform: scale(1.1);
+  color: #00BFA6;
+}
+
+/* Badge de contador */
+.notif-count {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #ff5555;
+  color: white;
+  border-radius: 50%;
+  padding: 3px 7px;
+  font-size: 11px;
+  font-weight: bold;
+  min-width: 18px;
+  text-align: center;
+}
+
+/* ===== DROPDOWN DE NOTIFICACIONES ===== */
+.notif-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  background: white;
+  border: 2px solid #00BFA6;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 191, 166, 0.2);
+  min-width: 320px;
+  max-width: 380px;
+  max-height: 450px;
+  overflow-y: auto;
+  z-index: 1500;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mensaje sin notificaciones */
+.notif-empty {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+  font-style: italic;
+}
+
+/* Item individual */
+.notif-item {
+  padding: 15px;
+  border-bottom: 1px solid #e0f2f1;
+  cursor: pointer;
+  transition: background 0.2s;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 16px;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
-  border-bottom: 3px solid #00BFA6;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.notif-item:hover {
+  background: #e0f2f1;
+}
+
+.notif-item:last-child {
+  border-bottom: none;
+}
+
+/* Estado no leído */
+.notif-item.no_leido {
+  background: #f0fffe;
+  font-weight: 600;
+  border-left: 4px solid #00BFA6;
+}
+
+/* Fecha de la notificación */
+.notif-fecha {
+  font-size: 0.75rem;
+  color: #666;
+  margin-top: 5px;
+}
+
+/* ===== PANEL DE DETALLE (ya lo tienes, pero lo mejoro) ===== */
+.notif-panel {
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 1000;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  box-sizing: border-box;
-}
-
-/* Flecha retroceso */
-.header-back {
-  font-size: 2rem;
-  font-weight: bold;
-  cursor: pointer;
-  color: #00796B;
-  transition: 0.3s;
-}
-
-.header-back:hover {
-  color: #00BFA6;
-  transform: scale(1.1);
-}
-
-/* ===== LOGO ===== */
-.header-logo {
-  height: 48px;
-  cursor: pointer;
-  flex: 1;
-  object-fit: contain;
-  transition: transform 0.25s ease;
-}
-
-.header-logo:hover {
-  transform: scale(1.08);
-}
-
-/* Usuario + botones derechos */
-.header-right {
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
+  justify-content: center;
   align-items: center;
-  gap: 10px;
+  z-index: 2000;
+  padding: 20px;
+  animation: fadeIn 0.3s ease-in-out;
 }
 
-/* Menú hamburguesa */
-.menu-toggle {
-  font-size: 1.9em;
-  color: #00796B;
-  cursor: pointer;
-  background: none;
-  border: none;
-  display: none;
-}
-
-/* Menú */
-.menu {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-}
-
-.menu-btn {
-  background: none;
-  border: none;
-  color: #00796B;
-  font-weight: 600;
-  font-size: 1em;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.menu-btn:hover {
-  color: #00BFA6;
-}
-
-/* Ajuste del contenido general */
-body {
-  margin: 0;
-  padding-top: 70px; /* espacio para el header fijo */
-  background-color: #f5f9fa;
-}
-
-/* =============================== */
-/* 📱 RESPONSIVE ================= */
-/* =============================== */
-
-@media (max-width: 768px) {
-  .menu {
-    display: none;
-    flex-direction: column;
-    position: absolute;
-    top: 65px;
-    right: 0;
-    width: 100%;
-    background: #ffffff;
-    border-top: 2px solid #00BFA6;
-    padding: 10px 0;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-  }
-
-  .menu.active {
-    display: flex;
-  }
-
-  .menu-btn {
-    padding: 12px 0;
-    border-bottom: 1px solid #e0f2f1;
-    width: 100%;
-    text-align: center;
-  }
-
-  .menu-btn:last-child {
-    border-bottom: none;
-  }
-
-  .menu-toggle {
-    display: block;
-  }
-
-  /* Ajustes visuales en pantallas pequeñas */
-  .header-logo {
-    height: 40px;
-  }
-
-  .header-back {
-    font-size: 1.6em;
-  }
-}
-.notif-panel {
-  position: fixed;
-  top: 80px;
-  right: 20px;
-  width: 340px;
+.notif-panel-content {
   background: #0e1a1a;
   color: white;
   border: 2px solid #00bfa6;
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0 0 15px rgba(0, 191, 166, 0.4);
-  z-index: 999;
-  animation: fadeIn 0.3s ease-in-out;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 191, 166, 0.4);
 }
 
 .notif-panel-content h3 {
   margin-top: 0;
   color: #00bfa6;
+  font-size: 1.4rem;
+  margin-bottom: 15px;
+}
+
+.notif-panel-content p {
+  margin: 10px 0;
+  line-height: 1.6;
 }
 
 .notif-panel-buttons {
   display: flex;
-  justify-content: space-between;
-  margin-top: 15px;
+  gap: 10px;
+  margin-top: 20px;
+  justify-content: flex-end;
+}
+
+.delegar-btn,
+.cerrar-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .delegar-btn {
   background: #00bfa6;
   color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 12px;
-  cursor: pointer;
+}
+
+.delegar-btn:hover {
+  background: #009688;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 191, 166, 0.3);
 }
 
 .cerrar-btn {
   background: #ff5555;
   color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 12px;
+}
+
+.cerrar-btn:hover {
+  background: #ff3333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 85, 85, 0.3);
+}
+
+/* Panel de delegación */
+.delegar-panel {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #00bfa6;
+}
+
+.delegar-panel h4 {
+  color: #00bfa6;
+  margin-bottom: 15px;
+}
+
+.delegar-select {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid #00bfa6;
+  border-radius: 8px;
+  background: #1a2828;
+  color: white;
+  font-size: 1rem;
+  margin-bottom: 15px;
   cursor: pointer;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+.delegar-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 191, 166, 0.3);
+}
+
+.delegar-select option {
+  background: #1a2828;
+  color: white;
+}
+
+/* Nombre de usuario en el header */
+.header-user {
+  font-weight: 600;
+  color: #00796B;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.header-user:hover {
+  background: #e0f2f1;
+  color: #00BFA6;
+}
+
+/* =============================== */
+/* 📱 RESPONSIVE MÓVIL =========== */
+/* =============================== */
+
+@media (max-width: 768px) {
+  /* Dropdown fullscreen en móvil */
+  .notif-dropdown {
+    position: fixed;
+    top: 70px;
+    left: 0;
+    right: 0;
+    min-width: 100%;
+    max-width: 100%;
+    max-height: calc(100vh - 70px);
+    border-radius: 0;
+    border: none;
+    border-top: 2px solid #00BFA6;
+  }
+
+  /* Panel de detalle más grande en móvil */
+  .notif-panel {
+    padding: 10px;
+    align-items: flex-start;
+  }
+
+  .notif-panel-content {
+    margin-top: 60px;
+    max-width: 100%;
+    max-height: calc(100vh - 80px);
+  }
+
+  /* Botones responsive */
+  .notif-panel-buttons {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .delegar-btn,
+  .cerrar-btn {
+    width: 100%;
+  }
+
+  /* Usuario en móvil más compacto */
+  .header-user {
+    font-size: 0.9rem;
+    padding: 6px 8px;
+  }
+
+  .notif-icon {
+    font-size: 1.5rem;
+  }
+}
+
+/* Para pantallas muy pequeñas */
+@media (max-width: 480px) {
+  .notif-panel-content {
+    padding: 16px;
+    margin-top: 80px;
+  }
+
+  .notif-panel-content h3 {
+    font-size: 1.2rem;
+  }
+
+  .header-right {
+    gap: 5px;
+  }
 }
