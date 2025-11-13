@@ -141,8 +141,6 @@ export default function Registro() {
           onChange={handleChange}
           required
         >
-          <option value="natural">Persona natural</option>
-          <option value="medico">Médico</option>
           <option value="enfermera">Enfermera</option>
           <option value="tecnico">Técnico</option>
           <option value="biomedico">Biomédico</option>

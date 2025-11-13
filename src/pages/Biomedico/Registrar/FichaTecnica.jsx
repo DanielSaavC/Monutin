@@ -399,7 +399,7 @@ const generarFichaPDF = async () => {
           ))}
         </section>
 
-        {/* === ESTADO DEL EQUIPO === */}
+              {/* === ESTADO DEL EQUIPO === */}
         <section>
           <h2>⚙️ Estado del Equipo</h2>
 
@@ -407,10 +407,16 @@ const generarFichaPDF = async () => {
             {["nuevo", "bueno", "reparable", "descartable"].map((key) => (
               <label key={key}>
                 <input
-                  type="checkbox"
+                  type="radio" // 🔹 Cambiado de checkbox → radio
+                  name="estado" // 🔹 Todos comparten el mismo grupo
                   checked={estado[key]}
-                  onChange={(e) =>
-                    setEstado({ ...estado, [key]: e.target.checked })
+                  onChange={() =>
+                    setEstado({
+                      nuevo: key === "nuevo",
+                      bueno: key === "bueno",
+                      reparable: key === "reparable",
+                      descartable: key === "descartable",
+                    })
                   }
                 />
                 {key.charAt(0).toUpperCase() + key.slice(1)}
@@ -419,16 +425,24 @@ const generarFichaPDF = async () => {
           </div>
         </section>
 
-
         {/* === FRECUENCIA === */}
         <section>
-          <h2>Frecuencia de Mantenimiento</h2>
-          <input
-            placeholder="Ej: Semestral, Anual..."
+          <h2>🕒 Frecuencia de Mantenimiento</h2>
+          <select
             value={frecuencia}
             onChange={(e) => setFrecuencia(e.target.value)}
-          />
+            style={{ padding: "8px", borderRadius: "6px", width: "100%", fontSize: "1em" }}
+          >
+            <option value="">Seleccione una frecuencia</option>
+            <option value="Mensual">Mensual</option>
+            <option value="Bimestral">Bimestral</option>
+            <option value="Trimestral">Trimestral</option>
+            <option value="Cuatrimestral">Cuatrimestral</option>
+            <option value="Semestral">Semestral</option>
+            <option value="Anual">Anual</option>
+          </select>
         </section>
+
 
         {/* === ELABORACIÓN === */}
         <section>
