@@ -20,7 +20,7 @@ export default function IncubadoraDetalle() {
   const [equipo, setEquipo] = useState(null);
   const [enSeguimiento, setEnSeguimiento] = useState(false);
   const [qrImage, setQrImage] = useState(null);
-  const [data, setData] = useState([]); // 🔹 Aquí se guardan los datos reales
+  const [data, setData] = useState([]); // 🔹 Datos reales de sensores
 
   // 🔹 Obtener lecturas reales desde Railway
   useEffect(() => {
@@ -30,8 +30,7 @@ export default function IncubadoraDetalle() {
           "https://monutinbackend-production.up.railway.app/api/sensores"
         );
 
-        // Transformar los datos para el gráfico
-        const formatted = res.data.map((item, index) => ({
+        const formatted = res.data.map((item) => ({
           time: new Date(item.fecha).toLocaleTimeString("es-BO", {
             hour: "2-digit",
             minute: "2-digit",
@@ -43,18 +42,18 @@ export default function IncubadoraDetalle() {
           ambTemp: item.ambtemp,
         }));
 
-        setData(formatted.reverse()); // orden cronológico
+        setData(formatted.reverse());
       } catch (err) {
         console.error("❌ Error obteniendo sensores:", err);
       }
     };
 
     fetchSensores();
-    const interval = setInterval(fetchSensores, 5000); // 🔁 Actualiza cada 5 segundos
+    const interval = setInterval(fetchSensores, 5000);
     return () => clearInterval(interval);
   }, []);
 
-  // 🔹 Obtener datos del equipo (sin cambios)
+  // 🔹 Obtener datos del equipo
   useEffect(() => {
     axios
       .get("https://monutinbackend-production.up.railway.app/api/equipos")
@@ -97,7 +96,7 @@ export default function IncubadoraDetalle() {
       });
   }, [id]);
 
-  // 🔹 Función para activar/desactivar seguimiento
+  // 🔹 Activar / desactivar seguimiento
   const toggleSeguimiento = async () => {
     try {
       const usuario = JSON.parse(localStorage.getItem("usuario"));
@@ -133,7 +132,7 @@ export default function IncubadoraDetalle() {
     }
   };
 
-  // 🔹 Generar QR (igual)
+  // 🔹 Generar y descargar QR
   const generarQR = async () => {
     try {
       const url = `https://danielsaavc.github.io/Monutin/#/incubadoras/${id}`;
@@ -156,7 +155,12 @@ export default function IncubadoraDetalle() {
     }
   };
 
-  // 🔹 Render
+  // 🔹 Descargar ficha técnica
+  const descargarFicha = (id) => {
+    const url = `https://monutinbackend-production.up.railway.app/api/fichatecnica/${id}/pdf`;
+    window.open(url, "_blank");
+  };
+
   if (!equipo)
     return (
       <div className="menu-container">
@@ -170,6 +174,7 @@ export default function IncubadoraDetalle() {
       <Header />
       <h2>📊 {equipo.nombre_equipo || `Incubadora ${id}`}</h2>
 
+      {/* 📈 Botón seguimiento */}
       <div className="seguimiento-boton-container">
         <button
           onClick={toggleSeguimiento}
@@ -179,6 +184,134 @@ export default function IncubadoraDetalle() {
         </button>
       </div>
 
+      {/* 🔳 Botón QR */}
+      <div style={{ marginTop: "15px", textAlign: "center" }}>
+        <button
+          onClick={generarQR}
+          style={{
+            backgroundColor: "#00796B",
+            color: "#fff",
+            border: "none",
+            borderRadius: "8px",
+            padding: "10px 20px",
+            cursor: "pointer",
+            fontWeight: "600",
+            fontSize: "1em",
+          }}
+        >
+          🔳 Generar QR
+        </button>
+
+        {qrImage && (
+          <div style={{ marginTop: "20px" }}>
+            <img
+              src={qrImage}
+              alt="QR de la incubadora"
+              style={{
+                width: "200px",
+                height: "200px",
+                border: "2px solid #00796B",
+                borderRadius: "10px",
+                padding: "10px",
+                backgroundColor: "#fff",
+              }}
+            />
+            <p style={{ fontSize: "0.9em", color: "#555" }}>
+              Escanéame para abrir esta incubadora
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* 📸 Imagen */}
+      <div className="equipo-detalle-imagen">
+        {equipo.imagen_base64 ? (
+          <img
+            src={equipo.imagen_base64}
+            alt={equipo.nombre_equipo}
+            style={{
+              width: "300px",
+              height: "200px",
+              objectFit: "cover",
+              borderRadius: "10px",
+              boxShadow: "0 3px 10px rgba(0,0,0,0.15)",
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              width: "300px",
+              height: "200px",
+              background: "#e0f2f1",
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#00bfa6",
+              fontSize: "2em",
+            }}
+          >
+            📷 Sin imagen
+          </div>
+        )}
+      </div>
+
+      {/* 📋 Información */}
+      <div className="equipo-detalle-info">
+        <h3>🔧 Información de la Incubadora</h3>
+        <p><b>Marca:</b> {equipo.marca || "N/A"}</p>
+        <p><b>Modelo:</b> {equipo.modelo || "N/A"}</p>
+        <p><b>Serie:</b> {equipo.serie || "N/A"}</p>
+        <p><b>Servicio:</b> {equipo.servicio || "N/A"}</p>
+        <p><b>Ubicación:</b> {equipo.ubicacion || "N/A"}</p>
+
+        <h3>🧩 Accesorios</h3>
+        {equipo.accesorios?.length ? (
+          <ul>
+            {equipo.accesorios.map((a, i) => (
+              <li key={i}>
+                <b>{a.funcion}:</b> {a.info}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No se registraron accesorios.</p>
+        )}
+
+        <h3>⚙️ Datos Técnicos</h3>
+        {equipo.datos_tecnicos?.length ? (
+          <ul>
+            {equipo.datos_tecnicos.map((dt, i) => (
+              <li key={i}>
+                <b>{dt.funcion}:</b> {dt.info}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No se registraron datos técnicos.</p>
+        )}
+      </div>
+
+      {/* 📄 Ficha técnica */}
+      <div style={{ marginTop: "20px", textAlign: "center" }}>
+        <button
+          onClick={() => descargarFicha(id)}
+          style={{
+            backgroundColor: "#005e56",
+            color: "#fff",
+            border: "none",
+            borderRadius: "8px",
+            padding: "10px 20px",
+            cursor: "pointer",
+            fontWeight: "600",
+            fontSize: "1em",
+          }}
+        >
+          📄 Descargar Ficha Técnica
+        </button>
+      </div>
+
+      {/* 📊 Gráficas (no modificadas) */}
       <div className="chart-box">
         <h4>🌡️ Temp Externa (°C) vs 💧 Humedad (%)</h4>
         <ResponsiveContainer width="100%" height={250}>
