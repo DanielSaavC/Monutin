@@ -770,72 +770,118 @@ app.put("/api/notificaciones/:id/leida", (req, res) => {
 }); 
 // ================== ENDPOINTS SENSORES (SIN PESO) ==================
 
+// ================== ENDPOINT SENSORES CON ALERTAS AUTOMÁTICAS ==================
 app.post("/api/sensores", async (req, res) => {
   try {
     const { device, temperatura, humedad, ambtemp, objtemp } = req.body;
 
-    // 1. Guardar en la base de datos (sin peso)
+    console.log("📊 Datos recibidos del sensor:", { device, temperatura, humedad, ambtemp, objtemp });
+
+    // 1. Guardar en la base de datos
     const stmt = db.prepare(`
       INSERT INTO sensores (device, temperatura, humedad, ambtemp, objtemp)
       VALUES (?, ?, ?, ?, ?)
     `);
     const info = stmt.run(device, temperatura, humedad, ambtemp, objtemp);
 
-    // 2. 🚨 Detectar condiciones críticas
+    // 2. 🚨 DETECTAR CONDICIONES CRÍTICAS
     let alertas = [];
+    
     if (temperatura > 37.5) {
-      alertas.push(`Temp. externa alta: ${temperatura.toFixed(1)} °C`);
+      alertas.push(`⚠️ Temperatura externa alta: ${temperatura.toFixed(1)}°C`);
+    }
+    if (temperatura < 20) {
+      alertas.push(`❄️ Temperatura externa baja: ${temperatura.toFixed(1)}°C`);
     }
     if (humedad < 40) {
-      alertas.push(`Humedad baja: ${humedad.toFixed(1)} %`);
+      alertas.push(`💧 Humedad baja: ${humedad.toFixed(1)}%`);
+    }
+    if (humedad > 70) {
+      alertas.push(`💦 Humedad alta: ${humedad.toFixed(1)}%`);
     }
     if (objtemp > 37.5) {
-      alertas.push(`Temp. paciente alta: ${objtemp.toFixed(1)} °C`);
+      alertas.push(`🌡️ Temperatura del paciente alta: ${objtemp.toFixed(1)}°C`);
+    }
+    if (objtemp < 35) {
+      alertas.push(`🧊 Temperatura del paciente baja: ${objtemp.toFixed(1)}°C`);
     }
 
-    // 3. Si hay alertas → Enviar notificación push (LEYENDO DE LA BD)
+    // 3. Si hay alertas → Enviar notificaciones push
     if (alertas.length > 0) {
-      
-      // 3.1. Buscar solo suscripciones de 'biomedico'
+      console.log("🚨 ALERTAS DETECTADAS:", alertas);
+
+      // 3.1. Crear notificación en la base de datos
+      const mensajeAlerta = alertas.join(" | ");
+      db.prepare(`
+        INSERT INTO notificaciones (mensaje, rol_destino, estado)
+        VALUES (?, 'biomedico', 'no_leido')
+      `).run(mensajeAlerta);
+
+      // 3.2. Buscar suscripciones de biomédicos
       const suscripcionesBiomedico = db.prepare(`
-        SELECT s.subscription_json, s.endpoint
+        SELECT s.subscription_json, s.endpoint, u.nombre, u.apellidopaterno
         FROM suscripciones_push s
         JOIN usuarios u ON s.usuario_id = u.id
         WHERE u.tipo = 'biomedico'
       `).all();
 
+      console.log(`📬 Enviando alertas a ${suscripcionesBiomedico.length} biomédico(s)`);
+
       if (suscripcionesBiomedico.length > 0) {
         const payload = JSON.stringify({
-          title: "⚠️ Alerta Monutin",
-          body: alertas.join(" | "),
+          title: "🚨 ALERTA MONUTIN - Sensor",
+          body: mensajeAlerta,
+          icon: "/icons/icon-192.png",
+          badge: "/icons/icon-192.png",
+          vibrate: [200, 100, 200, 100, 300, 100, 200],
+          requireInteraction: true,
+          tag: `sensor-alert-${Date.now()}`,
+          data: {
+            url: "/biomedico",
+            timestamp: Date.now(),
+            tipo: "sensor"
+          }
         });
 
-        // 3.2. Enviar a todos los biomédicos suscritos
-        await Promise.all(
-          suscripcionesBiomedico.map((row) => {
-            const sub = JSON.parse(row.subscription_json); // Convertir de texto a objeto
+        // 3.3. Enviar a todos los biomédicos
+        const resultados = await Promise.allSettled(
+          suscripcionesBiomedico.map(async (row) => {
+            const sub = JSON.parse(row.subscription_json);
             
-            return webpush.sendNotification(sub, payload).catch((err) => {
-              
-              // 3.3. Si falla (410 o 404), borra la suscripción de la BD
+            try {
+              await webpush.sendNotification(sub, payload);
+              console.log(`✅ Alerta enviada a ${row.nombre} ${row.apellidopaterno}`);
+              return { success: true };
+            } catch (err) {
+              // Si la suscripción expiró (410 Gone o 404), eliminarla
               if (err.statusCode === 410 || err.statusCode === 404) {
-                console.log("🗑️ Eliminando suscripción inválida de la BD (desde sensores)");
-                db.prepare(
-                  "DELETE FROM suscripciones_push WHERE endpoint = ?"
-                ).run(row.endpoint);
+                console.log(`🗑️ Eliminando suscripción inválida: ${row.endpoint}`);
+                db.prepare("DELETE FROM suscripciones_push WHERE endpoint = ?")
+                  .run(row.endpoint);
               } else {
-                console.error("❌ Error push (sensores):", err);
+                console.error(`❌ Error enviando a ${row.nombre}:`, err.message);
               }
-            });
+              return { success: false, error: err.message };
+            }
           })
         );
-        console.log("📢 Notificación automática enviada:", alertas.join(" | "));
+
+        const exitosas = resultados.filter(r => r.value?.success).length;
+        console.log(`📊 Resultado: ${exitosas}/${suscripcionesBiomedico.length} notificaciones enviadas`);
+      } else {
+        console.warn("⚠️ No hay biomédicos suscritos a notificaciones push");
       }
+    } else {
+      console.log("✅ Valores normales, sin alertas");
     }
 
-    // Respuesta normal
-    res.json({ message: "✅ Datos guardados y analizados", id: info.lastInsertRowid });
-  
+    // Respuesta al sensor
+    res.json({ 
+      message: "✅ Datos guardados",
+      id: info.lastInsertRowid,
+      alertas: alertas.length > 0 ? alertas : null
+    });
+
   } catch (err) {
     console.error("❌ Error en /api/sensores:", err);
     res.status(500).json({ error: "Error al guardar datos de sensor" });
