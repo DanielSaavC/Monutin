@@ -141,7 +141,18 @@ const crearTablas = [
   subscription_json TEXT NOT NULL,
   usuario_id INTEGER,
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+)`,
+`CREATE TABLE IF NOT EXISTS delegaciones (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  notificacion_id INTEGER,
+  tecnico_id INTEGER,
+  biomedico_id INTEGER,
+  fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (notificacion_id) REFERENCES notificaciones(id),
+  FOREIGN KEY (tecnico_id) REFERENCES usuarios(id),
+  FOREIGN KEY (biomedico_id) REFERENCES usuarios(id)
 )`
+
 ];
 // ... (tu código)
 crearTablas.forEach(sql => db.prepare(sql).run());
@@ -240,6 +251,46 @@ app.get("/api/seguimiento/:usuario_id", (req, res) => {
 });
 
 // ================== ENDPOINTS USUARIOS ==================
+// ================== ENDPOINT: Listar técnicos disponibles ==================
+app.get("/api/tecnicos", (req, res) => {
+  try {
+    const tecnicos = db.prepare(
+      "SELECT id, nombre, apellidopaterno, apellidomaterno, usuario, email FROM usuarios WHERE tipo = ?"
+    ).all("tecnico");
+
+    res.json(tecnicos);
+  } catch (error) {
+    console.error("❌ Error al obtener técnicos:", error.message);
+    res.status(500).json({ message: "Error al obtener técnicos" });
+  }
+});
+// ================== ENDPOINT: Delegar equipo ==================
+app.post("/api/delegar", (req, res) => {
+  try {
+    const { notificacion_id, tecnico_id, biomedico_id } = req.body;
+
+    // Validar datos básicos
+    if (!notificacion_id || !tecnico_id || !biomedico_id) {
+      return res.status(400).json({ message: "Faltan datos para delegar" });
+    }
+
+    // Registrar delegación
+    db.prepare(
+      "INSERT INTO delegaciones (notificacion_id, tecnico_id, biomedico_id) VALUES (?, ?, ?)"
+    ).run(notificacion_id, tecnico_id, biomedico_id);
+
+    // Crear notificación para el técnico
+    const mensaje = "Se te ha delegado un equipo para revisión.";
+    db.prepare(
+      "INSERT INTO notificaciones (mensaje, rol_destino, estado) VALUES (?, ?, 'no_leido')"
+    ).run(mensaje, "tecnico");
+
+    res.json({ message: "Delegación registrada y notificación enviada" });
+  } catch (error) {
+    console.error("❌ Error al delegar:", error.message);
+    res.status(500).json({ message: "Error al delegar equipo" });
+  }
+});
 
 // Registro
 app.post("/register", async (req, res) => {
