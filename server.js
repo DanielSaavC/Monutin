@@ -152,7 +152,20 @@ const crearTablas = [
   FOREIGN KEY (notificacion_id) REFERENCES notificaciones(id),
   FOREIGN KEY (tecnico_id) REFERENCES usuarios(id),
   FOREIGN KEY (biomedico_id) REFERENCES usuarios(id)
+)`,
+`CREATE TABLE IF NOT EXISTS mantenimientos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  equipo_id INTEGER,
+  tecnico_id INTEGER,
+  fecha TEXT DEFAULT (datetime('now')),
+  descripcion TEXT,
+  repuestos TEXT,
+  observaciones TEXT,
+  tipo TEXT,
+  FOREIGN KEY (equipo_id) REFERENCES fichas_tecnicas(id),
+  FOREIGN KEY (tecnico_id) REFERENCES usuarios(id)
 )`
+
 
 ];
 // ... (tu código)
@@ -248,6 +261,41 @@ app.get("/api/seguimiento/:usuario_id", (req, res) => {
   } catch (err) {
     console.error("❌ Error al obtener seguimiento:", err);
     res.status(500).json({ error: "Error al obtener seguimiento" });
+  }
+});
+// ================== ENDPOINT: Equipos delegados por técnico ==================
+app.get("/api/delegaciones/:tecnico_id", (req, res) => {
+  try {
+    const { tecnico_id } = req.params;
+    const equipos = db.prepare(`
+      SELECT d.id AS delegacion_id, f.id AS equipo_id, f.nombre_equipo, f.marca, f.modelo, r.descripcion
+      FROM delegaciones d
+      JOIN notificaciones n ON d.notificacion_id = n.id
+      LEFT JOIN fichas_tecnicas f ON n.mensaje LIKE '%' || f.nombre_equipo || '%'
+      LEFT JOIN reportes r ON r.equipo = f.nombre_equipo
+      WHERE d.tecnico_id = ?
+    `).all(tecnico_id);
+
+    res.json(equipos);
+  } catch (error) {
+    console.error("❌ Error al obtener equipos delegados:", error.message);
+    res.status(500).json({ message: "Error al obtener equipos delegados" });
+  }
+});
+// ================== ENDPOINT: Registrar mantenimiento ==================
+app.post("/api/mantenimientos", (req, res) => {
+  try {
+    const { equipo_id, tecnico_id, descripcion, repuestos, observaciones, tipo } = req.body;
+
+    db.prepare(`
+      INSERT INTO mantenimientos (equipo_id, tecnico_id, descripcion, repuestos, observaciones, tipo)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(equipo_id, tecnico_id, descripcion, repuestos, observaciones, tipo);
+
+    res.json({ message: "✅ Mantenimiento registrado correctamente" });
+  } catch (error) {
+    console.error("❌ Error al registrar mantenimiento:", error.message);
+    res.status(500).json({ message: "Error al registrar mantenimiento" });
   }
 });
 
