@@ -424,7 +424,32 @@ app.post("/api/delegar", (req, res) => {
     res.status(500).json({ message: "Error al delegar equipo" });
   }
 });
-
+// Después de crear las tablas, añade esta migración:
+try {
+  db.prepare("ALTER TABLE notificaciones ADD COLUMN usuario_id INTEGER").run();
+  console.log("✅ Migración: Columna 'usuario_id' añadida a notificaciones.");
+} catch (e) {
+  if (e.message.includes("duplicate column name")) {
+    console.log("ℹ️ Migración: Columna 'usuario_id' ya existe.");
+  } else {
+    console.error("❌ Error en migración:", e.message);
+  }
+}
+app.get("/api/notificaciones_tecnico/:tecnico_id", (req, res) => {
+  try {
+    const { tecnico_id } = req.params;
+    const notificaciones = db.prepare(`
+      SELECT * FROM notificaciones 
+      WHERE rol_destino = 'tecnico' AND usuario_id = ?
+      ORDER BY fecha DESC
+    `).all(tecnico_id);
+    
+    res.json(notificaciones);
+  } catch (error) {
+    console.error("❌ Error al obtener notificaciones del técnico:", error.message);
+    res.status(500).json({ message: "Error al obtener notificaciones" });
+  }
+});
 // ================== ENDPOINT: Crear notificación ==================
 app.post("/api/notificaciones", (req, res) => {
   try {
