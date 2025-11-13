@@ -49,6 +49,7 @@ import RegistrarEquipo from "./pages/Biomedico/Registrar/RegistrarEquipo.jsx";
 import VerSeguimiento from "./pages/Biomedico/Seguimiento/VerSeguimiento.jsx";
 import HojaDeMantenimiento from "./pages/Biomedico/Seguimiento/HojaDeMantenimiento.jsx";
 
+import ProtectedRoute from "./components/ProtectedRoute";
 // =============================
 // COMPONENTE PRINCIPAL
 // =============================
@@ -126,54 +127,49 @@ function App() {
 
       {/* === RUTAS === */}
       <Routes>
-        {/* === PÚBLICAS === */}
-        <Route path="/" element={<Presentacion />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/registro" element={<Registro />} />
+          {/* === PÚBLICAS === */}
+          <Route path="/" element={<Presentacion />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/registro" element={<Registro />} />
 
-        {/* === PRIVADAS === */}
-        <Route path="/ajustes" element={<Ajustes />} />
+          {/* === PRIVADAS === */}
+          {[
+            ["/ajustes", <Ajustes />],
+            ["/natural", <Natural />],
+            ["/medico", <Medico />],
+            ["/enfermera", <Enfermera />],
+            ["/tecnico", <Tecnico />],
+            ["/biomedico", <Biomedico />],
+            ["/equipos", <Equipos />],
+            ["/incubadoras", <Incubadoras />],
+            ["/incubadoras/:id", <IncubadoraDetalle />],
+            ["/servocunas", <Servocuna />],
+            ["/servocunas/:id", <IncubadoraDetalle />],
+            ["/ventiladores", <Ventilador />],
+            ["/ventiladores/:id", <IncubadoraDetalle />],
+            ["/imagenologia", <Imagenologia />],
+            ["/quirofano", <Quirofano />],
+            ["/uti", <Uti />],
+            ["/utin", <Utin />],
+            ["/cnsp", <CNSP />],
+            ["/hospitalsur", <HospitalDelSur />],
+            ["/hospitalobrero", <HospitalObrero />],
+            ["/hospitalviedma", <HospitalViedma />],
+            ["/hospitalunivalle", <HospitalUnivalle />],
+            ["/fichatecnica", <FichaTecnica />],
+            ["/registroequipo", <RegEquipo />],
+            ["/registraequipo", <RegistrarEquipo />],
+            ["/verseguimiento", <VerSeguimiento />],
+            ["/HojaDeMantenimiento", <HojaDeMantenimiento />],
+          ].map(([path, element]) => (
+            <Route
+              key={path}
+              path={path}
+              element={<ProtectedRoute>{element}</ProtectedRoute>}
+            />
+          ))}
+        </Routes>
 
-        {/* === ROLES === */}
-        <Route path="/natural" element={<Natural />} />
-        <Route path="/medico" element={<Medico />} />
-        <Route path="/enfermera" element={<Enfermera />} />
-        <Route path="/tecnico" element={<Tecnico />} />
-
-        {/* === BIOMÉDICO === */}
-        <Route path="/biomedico" element={<Biomedico />} />
-
-        {/* ---- EQUIPOS ---- */}
-        <Route path="/equipos" element={<Equipos />} />
-        <Route path="/incubadoras" element={<Incubadoras />} />
-        <Route path="/incubadoras/:id" element={<IncubadoraDetalle />} />
-        <Route path="/servocunas" element={<Servocuna />} />
-        <Route path="/servocunas/:id" element={<IncubadoraDetalle />} />
-        <Route path="/ventiladores" element={<Ventilador />} />
-        <Route path="/ventiladores/:id" element={<IncubadoraDetalle />} />
-
-        {/* ---- ÁREAS ---- */}
-        <Route path="/imagenologia" element={<Imagenologia />} />
-        <Route path="/quirofano" element={<Quirofano />} />
-        <Route path="/uti" element={<Uti />} />
-        <Route path="/utin" element={<Utin />} />
-
-        {/* ---- HOSPITALES ---- */}
-        <Route path="/cnsp" element={<CNSP />} />
-        <Route path="/hospitalsur" element={<HospitalDelSur />} />
-        <Route path="/hospitalobrero" element={<HospitalObrero />} />
-        <Route path="/hospitalviedma" element={<HospitalViedma />} />
-        <Route path="/hospitalunivalle" element={<HospitalUnivalle />} />
-
-        {/* ---- REGISTRAR ---- */}
-        <Route path="/fichatecnica" element={<FichaTecnica />} />
-        <Route path="/registroequipo" element={<RegEquipo />} />
-        <Route path="/registraequipo" element={<RegistrarEquipo />} />
-
-        {/* ---- SEGUIMIENTO ---- */}
-        <Route path="/verseguimiento" element={<VerSeguimiento />} />
-        <Route path="/HojaDeMantenimiento" element={<HojaDeMantenimiento />} />
-      </Routes>
     </>
   );
 }

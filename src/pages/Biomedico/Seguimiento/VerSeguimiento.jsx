@@ -21,8 +21,10 @@ export default function VerSeguimiento() {
 
   // 🔹 Cargar lista de equipos en seguimiento
   useEffect(() => {
-    if (!usuario) return;
-
+    if (!usuario) {
+      navigate("/login");
+      return;
+    }
     axios
       .get(
         `https://monutinbackend-production.up.railway.app/api/seguimiento/${usuario.id}`

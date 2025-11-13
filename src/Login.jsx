@@ -23,24 +23,33 @@ export default function Login() {
         alert(`✅ Bienvenido ${data.user.nombre} ${data.user.apellidopaterno}`);
         localStorage.setItem("usuario", JSON.stringify(data.user));
 
-        switch (data.user.tipo) {
-          case "natural":
-            navigate("/natural");
-            break;
-          case "medico":
-            navigate("/medico");
-            break;
-          case "enfermera":
-            navigate("/enfermera");
-            break;
-          case "tecnico":
-            navigate("/tecnico");
-            break;
-          case "biomedico":
-            navigate("/biomedico");
-            break;
-          default:
-            navigate("/");
+        // 🔹 Verificar si hay una URL de redirección pendiente
+        const redirectPath = localStorage.getItem("redirectAfterLogin");
+
+        if (redirectPath) {
+          localStorage.removeItem("redirectAfterLogin");
+          navigate(redirectPath); // 👉 Redirigir al equipo que venía del QR
+        } else {
+          // 🔹 Comportamiento normal según tipo de usuario
+          switch (data.user.tipo) {
+            case "natural":
+              navigate("/natural");
+              break;
+            case "medico":
+              navigate("/medico");
+              break;
+            case "enfermera":
+              navigate("/enfermera");
+              break;
+            case "tecnico":
+              navigate("/tecnico");
+              break;
+            case "biomedico":
+              navigate("/biomedico");
+              break;
+            default:
+              navigate("/");
+          }
         }
       } else {
         alert("❌ " + data.error);
