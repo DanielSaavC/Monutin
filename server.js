@@ -45,6 +45,7 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) =>
     cb(null, Date.now() + "_" + file.originalname)
 });
+
 const upload = multer({ storage });
 
 // === Servir imágenes ===
@@ -289,6 +290,45 @@ app.post("/api/delegar", (req, res) => {
   } catch (error) {
     console.error("❌ Error al delegar:", error.message);
     res.status(500).json({ message: "Error al delegar equipo" });
+  }
+});
+// ================== ENDPOINT: Crear notificación ==================
+app.post("/api/notificaciones", (req, res) => {
+  try {
+    const { mensaje, rol_destino, estado } = req.body;
+
+    if (!mensaje || !rol_destino) {
+      return res.status(400).json({ message: "Faltan datos para crear la notificación" });
+    }
+
+    db.prepare(
+      "INSERT INTO notificaciones (mensaje, rol_destino, estado) VALUES (?, ?, ?)"
+    ).run(mensaje, rol_destino, estado || "no_leido");
+
+    res.json({ message: "Notificación creada correctamente" });
+  } catch (error) {
+    console.error("❌ Error al crear notificación:", error.message);
+    res.status(500).json({ message: "Error al crear notificación" });
+  }
+});
+// ================== ENDPOINT: Obtener notificaciones por rol ==================
+app.get("/api/notificaciones", (req, res) => {
+  try {
+    const rol = req.query.rol;
+    let notificaciones;
+
+    if (rol) {
+      notificaciones = db.prepare(
+        "SELECT * FROM notificaciones WHERE rol_destino = ? ORDER BY fecha DESC"
+      ).all(rol);
+    } else {
+      notificaciones = db.prepare("SELECT * FROM notificaciones ORDER BY fecha DESC").all();
+    }
+
+    res.json(notificaciones);
+  } catch (error) {
+    console.error("❌ Error al obtener notificaciones:", error.message);
+    res.status(500).json({ message: "Error al obtener notificaciones" });
   }
 });
 
