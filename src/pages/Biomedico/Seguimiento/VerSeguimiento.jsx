@@ -187,13 +187,15 @@ export default function VerSeguimiento() {
                   📄 Descargar Ficha Técnica
                 </button>
                 <button
-  onClick={() =>
-    window.open(`https://monutinbackend-production.up.railway.app/api/mantenimientos/pdf/${mantenimiento.id}`)
-  }
->
-  📄 Descargar hoja de mantenimiento
-</button>
-
+                  className="btn-control verde"
+                  onClick={() =>
+                    window.open(
+                      `https://monutinbackend-production.up.railway.app/api/mantenimientos/pdf/${eq.id}`
+                    )
+                  }
+                >
+                  📄 Descargar Hoja de Mantenimiento
+                </button>
               </div>
 
               {/* 📈 Gráficas en tiempo real */}
