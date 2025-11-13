@@ -1,280 +1,250 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import "./Header.css";
+  import React, { useState, useEffect } from "react";
+  import { useNavigate } from "react-router-dom";
+  import axios from "axios";
+  import "./Header.css";
 
-export default function Header() {
-  const navigate = useNavigate();
-  const usuario = JSON.parse(localStorage.getItem("usuario"));
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [notificaciones, setNotificaciones] = useState([]);
-  const [verNotificaciones, setVerNotificaciones] = useState(false);
+  export default function Header() {
+    const navigate = useNavigate();
+    const usuario = JSON.parse(localStorage.getItem("usuario"));
+    const [menuOpen, setMenuOpen] = useState(false);
+    const [notificaciones, setNotificaciones] = useState([]);
+    const [verNotificaciones, setVerNotificaciones] = useState(false);
 
-  // === REGISTRAR SERVICE WORKER (Una sola vez) ===
-  useEffect(() => {
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register(`${process.env.PUBLIC_URL}/service-worker.js`)
-        .then((registration) => {
-          console.log("✅ Service Worker registrado:", registration.scope);
+    // === 🔔 Cargar notificaciones solo si es biomédico ===
+    useEffect(() => {
+      if (usuario?.tipo === "biomedico") {
+        obtenerNotificaciones();
+        const intervalo = setInterval(obtenerNotificaciones, 10000); // cada 10s
+        return () => clearInterval(intervalo);
+      }
+    }, [usuario]);
+
+// ✅ USA ESTE CÓDIGO
+useEffect(() => {
+  // 1. Verificamos que el usuario esté cargado Y sea biomédico
+  if (usuario?.tipo === "biomedico" && "serviceWorker" in navigator && "PushManager" in window) {
+    console.log("ℹ️ Usuario biomédico detectado, intentando suscribir a push...");
+    
+    navigator.serviceWorker.ready.then((registration) => {
+      registration.pushManager
+        .subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(
+            "BPa9Ypp_D-5nqP2NvdMWAlJvz5z9IpZHHFUZdtVRDgf4Grx1Txr4h8Bzi1ljCimbK2zFgnqfkZ6VaPLHf7dwA3M"
+          ),
         })
-        .catch((error) => {
-          console.error("❌ Error al registrar el Service Worker:", error);
-        });
-    }
-  }, []);
-
-  // === 🔔 SUSCRIPCIÓN PUSH (SOLO BIOMÉDICOS) ===
-  useEffect(() => {
-    // ⚠️ VERIFICAR TIPO DE USUARIO PRIMERO
-    if (usuario?.tipo !== "biomedico") {
-      console.log("ℹ️ Usuario no es biomédico, no se suscribe a push.");
-      return;
-    }
-
-    if ("serviceWorker" in navigator && "PushManager" in window) {
-      Notification.requestPermission().then((permission) => {
-        if (permission === "granted") {
-          console.log("✅ Permiso de notificación concedido");
+        .then((subscription) => {
           
-          navigator.serviceWorker.ready.then((registration) => {
-            // Verificar si ya hay una suscripción
-            registration.pushManager.getSubscription().then((existingSub) => {
-              if (existingSub) {
-                console.log("✅ Ya existe una suscripción activa");
-                return;
-              }
+          // 2. Creamos el objeto que el backend espera
+          const dataParaBackend = {
+            subscription: subscription, // La suscripción anidada
+            usuario_id: usuario.id      // El ID del usuario logueado
+          };
 
-              // Crear nueva suscripción
-              registration.pushManager
-                .subscribe({
-                  userVisibleOnly: true,
-                  applicationServerKey: urlBase64ToUint8Array(
-                    "BPa9Ypp_D-5nqP2NvdMWAlJvz5z9IpZHHFUZdtVRDgf4Grx1Txr4h8Bzi1ljCimbK2zFgnqfkZ6VaPLHf7dwA3M"
-                  ),
-                })
-                .then((subscription) => {
-                  console.log("📢 Enviando suscripción al backend...", subscription);
-                  
-                  // Enviar al backend
-                  axios
-                    .post(
-                      "https://monutinbackend-production.up.railway.app/api/suscribir",
-                      {
-                        subscription: subscription,
-                        usuario_id: usuario.id,
-                      }
-                    )
-                    .then(() => {
-                      console.log("✅ Suscripción push registrada en backend");
-                    })
-                    .catch((err) => {
-                      console.error("❌ Error al enviar suscripción:", err);
-                    });
-                })
-                .catch((err) => {
-                  console.error("❌ Error al crear suscripción push:", err);
-                });
-            });
-          });
-        } else {
-          console.warn("⚠️ Permiso de notificación denegado");
-        }
-      });
-    } else {
-      console.warn("⚠️ Push API no soportada en este navegador");
-    }
-  }, [usuario?.tipo, usuario?.id]);// ⬅️ Se ejecuta cuando cambia el usuario
+          console.log("✅ Suscripción Push obtenida, enviando al backend:", dataParaBackend);
 
-  // Función auxiliar para convertir clave VAPID
-  function urlBase64ToUint8Array(base64String) {
-    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-    for (let i = 0; i < rawData.length; ++i) {
-      outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
+          // 3. Enviamos el objeto correcto
+          axios.post(
+            "https://monutinbackend-production.up.railway.app/api/suscribir",
+            dataParaBackend // ⬅️ ¡CORRECTO!
+          );
+        })
+        .catch((err) => console.error("❌ Error en suscripción push:", err));
+    });
   }
+// 4. Hacemos que se ejecute CADA VEZ que el 'usuario' cambie
+}, [usuario]);
 
-  // === 🔔 Cargar notificaciones (solo biomédico) ===
-  useEffect(() => {
-    if (usuario?.tipo === "biomedico") {
-      obtenerNotificaciones();
-      const interval = setInterval(obtenerNotificaciones, 30000); // Cada 30s
-      return () => clearInterval(interval);
+    function urlBase64ToUint8Array(base64String) {
+      const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+      const base64 = (base64String + padding)
+        .replace(/-/g, "+")
+        .replace(/_/g, "/");
+      const rawData = window.atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+      for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+      }
+      return outputArray;
     }
-  }, [usuario]);
 
-  const obtenerNotificaciones = async () => {
-    try {
-      const res = await axios.get(
-        "https://monutinbackend-production.up.railway.app/api/notificaciones?rol=biomedico"
+    const obtenerNotificaciones = async () => {
+      try {
+        const res = await axios.get(
+          "https://monutinbackend-production.up.railway.app/api/notificaciones?rol=biomedico"
+        );
+        setNotificaciones(res.data);
+      } catch (error) {
+        console.error("Error al cargar notificaciones:", error);
+      }
+    };
+
+    // === Función para marcar como leída ===
+    const marcarLeida = async (id) => {
+      await axios.put(
+        `https://monutinbackend-production.up.railway.app/api/notificaciones/${id}/leida`
       );
-      setNotificaciones(res.data);
-    } catch (error) {
-      console.error("Error al cargar notificaciones:", error);
-    }
-  };
+      obtenerNotificaciones();
+    };
 
-  const marcarLeida = async (id) => {
-    await axios.put(
-      `https://monutinbackend-production.up.railway.app/api/notificaciones/${id}/leida`
-    );
-    obtenerNotificaciones();
-  };
+    // === Redirección al inicio según tipo ===
+    const irInicio = () => {
+      switch (usuario?.tipo) {
+        case "medico":
+          navigate("/medico");
+          break;
+        case "enfermera":
+          navigate("/enfermera");
+          break;
+        case "tecnico":
+          navigate("/tecnico");
+          break;
+        case "biomedico":
+          navigate("/biomedico");
+          break;
+        case "natural":
+          navigate("/natural");
+          break;
+        default:
+          navigate("/");
+      }
+    };
 
-  // === Redirección al inicio según tipo ===
-  const irInicio = () => {
+    // === Cerrar sesión ===
+    const cerrarSesion = () => {
+      localStorage.removeItem("usuario");
+      navigate("/");
+    };
+
+    // === Prefijo según tipo ===
+    let prefijo = "";
     switch (usuario?.tipo) {
       case "medico":
-        navigate("/medico");
+        prefijo = "Dr.";
         break;
       case "enfermera":
-        navigate("/enfermera");
+        prefijo = "Enf.";
         break;
       case "tecnico":
-        navigate("/tecnico");
+        prefijo = "Tec.";
         break;
       case "biomedico":
-        navigate("/biomedico");
-        break;
-      case "natural":
-        navigate("/natural");
+        prefijo = "Ing.";
         break;
       default:
-        navigate("/");
+        prefijo = "";
     }
-  };
 
-  const cerrarSesion = () => {
-    localStorage.removeItem("usuario");
-    navigate("/");
-  };
+    // Si no hay usuario, solo muestra el logo
+    if (!usuario) {
+      return (
+        <div className="header-container">
+          <img
+            src={`${process.env.PUBLIC_URL}/images/Monutin.png`}
+            alt="Logo Monutin"
+            className="header-logo"
+            onClick={() => navigate("/")}
+          />
+        </div>
+      );
+    }
 
-  // Prefijo según tipo
-  let prefijo = "";
-  switch (usuario?.tipo) {
-    case "medico":
-      prefijo = "Dr.";
-      break;
-    case "enfermera":
-      prefijo = "Enf.";
-      break;
-    case "tecnico":
-      prefijo = "Tec.";
-      break;
-    case "biomedico":
-      prefijo = "Ing.";
-      break;
-    default:
-      prefijo = "";
-  }
-
-  // Si no hay usuario, solo muestra el logo
-  if (!usuario) {
+    // === Render principal ===
     return (
-      <div className="header-container">
+      <header className="header-container">
+        {/* Flecha atrás */}
+        <div className="header-back" onClick={() => navigate(-1)}>
+          ←
+        </div>
+
+        {/* Logo principal */}
         <img
           src={`${process.env.PUBLIC_URL}/images/Monutin.png`}
           alt="Logo Monutin"
           className="header-logo"
-          onClick={() => navigate("/")}
+          onClick={irInicio}
         />
-      </div>
-    );
-  }
 
-  return (
-    <header className="header-container">
-      <div className="header-back" onClick={() => navigate(-1)}>
-        ←
-      </div>
+        {/* Contenedor derecho */}
+        <div className="header-right">
+          {/* 🔔 Notificaciones (solo biomédico) */}
+          {usuario.tipo === "biomedico" && (
+            <div className="notif-container">
+              <span
+                className="notif-icon"
+                onClick={() => setVerNotificaciones(!verNotificaciones)}
+              >
+                🔔
+              </span>
 
-      <img
-        src={`${process.env.PUBLIC_URL}/images/Monutin.png`}
-        alt="Logo Monutin"
-        className="header-logo"
-        onClick={irInicio}
-      />
+              {notificaciones.filter((n) => n.estado === "no_leido").length > 0 && (
+                <span className="notif-count">
+                  {
+                    notificaciones.filter((n) => n.estado === "no_leido")
+                      .length
+                  }
+                </span>
+              )}
 
-      <div className="header-right">
-        {/* 🔔 Notificaciones (solo biomédicdo) */}
-        {usuario.tipo === "biomedico" && (
-          <div className="notif-container">
-            <span
-              className="notif-icon"
-              onClick={() => {
-                setVerNotificaciones(!verNotificaciones);
-                obtenerNotificaciones();
+              {/* Lista desplegable */}
+              {verNotificaciones && (
+                <div className="notif-dropdown">
+                  {notificaciones.length === 0 ? (
+                    <p className="notif-empty">Sin notificaciones</p>
+                  ) : (
+                    notificaciones.map((n) => (
+                      <div
+                        key={n.id}
+                        className={`notif-item ${n.estado}`}
+                        onClick={() => marcarLeida(n.id)}
+                      >
+                        {n.mensaje}
+                        <span className="notif-fecha">
+                          {new Date(n.fecha).toLocaleString("es-BO")}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Nombre */}
+          <div className="header-user" onClick={() => navigate("/ajustes")}>
+            {prefijo} {usuario.apellidopaterno || usuario.usuario}
+          </div>
+
+          {/* Botón menú */}
+          <div className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)}>
+            ☰
+          </div>
+
+          {/* Menú desplegable */}
+          <nav className={`menu ${menuOpen ? "active" : ""}`}>
+            <button onClick={irInicio} className="menu-btn">
+              Inicio
+            </button>
+            <button onClick={() => navigate("/ajustes")} className="menu-btn">
+              Ajustes
+            </button>
+            <button onClick={cerrarSesion} className="menu-btn">
+              Cerrar sesión
+            </button>
+            <button
+              onClick={() => document.body.classList.toggle("dark-mode")}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#00BFA6",
+                fontSize: "1.2em",
+                cursor: "pointer",
               }}
             >
-              🔔
-            </span>
-            {notificaciones.filter((n) => n.estado === "no_leido").length > 0 && (
-              <span className="notif-count">
-                {notificaciones.filter((n) => n.estado === "no_leido").length}
-              </span>
-            )}
-
-            {verNotificaciones && (
-              <div className="notif-dropdown">
-                {notificaciones.length === 0 ? (
-                  <p className="notif-empty">Sin notificaciones</p>
-                ) : (
-                  notificaciones.map((n) => (
-                    <div
-                      key={n.id}
-                      className={`notif-item ${n.estado}`}
-                      onClick={() => marcarLeida(n.id)}
-                    >
-                      {n.mensaje}
-                      <span className="notif-fecha">
-                        {new Date(n.fecha).toLocaleString("es-BO", {
-                          timeZone: "America/La_Paz",
-                        })}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="header-user" onClick={() => navigate("/ajustes")}>
-          {prefijo} {usuario.apellidopaterno || usuario.usuario}
+              🌙
+            </button>
+          </nav>
         </div>
-
-        <div className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)}>
-          ☰
-        </div>
-
-        <nav className={`menu ${menuOpen ? "active" : ""}`}>
-          <button onClick={irInicio} className="menu-btn">
-            Inicio
-          </button>
-          <button onClick={() => navigate("/ajustes")} className="menu-btn">
-            Ajustes
-          </button>
-          <button onClick={cerrarSesion} className="menu-btn">
-            Cerrar sesión
-          </button>
-          <button
-            onClick={() => document.body.classList.toggle("dark-mode")}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#00BFA6",
-              fontSize: "1.2em",
-              cursor: "pointer",
-            }}
-          >
-            🌙
-          </button>
-        </nav>
-      </div>
-    </header>
-  );
-}
+      </header>
+    );
+  }

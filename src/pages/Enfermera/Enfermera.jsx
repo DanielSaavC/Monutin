@@ -19,6 +19,7 @@ export default function Enfermera() {
   }, []);
 
   // ✅ Enviar reporte al backend
+
 const enviarReporte = async () => {
   if (!equipo || !descripcion) {
     return setMensaje("⚠️ Complete todos los campos.");
@@ -67,6 +68,7 @@ const toBase64 = (file) => new Promise((resolve, reject) => {
   reader.onload = () => resolve(reader.result);
   reader.onerror = reject;
 });
+
 
 
   // ✅ Consultar reportes anteriores
