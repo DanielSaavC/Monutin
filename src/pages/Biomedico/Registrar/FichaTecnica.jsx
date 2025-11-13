@@ -112,52 +112,57 @@ export default function FichaTecnica() {
       alert("⚠️ Complete ambos campos antes de agregar.");
     }
   };
+const generarFichaPDF = async () => {
+  try {
+    const payload = {
+      proveedor,
+      datosTecnicos,
+      accesorios,
+      observaciones,
+      manuales,
+      estado,
+      frecuencia,
+      nombreElaboracion,
+      imagenBase64,
+      nombreEquipo,
+      marca,
+      modelo,
+      serie,
+      codigo,
+      servicio,
+      ubicacion,
+      garantia,
+      procedencia,
+      fechaCompra
+    };
 
-  const generarFichaPDF = async () => {
-    try {
-      const payload = {
-        proveedor,
-        datosTecnicos,
-        accesorios,
-        observaciones,
-        manuales,
-        estado,
-        frecuencia,
-        nombreElaboracion,
-        imagenBase64,
-        nombreEquipo,
-        marca,
-        modelo,
-        serie,
-        codigo,
-        servicio,
-        ubicacion,
-        garantia,
-        procedencia,
-        fechaCompra
-      };
+    // 1️⃣ Guardar ficha
+    const res = await axios.post(
+      "https://monutinbackend-production.up.railway.app/api/fichatecnica",
+      payload
+    );
 
-      const res = await axios.post(
-        "https://monutinbackend-production.up.railway.app/api/fichatecnica",
-        payload
-      );
-      alert("✅ Ficha guardada con ID: " + res.data.id);
+    const fichaId = res.data.id;
+    alert("✅ Ficha guardada con ID: " + fichaId);
 
-      const pdfRes = await axios.post(
-        "https://monutinbackend-production.up.railway.app/api/fichatecnica/pdf",
-        payload,
-        { responseType: "blob" }
-      );
-      const url = URL.createObjectURL(new Blob([pdfRes.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "Ficha_Tecnica.pdf";
-      link.click();
-    } catch (error) {
-      console.error("❌ Error al guardar/generar ficha:", error);
-      alert("❌ Error al guardar o generar la ficha técnica.");
-    }
-  };
+    // 2️⃣ Generar PDF (llamando al endpoint correcto)
+    const pdfRes = await axios.get(
+      `https://monutinbackend-production.up.railway.app/api/fichatecnica/${fichaId}/pdf`,
+      { responseType: "blob" }
+    );
+
+    // 3️⃣ Descargar el PDF
+    const url = URL.createObjectURL(new Blob([pdfRes.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Ficha_Tecnica_${fichaId}.pdf`;
+    link.click();
+  } catch (error) {
+    console.error("❌ Error al guardar/generar ficha:", error);
+    alert("❌ Error al guardar o generar la ficha técnica.");
+  }
+};
+
 
   return (
     <div className="adquisicion-container">

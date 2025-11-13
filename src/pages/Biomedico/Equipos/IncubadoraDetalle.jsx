@@ -20,15 +20,39 @@ export default function IncubadoraDetalle() {
   const [equipo, setEquipo] = useState(null);
   const [enSeguimiento, setEnSeguimiento] = useState(false);
   const [qrImage, setQrImage] = useState(null);
+  const [data, setData] = useState([]); // 🔹 Aquí se guardan los datos reales
 
-  // 🔹 Datos simulados (sin cambios)
-  const data = Array.from({ length: 10 }, (_, i) => ({
-    time: i,
-    temp: 36 + Math.random(),
-    humedad: 40 + Math.random() * 10,
-    peso: 3 + Math.random() * 0.5,
-    tempBebe: 36.5 + Math.random() * 0.5,
-  }));
+  // 🔹 Obtener lecturas reales desde Railway
+  useEffect(() => {
+    const fetchSensores = async () => {
+      try {
+        const res = await axios.get(
+          "https://monutinbackend-production.up.railway.app/api/sensores"
+        );
+
+        // Transformar los datos para el gráfico
+        const formatted = res.data.map((item, index) => ({
+          time: new Date(item.fecha).toLocaleTimeString("es-BO", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          }),
+          temp: item.temperatura,
+          humedad: item.humedad,
+          tempBebe: item.objtemp,
+          ambTemp: item.ambtemp,
+        }));
+
+        setData(formatted.reverse()); // orden cronológico
+      } catch (err) {
+        console.error("❌ Error obteniendo sensores:", err);
+      }
+    };
+
+    fetchSensores();
+    const interval = setInterval(fetchSensores, 5000); // 🔁 Actualiza cada 5 segundos
+    return () => clearInterval(interval);
+  }, []);
 
   // 🔹 Obtener datos del equipo (sin cambios)
   useEffect(() => {
@@ -41,7 +65,7 @@ export default function IncubadoraDetalle() {
       .catch((err) => console.error("❌ Error cargando equipo:", err));
   }, [id]);
 
-  // 🔹 Verificar sesión (sin cambios)
+  // 🔹 Verificar sesión
   useEffect(() => {
     const usuario = JSON.parse(localStorage.getItem("usuario"));
     if (!usuario) {
@@ -50,12 +74,9 @@ export default function IncubadoraDetalle() {
     }
   }, [navigate]);
 
-  // 🔹 Verificar si ya está en seguimiento (MODIFICADO)
-  // Ahora lee desde el backend en lugar de localStorage
+  // 🔹 Verificar si el equipo está en seguimiento
   useEffect(() => {
     const usuario = JSON.parse(localStorage.getItem("usuario"));
-    
-    // Solo ejecutar si tenemos usuario y el ID del equipo
     if (!usuario || !id) return;
 
     axios
@@ -63,7 +84,6 @@ export default function IncubadoraDetalle() {
         `https://monutinbackend-production.up.railway.app/api/seguimiento/${usuario.id}`
       )
       .then((res) => {
-        // Aseguramos que la respuesta sea un array
         const lista = res.data?.data || res.data;
         if (Array.isArray(lista)) {
           const existe = lista.some((eq) => eq.id === parseInt(id));
@@ -75,9 +95,9 @@ export default function IncubadoraDetalle() {
       .catch((err) => {
         console.error("❌ Error al verificar estado de seguimiento:", err);
       });
-  }, [id]); // Depende del 'id' del equipo (se re-ejecuta si cambia)
+  }, [id]);
 
-  // 🔹 Agregar o quitar del seguimiento (MODIFICADO)
+  // 🔹 Función para activar/desactivar seguimiento
   const toggleSeguimiento = async () => {
     try {
       const usuario = JSON.parse(localStorage.getItem("usuario"));
@@ -86,36 +106,17 @@ export default function IncubadoraDetalle() {
         return;
       }
 
-      // No necesitamos leer de localStorage
-      // let lista = JSON.parse(localStorage.getItem("equipos_en_seguimiento")) || [];
-
       if (enSeguimiento) {
-        // 🔻 Quitar del seguimiento
-        // lista = lista.filter((eq) => eq.id !== parseInt(id)); // <-- No necesario
-        setEnSeguimiento(false); // Optimistic UI
-
-        // 🔻 LÍNEA ELIMINADA 🔻
-        // localStorage.setItem("equipos_en_seguimiento", JSON.stringify(lista));
-
+        setEnSeguimiento(false);
         await axios.delete(
           "https://monutinbackend-production.up.railway.app/api/seguimiento",
           {
             data: { usuario_id: usuario.id, equipo_id: equipo.id },
           }
         );
-
         alert("🗑️ Equipo eliminado del seguimiento.");
       } else {
-        // 🔺 Agregar al seguimiento
-        // (Los datos del equipo se crean en el backend, no necesitamos pasarlos todos)
-
-        // 🔻 LÍNEAS ELIMINADAS 🔻
-        // const nuevoEquipo = { ... };
-        // lista.push(nuevoEquipo);
-        // localStorage.setItem("equipos_en_seguimiento", JSON.stringify(lista));
-
-        setEnSeguimiento(true); // Optimistic UI
-
+        setEnSeguimiento(true);
         await axios.post(
           "https://monutinbackend-production.up.railway.app/api/seguimiento",
           {
@@ -123,18 +124,16 @@ export default function IncubadoraDetalle() {
             equipo_id: equipo.id,
           }
         );
-
         alert("✅ Equipo agregado al seguimiento.");
       }
     } catch (err) {
       console.error("❌ Error al cambiar seguimiento:", err);
-      // Revertir el estado si la API falla
       setEnSeguimiento(!enSeguimiento);
       alert("Error al actualizar el seguimiento del equipo.");
     }
   };
 
-  // 🔹 Generar código QR (sin cambios)
+  // 🔹 Generar QR (igual)
   const generarQR = async () => {
     try {
       const url = `https://danielsaavc.github.io/Monutin/#/incubadoras/${id}`;
@@ -157,7 +156,7 @@ export default function IncubadoraDetalle() {
     }
   };
 
-  // RENDER (Sin cambios en el JSX)
+  // 🔹 Render
   if (!equipo)
     return (
       <div className="menu-container">
@@ -171,7 +170,6 @@ export default function IncubadoraDetalle() {
       <Header />
       <h2>📊 {equipo.nombre_equipo || `Incubadora ${id}`}</h2>
 
-      {/* 📈 Botón seguimiento */}
       <div className="seguimiento-boton-container">
         <button
           onClick={toggleSeguimiento}
@@ -181,125 +179,6 @@ export default function IncubadoraDetalle() {
         </button>
       </div>
 
-      {/* 🔳 Botón QR */}
-      <div style={{ marginTop: "15px", textAlign: "center" }}>
-        <button
-          onClick={generarQR}
-          style={{
-            backgroundColor: "#00796B",
-            color: "#fff",
-            border: "none",
-            borderRadius: "8px",
-            padding: "10px 20px",
-            cursor: "pointer",
-            fontWeight: "600",
-            fontSize: "1em",
-          }}
-        >
-          🔳 Generar QR
-        </button>
-
-        {qrImage && (
-          <div style={{ marginTop: "20px" }}>
-            <img
-              src={qrImage}
-              alt="QR del equipo"
-              style={{
-                width: "200px",
-                height: "200px",
-                border: "2px solid #00796B",
-                borderRadius: "10px",
-                padding: "10px",
-                backgroundColor: "#fff",
-              }}
-            />
-            <p style={{ fontSize: "0.9em", color: "#555" }}>
-              Escanéame para abrir este equipo
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* 📸 Imagen */}
-      <div className="equipo-detalle-imagen">
-        {equipo.imagen_base64 ? (
-          <img
-            src={equipo.imagen_base64}
-            alt={equipo.nombre_equipo}
-            style={{
-              width: "300px",
-              height: "200px",
-              objectFit: "cover",
-              borderRadius: "10px",
-              boxShadow: "0 3px 10px rgba(0,0,0,0.15)",
-            }}
-          />
-        ) : (
-          <div
-            style={{
-              width: "300px",
-              height: "200px",
-              background: "#e0f2f1",
-              borderRadius: "10px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#00bfa6",
-              fontSize: "2em",
-            }}
-          >
-            📷 Sin imagen
-          </div>
-        )}
-      </div>
-
-      {/* Información */}
-      <div className="equipo-detalle-info">
-        <h3>🔧 Información del Equipo</h3>
-        <p>
-          <b>Marca:</b> {equipo.marca || "N/A"}
-        </p>
-        <p>
-          <b>Modelo:</b> {equipo.modelo || "N/A"}
-        </p>
-        <p>
-          <b>Serie:</b> {equipo.serie || "N/A"}
-        </p>
-        <p>
-          <b>Servicio:</b> {equipo.servicio || "N/A"}
-        </p>
-        <p>
-          <b>Ubicación:</b> {equipo.ubicacion || "N/A"}
-        </p>
-
-        <h3>🧩 Accesorios</h3>
-        {equipo.accesorios?.length ? (
-          <ul>
-            {equipo.accesorios.map((a, i) => (
-              <li key={i}>
-                <b>{a.funcion}:</b> {a.info}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No se registraron accesorios.</p>
-        )}
-
-        <h3>⚙️ Datos Técnicos</h3>
-        {equipo.datos_tecnicos?.length ? (
-          <ul>
-            {equipo.datos_tecnicos.map((dt, i) => (
-              <li key={i}>
-                <b>{dt.funcion}:</b> {dt.info}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No se registraron datos técnicos.</p>
-        )}
-      </div>
-
-      {/* 📊 Gráficos */}
       <div className="chart-box">
         <h4>🌡️ Temp Externa (°C) vs 💧 Humedad (%)</h4>
         <ResponsiveContainer width="100%" height={250}>
@@ -320,19 +199,24 @@ export default function IncubadoraDetalle() {
       </div>
 
       <div className="chart-box">
-        <h4>⚖️ Peso (Kg) vs 🌡️ Temp Bebé (°C)</h4>
+        <h4>🌡️ Temp Bebé (°C) vs 🌡️ Temp Ambiente (°C)</h4>
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="time" />
             <YAxis />
             <Tooltip />
-            <Line type="monotone" dataKey="peso" stroke="green" name="Peso" />
             <Line
               type="monotone"
               dataKey="tempBebe"
               stroke="orange"
               name="Temp Bebé"
+            />
+            <Line
+              type="monotone"
+              dataKey="ambTemp"
+              stroke="green"
+              name="Temp Amb"
             />
           </LineChart>
         </ResponsiveContainer>
