@@ -72,13 +72,14 @@ useEffect(() => {
     const obtenerNotificaciones = async () => {
       try {
         const res = await axios.get(
-          `https://mountinbackend-production.up.railway.app/api/notificaciones?rol=${usuario.tipo}`
+          `https://monutinbackend-production.up.railway.app/api/notificaciones?rol=${usuario.tipo}`
         );
         setNotificaciones(res.data);
       } catch (error) {
         console.error("Error al cargar notificaciones:", error);
       }
     };
+
 
 
     // === Función para marcar como leída ===
@@ -320,14 +321,12 @@ useEffect(() => {
                   alert("✅ Reporte delegado al técnico correctamente.");
 
                   // 🔹 Crear notificación para el técnico
-                  await axios.post(
-                    "https://monutinbackend-production.up.railway.app/api/notificaciones",
-                    {
+                    await axios.post("https://monutinbackend-production.up.railway.app/api/notificaciones", {
                       mensaje: `Se te ha delegado un equipo para revisión: ${notificacionSeleccionada.mensaje}`,
-                      rol: "tecnico",
+                      rol_destino: "tecnico",
                       usuario_id: notificacionSeleccionada.tecnicoSeleccionado,
-                    }
-                  );
+                    });
+
 
                   setNotificacionSeleccionada(null);
                   obtenerNotificaciones();
