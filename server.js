@@ -318,7 +318,6 @@ app.post("/api/mantenimientos", async (req, res) => {
     doc.pipe(fs.createWriteStream(pdfPath));
 
     // === ENCABEZADO ===
-    doc.image("uploads/logo_monutin.png", 50, 30, { width: 60 }).strokeColor("#00BFA6");
     doc.fontSize(20).fillColor("#00BFA6").text("HOJA DE MANTENIMIENTO", 150, 40);
     doc.moveDown(2);
 
