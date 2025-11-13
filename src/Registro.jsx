@@ -13,7 +13,7 @@ export default function Registro() {
     password: "",
     confirmPassword: "",
     email: "",
-    tipo: "enfermera",
+    tipo: "natural",
     codigo: "",
   });
 
@@ -141,6 +141,7 @@ export default function Registro() {
           onChange={handleChange}
           required
         >
+          <option value="natural">Usuario Natural</option>
           <option value="enfermera">Enfermera</option>
           <option value="tecnico">Técnico</option>
           <option value="biomedico">Biomédico</option>
