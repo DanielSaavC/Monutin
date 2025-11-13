@@ -834,13 +834,13 @@ app.get("/api/fichatecnica/:id/pdf", (req, res) => {
     doc.fontSize(22)
        .fillColor('#ffffff')
        .font('Helvetica-Bold')
-       .text('FICHA TÉCNICA DE MAQUINARIA', 50, 65, { align: 'left' });
+       .text('FICHA TÉCNICA DE EQUIPO MEDICO', 50, 65, { align: 'left' });
 
     // Logo/Nombre empresa (esquina derecha)
     doc.fontSize(16)
        .fillColor('#ffffff')
        .font('Helvetica-Bold')
-       .text('MELAINE', 450, 65)
+       .text('MONUTIN', 450, 65)
        .fontSize(10)
        .font('Helvetica')
        .text('ENGINEERING', 450, 85);
@@ -883,7 +883,7 @@ app.get("/api/fichatecnica/:id/pdf", (req, res) => {
       doc.rect(40 + col1Width + col2Width + col3Width, y, col4Width, cellHeight).stroke();
 
       doc.fontSize(9).font('Helvetica-Bold')
-         .text('MÁQUINA-EQUIPO', 45, y + 8);
+         .text('EQUIPO', 45, y + 8);
       doc.fontSize(10).font('Helvetica')
          .text(ficha.nombre_equipo || 'N/A', 45 + col1Width, y + 8);
       
