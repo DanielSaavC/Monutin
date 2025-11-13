@@ -249,11 +249,23 @@ const generarFichaPDF = async () => {
             value={ubicacion}
             onChange={(e) => setUbicacion(e.target.value)}
           />
-          <input
-            placeholder="Garantía"
+          <select
             value={garantia}
             onChange={(e) => setGarantia(e.target.value)}
-          />
+            className="form-input"
+          >
+            <option value="">Seleccionar garantía</option>
+            <option value="1 mes">1 mes</option>
+            <option value="3 meses">3 meses</option>
+            <option value="6 meses">6 meses</option>
+            <option value="9 meses">9 meses</option>
+            <option value="12 meses">12 meses (1 año)</option>
+            <option value="18 meses">18 meses</option>
+            <option value="24 meses">24 meses (2 años)</option>
+            <option value="36 meses">36 meses (3 años)</option>
+            <option value="48 meses">48 meses (4 años)</option>
+            <option value="60 meses">60 meses (5 años)</option>
+          </select>
           <input
             placeholder="Procedencia"
             value={procedencia}
