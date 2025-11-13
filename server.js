@@ -293,7 +293,7 @@ app.post("/api/mantenimientos", async (req, res) => {
 
     // 🔹 Obtener datos del técnico y del equipo
     const tecnico = db.prepare("SELECT nombre, apellidopaterno FROM usuarios WHERE id = ?").get(tecnico_id);
-    const equipo = db.prepare("SELECT nombre_equipo, marca, modelo, codigo FROM fichas_tecnicas WHERE id = ?").get(equipo_id);
+    const equipo = db.prepare("SELECT nombre_equipo, marca, modelo, codigo, servicio, ubicacion FROM fichas_tecnicas WHERE id = ?").get(equipo_id);
 
     if (!tecnico || !equipo) {
       return res.status(400).json({ message: "Datos de técnico o equipo no encontrados" });
@@ -314,36 +314,116 @@ app.post("/api/mantenimientos", async (req, res) => {
 
     // 🔹 Generar PDF
     const pdfPath = `${dir}/mantenimiento_${mantenimientoId}.pdf`;
-    const doc = new PDFDocument();
+    const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
 
     doc.pipe(fs.createWriteStream(pdfPath));
 
-    // === ENCABEZADO ===
-    doc.fontSize(20).fillColor("#00BFA6").text("HOJA DE MANTENIMIENTO", 150, 40);
-    doc.moveDown(2);
+    // === FUNCIÓN AUXILIAR PARA LÍNEAS ===
+    const drawLine = (y) => {
+      doc.moveTo(50, y).lineTo(562, y).stroke();
+    };
 
-    // === DATOS DEL EQUIPO ===
-    doc.fontSize(12).fillColor("black");
-    doc.text(`📅 Fecha: ${new Date().toLocaleString("es-BO")}`);
-    doc.text(`🧾 Código: ${equipo.codigo || "No asignado"}`);
-    doc.text(`🔧 Equipo: ${equipo.nombre_equipo}`);
-    doc.text(`🏷 Marca/Modelo: ${equipo.marca} / ${equipo.modelo}`);
-    doc.text(`👨‍🔧 Técnico: ${tecnico.nombre} ${tecnico.apellidopaterno}`);
-    doc.text(`🛠 Tipo de mantenimiento: ${tipo}`);
-    doc.moveDown(1);
+    // === ENCABEZADO CON FONDO ===
+    doc.rect(50, 40, 512, 60).fill('#00BFA6');
+    doc.fontSize(24).fillColor("white").text("HOJA DE MANTENIMIENTO", 50, 55, { align: 'center' });
+    doc.fontSize(10).text(`N° ${String(mantenimientoId).padStart(6, '0')}`, 50, 80, { align: 'center' });
 
-    // === SECCIÓN DESCRIPTIVA ===
-    doc.fontSize(12).fillColor("black");
-    doc.text("Descripción del trabajo:", { underline: true });
-    doc.text(descripcion || "No especificada", { indent: 20, align: "justify" });
+    // === INFORMACIÓN GENERAL ===
+    let yPos = 130;
+    doc.fillColor("black").fontSize(14).font('Helvetica-Bold').text("INFORMACIÓN GENERAL", 50, yPos);
+    drawLine(yPos + 18);
+    
+    yPos += 30;
+    doc.fontSize(10).font('Helvetica');
+    
+    // Tabla de información
+    const infoTable = [
+      { label: "Fecha:", value: new Date().toLocaleString("es-BO", { dateStyle: 'full', timeStyle: 'short' }) },
+      { label: "Código equipo:", value: equipo.codigo || "No asignado" },
+      { label: "Equipo:", value: equipo.nombre_equipo },
+      { label: "Marca/Modelo:", value: `${equipo.marca} / ${equipo.modelo}` },
+      { label: "Servicio:", value: equipo.servicio || "No especificado" },
+      { label: "Ubicación:", value: equipo.ubicacion || "No especificada" },
+      { label: "Técnico responsable:", value: `${tecnico.nombre} ${tecnico.apellidopaterno}` },
+      { label: "Tipo de mantenimiento:", value: tipo.toUpperCase() }
+    ];
 
-    doc.moveDown(1);
-    doc.text("Repuestos utilizados:", { underline: true });
-    doc.text(repuestos || "Ninguno", { indent: 20, align: "justify" });
+    infoTable.forEach((item, index) => {
+      if (index % 2 === 0 && index !== 0) yPos += 25;
+      
+      const xPos = index % 2 === 0 ? 50 : 306;
+      doc.font('Helvetica-Bold').text(item.label, xPos, yPos, { width: 100, continued: true });
+      doc.font('Helvetica').text(' ' + item.value, { width: 200 });
+    });
 
-    doc.moveDown(1);
-    doc.text("Observaciones:", { underline: true });
-    doc.text(observaciones || "Sin observaciones", { indent: 20, align: "justify" });
+    // === DESCRIPCIÓN DEL TRABAJO ===
+    yPos += 50;
+    doc.rect(50, yPos, 512, 25).fill('#E8F5E9');
+    doc.fillColor("black").fontSize(12).font('Helvetica-Bold').text("DESCRIPCIÓN DEL TRABAJO", 55, yPos + 7);
+    
+    yPos += 35;
+    doc.fontSize(10).font('Helvetica').fillColor("#333");
+    const descripcionTexto = descripcion || "No especificada";
+    doc.text(descripcionTexto, 60, yPos, { 
+      width: 492, 
+      align: 'justify',
+      lineGap: 3
+    });
+
+    // === REPUESTOS UTILIZADOS ===
+    yPos += doc.heightOfString(descripcionTexto, { width: 492 }) + 25;
+    doc.rect(50, yPos, 512, 25).fill('#FFF3E0');
+    doc.fillColor("black").fontSize(12).font('Helvetica-Bold').text("REPUESTOS UTILIZADOS", 55, yPos + 7);
+    
+    yPos += 35;
+    doc.fontSize(10).font('Helvetica').fillColor("#333");
+    const repuestosTexto = repuestos || "Ninguno";
+    
+    // Si hay repuestos, formatearlos como lista
+    if (repuestos && repuestos.includes(',')) {
+      const listaRepuestos = repuestos.split(',').map(r => r.trim());
+      listaRepuestos.forEach((repuesto, index) => {
+        doc.text(`${index + 1}. ${repuesto}`, 70, yPos, { width: 482 });
+        yPos += 18;
+      });
+    } else {
+      doc.text(repuestosTexto, 60, yPos, { width: 492, align: 'justify' });
+      yPos += doc.heightOfString(repuestosTexto, { width: 492 });
+    }
+
+    // === OBSERVACIONES ===
+    yPos += 25;
+    doc.rect(50, yPos, 512, 25).fill('#E3F2FD');
+    doc.fillColor("black").fontSize(12).font('Helvetica-Bold').text("OBSERVACIONES", 55, yPos + 7);
+    
+    yPos += 35;
+    doc.fontSize(10).font('Helvetica').fillColor("#333");
+    const observacionesTexto = observaciones || "Sin observaciones";
+    doc.text(observacionesTexto, 60, yPos, { 
+      width: 492, 
+      align: 'justify',
+      lineGap: 3
+    });
+
+    // === FIRMAS ===
+    yPos = 680; // Posición fija al final de la página
+    drawLine(yPos);
+    
+    yPos += 20;
+    doc.fontSize(10).font('Helvetica-Bold').fillColor("black");
+    doc.text("Técnico responsable", 80, yPos, { width: 150, align: 'center' });
+    doc.text("Supervisor", 370, yPos, { width: 150, align: 'center' });
+    
+    yPos += 15;
+    doc.font('Helvetica').fontSize(9);
+    doc.text(`${tecnico.nombre} ${tecnico.apellidopaterno}`, 80, yPos, { width: 150, align: 'center' });
+    
+    // === PIE DE PÁGINA ===
+    doc.fontSize(8).fillColor("#666").text(
+      "Este documento es generado automáticamente por el sistema MONUTIN",
+      50, 750,
+      { align: 'center', width: 512 }
+    );
 
     doc.end();
 
