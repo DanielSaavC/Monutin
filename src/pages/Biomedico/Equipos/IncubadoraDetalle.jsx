@@ -105,7 +105,20 @@ useEffect(() => {
         console.error("❌ Error al verificar estado de seguimiento:", err);
       });
   }, [id]);
-
+      const aplicarTareRemoto = async () => {
+      try {
+        const res = await axios.post(
+          "https://monutinbackend-production.up.railway.app/api/tare"
+        );
+        
+        if (res.data.success) {
+          alert("✅ Comando TARE enviado correctamente al ESP32");
+        }
+      } catch (err) {
+        console.error("❌ Error al enviar comando TARE:", err);
+        alert("⚠️ Error al enviar comando TARE");
+      }
+    };
   // 🔹 Activar / desactivar seguimiento
   const toggleSeguimiento = async () => {
     try {
@@ -409,8 +422,38 @@ useEffect(() => {
             textAlign: "center",
           }}
         >
+          {/* 🆕 BOTÓN TARE */}
+    <div style={{ marginTop: "15px", textAlign: "center" }}>
+      <button
+        onClick={aplicarTareRemoto}
+        style={{
+          backgroundColor: "#ff5722",
+          color: "#fff",
+          border: "none",
+          borderRadius: "8px",
+          padding: "12px 24px",
+          cursor: "pointer",
+          fontWeight: "700",
+          fontSize: "1em",
+          boxShadow: "0 4px 8px rgba(255,87,34,0.3)",
+          transition: "all 0.3s ease",
+        }}
+        onMouseOver={(e) => {
+          e.target.style.backgroundColor = "#e64a19";
+          e.target.style.transform = "scale(1.05)";
+        }}
+        onMouseOut={(e) => {
+          e.target.style.backgroundColor = "#ff5722";
+          e.target.style.transform = "scale(1)";
+        }}
+      >
+        ⚖️ Aplicar TARE (Reset Balanza)
+      </button>
+    </div>
         </div>
+        
       </div>
+      
     </div>
   );
 }
