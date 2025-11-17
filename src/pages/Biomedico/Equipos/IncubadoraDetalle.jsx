@@ -447,7 +447,7 @@ useEffect(() => {
           e.target.style.transform = "scale(1)";
         }}
       >
-        ⚖️ Aplicar TARE (Reset Balanza)
+      TARE
       </button>
     </div>
         </div>
