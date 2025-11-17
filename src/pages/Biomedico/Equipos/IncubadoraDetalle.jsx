@@ -42,8 +42,8 @@ export default function IncubadoraDetalle() {
           humedad: item.humedad,
           tempBebe: item.objtemp,
           ambTemp: item.ambtemp,
-          peso: item.peso_gramos ? parseFloat(item.peso_gramos) : null, // 🆕 PESO
-        }));
+          peso: item.peso_gramos ? parseFloat(item.peso_gramos) * 100 : null, 
+          }));
 
         setData(formatted.reverse());
         
@@ -209,59 +209,6 @@ export default function IncubadoraDetalle() {
           {enSeguimiento ? "👁️ En seguimiento" : "📈 Dar seguimiento"}
         </button>
       </div>
-
-      {/* 🆕 CARD DE PESO ACTUAL */}
-      <div
-        style={{
-          marginTop: "20px",
-          padding: "20px",
-          backgroundColor: "#fff",
-          borderRadius: "15px",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-          textAlign: "center",
-          border: `3px solid ${getPesoColor(pesoActual)}`,
-        }}
-      >
-        <h3 style={{ margin: "0 0 10px 0", color: "#333" }}>⚖️ Peso Actual del Paciente</h3>
-        <div
-          style={{
-            fontSize: "3em",
-            fontWeight: "bold",
-            color: getPesoColor(pesoActual),
-            margin: "10px 0",
-          }}
-        >
-          {pesoActual !== null ? `${pesoActual} g` : "---"}
-        </div>
-        <div
-          style={{
-            fontSize: "1.2em",
-            fontWeight: "600",
-            color: getPesoColor(pesoActual),
-          }}
-        >
-          {getPesoEstado(pesoActual)}
-        </div>
-        <div
-          style={{
-            marginTop: "15px",
-            padding: "10px",
-            backgroundColor: "#f5f5f5",
-            borderRadius: "8px",
-            fontSize: "0.9em",
-            color: "#666",
-          }}
-        >
-          <p style={{ margin: "5px 0" }}>
-            <b>Rangos de referencia:</b>
-          </p>
-          <p style={{ margin: "5px 0", color: "#ff1744" }}>🔴 Crítico: &lt; 500g</p>
-          <p style={{ margin: "5px 0", color: "#ff9800" }}>🟠 Bajo peso: 500g - 2500g</p>
-          <p style={{ margin: "5px 0", color: "#4caf50" }}>🟢 Normal: 2500g - 4000g</p>
-          <p style={{ margin: "5px 0", color: "#2196f3" }}>🔵 Alto: &gt; 4000g</p>
-        </div>
-      </div>
-
       {/* 🔳 Botón QR */}
       <div style={{ marginTop: "15px", textAlign: "center" }}>
         <button
@@ -459,10 +406,6 @@ export default function IncubadoraDetalle() {
             textAlign: "center",
           }}
         >
-          <p style={{ margin: "5px 0" }}>
-            💡 <b>Nota:</b> El gráfico muestra la evolución del peso en tiempo real.
-            Los puntos indican las lecturas individuales del sensor HX711.
-          </p>
         </div>
       </div>
     </div>
