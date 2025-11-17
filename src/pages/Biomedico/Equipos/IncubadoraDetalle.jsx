@@ -42,7 +42,7 @@ export default function IncubadoraDetalle() {
           humedad: item.humedad,
           tempBebe: item.objtemp,
           ambTemp: item.ambtemp,
-          peso: item.peso_gramos !== null ? parseFloat(item.peso_gramos) : null,
+          peso: item.peso_gramos !== null ? parseFloat(item.peso_gramos)* 100 : null,
           }));
 
         setData(formatted.reverse());
