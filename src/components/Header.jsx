@@ -2,6 +2,11 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Header.css";
+import { 
+  inicializarNotificacionesPush, 
+  probarNotificacion,
+  verificarSuscripcionActiva 
+} from "../pushNotifications";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -10,6 +15,29 @@ export default function Header() {
   const [notificaciones, setNotificaciones] = useState([]);
   const [verNotificaciones, setVerNotificaciones] = useState(false);
   const [notificacionSeleccionada, setNotificacionSeleccionada] = useState(null);
+  const [pushEstado, setPushEstado] = useState("loading"); // loading, active, inactive
+
+  // ============================
+  // 🔔 INICIALIZAR NOTIFICACIONES PUSH
+  // ============================
+  useEffect(() => {
+    if (usuario && (usuario.tipo === "biomedico" || usuario.tipo === "tecnico")) {
+      console.log("🔔 Iniciando sistema de notificaciones push...");
+      
+      // Verificar primero si ya hay suscripción
+      verificarSuscripcionActiva().then(yaExiste => {
+        if (yaExiste) {
+          console.log("✅ Ya hay suscripción activa");
+          setPushEstado("active");
+        } else {
+          // Intentar suscribir
+          inicializarNotificacionesPush(usuario.id).then(exito => {
+            setPushEstado(exito ? "active" : "inactive");
+          });
+        }
+      });
+    }
+  }, [usuario]);
 
   // ============================
   // 🔔 CARGA DE NOTIFICACIONES
@@ -17,21 +45,17 @@ export default function Header() {
   useEffect(() => {
     if (!usuario) return;
 
-    // 🔹 Biomédico → recibe todas las alarmas
     if (usuario.tipo === "biomedico") {
       obtenerNotificacionesBiomedico();
       const intervalo = setInterval(obtenerNotificacionesBiomedico, 10000);
       return () => clearInterval(intervalo);
     }
 
-    // 🔹 Técnico → recibe SOLO delegaciones dirigidas a él
     if (usuario.tipo === "tecnico") {
       obtenerNotificacionesTecnico();
       const intervalo = setInterval(obtenerNotificacionesTecnico, 10000);
       return () => clearInterval(intervalo);
     }
-
-    // 🔹 Enfermera → no carga nada
   }, [usuario]);
 
   // ============================
@@ -65,6 +89,15 @@ export default function Header() {
     );
     if (usuario.tipo === "biomedico") obtenerNotificacionesBiomedico();
     if (usuario.tipo === "tecnico") obtenerNotificacionesTecnico();
+  };
+
+  // ============================
+  // 🧪 PROBAR NOTIFICACIÓN PUSH
+  // ============================
+  const handleProbarNotificacion = async () => {
+    console.log("🧪 Probando notificación push...");
+    await probarNotificacion();
+    alert("✅ Notificación de prueba enviada. Revisa si apareció.");
   };
 
   // ============================
@@ -146,8 +179,10 @@ export default function Header() {
             <span
               className="notif-icon"
               onClick={() => setVerNotificaciones(!verNotificaciones)}
+              title={`Push: ${pushEstado === "active" ? "✅ Activo" : "❌ Inactivo"}`}
             >
               🔔
+              {pushEstado === "active" && <span style={{fontSize: "10px"}}>✅</span>}
             </span>
 
             {notificaciones.filter((n) => n.estado === "no_leido").length > 0 && (
@@ -158,6 +193,23 @@ export default function Header() {
 
             {verNotificaciones && (
               <div className="notif-dropdown">
+                {/* 🧪 Botón de prueba */}
+                <button 
+                  onClick={handleProbarNotificacion}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    marginBottom: "10px",
+                    backgroundColor: "#4CAF50",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "5px",
+                    cursor: "pointer"
+                  }}
+                >
+                  🧪 Probar Notificación Push
+                </button>
+
                 {notificaciones.length === 0 ? (
                   <p className="notif-empty">Sin notificaciones</p>
                 ) : (

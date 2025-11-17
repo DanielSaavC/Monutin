@@ -59,14 +59,26 @@ export default function FichaTecnica() {
   }, []);
 
   // === MANEJO DE FOTO ===
-  const abrirCamara = async () => {
-    try {
-      await navigator.mediaDevices.getUserMedia({ video: true });
-      setMostrarCamara(true);
-    } catch (error) {
-      alert("❌ No se pudo acceder a la cámara. Verifica permisos.");
+ const abrirCamara = async () => {
+  try {
+    await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" },
+      audio: false,
+    });
+    setMostrarCamara(true);
+  } catch (error) {
+    console.error("Error cámara:", error);
+
+    if (error.name === "NotAllowedError") {
+      alert("❌ Debes permitir el acceso a la cámara.");
+    } else if (error.name === "NotFoundError") {
+      alert("❌ Este dispositivo no tiene cámara disponible.");
+    } else {
+      alert("❌ No se pudo acceder a la cámara.");
     }
-  };
+  }
+};
+
 
   const capturarFoto = () => {
     const imageSrc = webcamRef.current.getScreenshot();
@@ -183,15 +195,16 @@ const generarFichaPDF = async () => {
             </div>
           ) : mostrarCamara ? (
             <div className="camara-container">
-              <Webcam
-                audio={false}
-                ref={webcamRef}
-                screenshotFormat="image/jpeg"
-                className="webcam"
-                videoConstraints={{
-                  facingMode: { exact: "environment" }, // ✅ fuerza cámara trasera
-                }}
-              />
+             <Webcam
+  audio={false}
+  ref={webcamRef}
+  screenshotFormat="image/jpeg"
+  className="webcam"
+  videoConstraints={{
+    facingMode: "environment"
+  }}
+/>
+
 
               <div className="camara-buttons">
                 <button onClick={capturarFoto}>📷 Capturar</button>
