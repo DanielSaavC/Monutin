@@ -256,7 +256,58 @@ app.delete("/api/seguimiento/:usuario_id/:equipo_id", (req, res) => {
   }
 });
 
+// ================== ENDPOINT: TARE REMOTO ==================
+app.post("/api/tare", (req, res) => {
+  try {
+    console.log("🔘 Solicitud de TARE recibida desde frontend");
+    
+    // Guardar comando de TARE en la base de datos
+    db.prepare(`
+      INSERT INTO notificaciones (mensaje, rol_destino, estado)
+      VALUES ('TARE_COMMAND', 'esp32', 'pendiente')
+    `).run();
+    
+    res.json({ 
+      success: true, 
+      message: "✅ Comando TARE enviado al ESP32" 
+    });
+  } catch (err) {
+    console.error("❌ Error al enviar comando TARE:", err);
+    res.status(500).json({ error: "Error al enviar comando TARE" });
+  }
+});
 
+// ================== ENDPOINT: ESP32 consulta comandos pendientes ==================
+app.get("/api/comandos/esp32", (req, res) => {
+  try {
+    const comandos = db.prepare(`
+      SELECT id, mensaje 
+      FROM notificaciones 
+      WHERE rol_destino = 'esp32' AND estado = 'pendiente'
+      ORDER BY fecha ASC
+    `).all();
+    
+    res.json({ comandos });
+  } catch (err) {
+    console.error("❌ Error al obtener comandos:", err);
+    res.status(500).json({ error: "Error al obtener comandos" });
+  }
+});
+
+// ================== ENDPOINT: Marcar comando como ejecutado ==================
+app.put("/api/comandos/:id/ejecutado", (req, res) => {
+  try {
+    const { id } = req.params;
+    db.prepare(
+      "UPDATE notificaciones SET estado = 'ejecutado' WHERE id = ?"
+    ).run(id);
+    
+    res.json({ success: true });
+  } catch (err) {
+    console.error("❌ Error al actualizar comando:", err);
+    res.status(500).json({ error: "Error al actualizar comando" });
+  }
+});
 // 🔹 Obtener lista de seguimiento de un usuario
 app.get("/api/seguimiento/:usuario_id", (req, res) => {
   const { usuario_id } = req.params;
