@@ -25,42 +25,44 @@ export default function IncubadoraDetalle() {
   const [pesoActual, setPesoActual] = useState(null); // 🆕 Peso actual
 
   // 🔹 Obtener lecturas reales desde Railway (CON PESO)
-  useEffect(() => {
-    const fetchSensores = async () => {
-      try {
-        const res = await axios.get(
-          "https://monutinbackend-production.up.railway.app/api/sensores"
-        );
 
-        const formatted = res.data.map((item) => ({
-          time: new Date(item.fecha).toLocaleTimeString("es-BO", {
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-          }),
-          temp: item.temperatura,
-          humedad: item.humedad,
-          tempBebe: item.objtemp,
-          ambTemp: item.ambtemp,
-          peso: item.peso_gramos !== null ? parseFloat(item.peso_gramos)* 100 : null,
-          }));
+useEffect(() => {
+  const fetchSensores = async () => {
+    try {
+      const res = await axios.get(
+        "https://monutinbackend-production.up.railway.app/api/sensores"
+      );
 
-        setData(formatted.reverse());
-        
-        // 🆕 Actualizar peso actual (última lectura)
-        if (formatted.length > 0 && formatted[formatted.length - 1].peso !== null) {
-          setPesoActual(formatted[formatted.length - 1].peso);
-        }
-      } catch (err) {
-        console.error("❌ Error obteniendo sensores:", err);
+      const formatted = res.data.map((item) => ({
+        time: new Date(item.fecha).toLocaleTimeString("es-BO", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        }),
+        temp: item.temperatura,
+        humedad: item.humedad,
+        tempBebe: item.objtemp,
+        ambTemp: item.ambtemp,
+        peso: item.peso_gramos !== null && item.peso_gramos !== undefined 
+          ? parseFloat(item.peso_gramos) 
+          : 0,  // ✅ Sin multiplicar, valor directo
+      }));
+
+      setData(formatted.reverse());
+      
+      // Actualizar peso actual (última lectura)
+      if (formatted.length > 0) {
+        setPesoActual(formatted[formatted.length - 1].peso);
       }
-    };
+    } catch (err) {
+      console.error("❌ Error obteniendo sensores:", err);
+    }
+  };
 
-    fetchSensores();
-    const interval = setInterval(fetchSensores, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
+  fetchSensores();
+  const interval = setInterval(fetchSensores, 5000);
+  return () => clearInterval(interval);
+}, []);
   // 🔹 Obtener datos del equipo
   useEffect(() => {
     axios
@@ -377,7 +379,7 @@ export default function IncubadoraDetalle() {
             <XAxis dataKey="time" />
             <YAxis 
               label={{ value: 'Peso (g)', angle: -90, position: 'insideLeft' }}
-              domain={[0, 'dataMax + 500']}
+              domain={[0, 'dataMax + 100']}  // ✅ Incluye el 0
             />
             <Tooltip 
               formatter={(value) => [`${value} g`, 'Peso']}
@@ -392,6 +394,7 @@ export default function IncubadoraDetalle() {
               strokeWidth={3}
               dot={{ r: 4 }}
               activeDot={{ r: 6 }}
+              connectNulls={true}
             />
           </LineChart>
         </ResponsiveContainer>
