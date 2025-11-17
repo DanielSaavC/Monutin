@@ -918,8 +918,6 @@ app.post("/api/sensores", async (req, res) => {
     res.status(500).json({ error: "Error al guardar datos de sensor" });
   }
 });
-
-
 app.get("/api/sensores", (_, res) => {
   try {
     const rows = db.prepare(`
@@ -937,10 +935,10 @@ app.get("/api/sensores", (_, res) => {
       LIMIT 50
     `).all();
     
-    // Formatear el peso para el frontend (de centigramos a gramos)
+    // ✅ NO redondees, devuelve el valor exacto
     const formateado = rows.map(row => ({
       ...row,
-      peso_gramos: row.peso ? (row.peso / 100).toFixed(0) : null
+      peso_gramos: row.peso !== null && row.peso !== undefined ? row.peso : 0  // ✅ Valor directo sin dividir ni redondear
     }));
     
     res.json(formateado);
