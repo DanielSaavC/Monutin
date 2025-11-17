@@ -9,6 +9,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Legend,
 } from "recharts";
 import axios from "axios";
 import QRCode from "qrcode";
@@ -21,8 +22,9 @@ export default function IncubadoraDetalle() {
   const [enSeguimiento, setEnSeguimiento] = useState(false);
   const [qrImage, setQrImage] = useState(null);
   const [data, setData] = useState([]); // 🔹 Datos reales de sensores
+  const [pesoActual, setPesoActual] = useState(null); // 🆕 Peso actual
 
-  // 🔹 Obtener lecturas reales desde Railway
+  // 🔹 Obtener lecturas reales desde Railway (CON PESO)
   useEffect(() => {
     const fetchSensores = async () => {
       try {
@@ -40,9 +42,15 @@ export default function IncubadoraDetalle() {
           humedad: item.humedad,
           tempBebe: item.objtemp,
           ambTemp: item.ambtemp,
+          peso: item.peso_gramos ? parseFloat(item.peso_gramos) : null, // 🆕 PESO
         }));
 
         setData(formatted.reverse());
+        
+        // 🆕 Actualizar peso actual (última lectura)
+        if (formatted.length > 0 && formatted[formatted.length - 1].peso !== null) {
+          setPesoActual(formatted[formatted.length - 1].peso);
+        }
       } catch (err) {
         console.error("❌ Error obteniendo sensores:", err);
       }
@@ -161,6 +169,24 @@ export default function IncubadoraDetalle() {
     window.open(url, "_blank");
   };
 
+  // 🆕 Función para determinar el color del peso según el rango
+  const getPesoColor = (peso) => {
+    if (peso === null) return "#999";
+    if (peso < 500) return "#ff1744"; // Rojo crítico
+    if (peso < 2500) return "#ff9800"; // Naranja bajo
+    if (peso <= 4000) return "#4caf50"; // Verde normal
+    return "#2196f3"; // Azul alto
+  };
+
+  // 🆕 Función para obtener el estado del peso
+  const getPesoEstado = (peso) => {
+    if (peso === null) return "Sin datos";
+    if (peso < 500) return "⚠️ CRÍTICO";
+    if (peso < 2500) return "⚠️ Bajo peso";
+    if (peso <= 4000) return "✅ Normal";
+    return "📊 Por encima del promedio";
+  };
+
   if (!equipo)
     return (
       <div className="menu-container">
@@ -182,6 +208,58 @@ export default function IncubadoraDetalle() {
         >
           {enSeguimiento ? "👁️ En seguimiento" : "📈 Dar seguimiento"}
         </button>
+      </div>
+
+      {/* 🆕 CARD DE PESO ACTUAL */}
+      <div
+        style={{
+          marginTop: "20px",
+          padding: "20px",
+          backgroundColor: "#fff",
+          borderRadius: "15px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+          textAlign: "center",
+          border: `3px solid ${getPesoColor(pesoActual)}`,
+        }}
+      >
+        <h3 style={{ margin: "0 0 10px 0", color: "#333" }}>⚖️ Peso Actual del Paciente</h3>
+        <div
+          style={{
+            fontSize: "3em",
+            fontWeight: "bold",
+            color: getPesoColor(pesoActual),
+            margin: "10px 0",
+          }}
+        >
+          {pesoActual !== null ? `${pesoActual} g` : "---"}
+        </div>
+        <div
+          style={{
+            fontSize: "1.2em",
+            fontWeight: "600",
+            color: getPesoColor(pesoActual),
+          }}
+        >
+          {getPesoEstado(pesoActual)}
+        </div>
+        <div
+          style={{
+            marginTop: "15px",
+            padding: "10px",
+            backgroundColor: "#f5f5f5",
+            borderRadius: "8px",
+            fontSize: "0.9em",
+            color: "#666",
+          }}
+        >
+          <p style={{ margin: "5px 0" }}>
+            <b>Rangos de referencia:</b>
+          </p>
+          <p style={{ margin: "5px 0", color: "#ff1744" }}>🔴 Crítico: &lt; 500g</p>
+          <p style={{ margin: "5px 0", color: "#ff9800" }}>🟠 Bajo peso: 500g - 2500g</p>
+          <p style={{ margin: "5px 0", color: "#4caf50" }}>🟢 Normal: 2500g - 4000g</p>
+          <p style={{ margin: "5px 0", color: "#2196f3" }}>🔵 Alto: &gt; 4000g</p>
+        </div>
       </div>
 
       {/* 🔳 Botón QR */}
@@ -311,7 +389,7 @@ export default function IncubadoraDetalle() {
         </button>
       </div>
 
-      {/* 📊 Gráficas (no modificadas) */}
+      {/* 📊 Gráfica de Temperatura y Humedad */}
       <div className="chart-box">
         <h4>🌡️ Temp Externa (°C) vs 💧 Humedad (%)</h4>
         <ResponsiveContainer width="100%" height={250}>
@@ -320,17 +398,14 @@ export default function IncubadoraDetalle() {
             <XAxis dataKey="time" />
             <YAxis />
             <Tooltip />
-            <Line type="monotone" dataKey="temp" stroke="red" name="Temp Ext" />
-            <Line
-              type="monotone"
-              dataKey="humedad"
-              stroke="blue"
-              name="Humedad"
-            />
+            <Legend />
+            <Line type="monotone" dataKey="temp" stroke="#f44336" name="Temp Ext" strokeWidth={2} />
+            <Line type="monotone" dataKey="humedad" stroke="#2196f3" name="Humedad" strokeWidth={2} />
           </LineChart>
         </ResponsiveContainer>
       </div>
 
+      {/* 📊 Gráfica de Temperatura del bebé */}
       <div className="chart-box">
         <h4>🌡️ Temp Bebé (°C) vs 🌡️ Temp Ambiente (°C)</h4>
         <ResponsiveContainer width="100%" height={250}>
@@ -339,20 +414,56 @@ export default function IncubadoraDetalle() {
             <XAxis dataKey="time" />
             <YAxis />
             <Tooltip />
-            <Line
-              type="monotone"
-              dataKey="tempBebe"
-              stroke="orange"
-              name="Temp Bebé"
+            <Legend />
+            <Line type="monotone" dataKey="tempBebe" stroke="#ff9800" name="Temp Bebé" strokeWidth={2} />
+            <Line type="monotone" dataKey="ambTemp" stroke="#4caf50" name="Temp Amb" strokeWidth={2} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* 🆕 GRÁFICA DE PESO */}
+      <div className="chart-box">
+        <h4>⚖️ Peso del Paciente (gramos)</h4>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="time" />
+            <YAxis 
+              label={{ value: 'Peso (g)', angle: -90, position: 'insideLeft' }}
+              domain={[0, 'dataMax + 500']}
             />
-            <Line
-              type="monotone"
-              dataKey="ambTemp"
-              stroke="green"
-              name="Temp Amb"
+            <Tooltip 
+              formatter={(value) => [`${value} g`, 'Peso']}
+              labelFormatter={(label) => `Hora: ${label}`}
+            />
+            <Legend />
+            <Line 
+              type="monotone" 
+              dataKey="peso" 
+              stroke="#9c27b0" 
+              name="Peso" 
+              strokeWidth={3}
+              dot={{ r: 4 }}
+              activeDot={{ r: 6 }}
             />
           </LineChart>
         </ResponsiveContainer>
+        <div
+          style={{
+            marginTop: "10px",
+            padding: "10px",
+            backgroundColor: "#f5f5f5",
+            borderRadius: "8px",
+            fontSize: "0.85em",
+            color: "#666",
+            textAlign: "center",
+          }}
+        >
+          <p style={{ margin: "5px 0" }}>
+            💡 <b>Nota:</b> El gráfico muestra la evolución del peso en tiempo real.
+            Los puntos indican las lecturas individuales del sensor HX711.
+          </p>
+        </div>
       </div>
     </div>
   );
