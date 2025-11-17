@@ -44,7 +44,7 @@ useEffect(() => {
         tempBebe: item.objtemp,
         ambTemp: item.ambtemp,
         peso: item.peso_gramos !== null && item.peso_gramos !== undefined 
-          ? parseFloat(item.peso_gramos) / 100  // ✅ Dividir por 100
+          ? parseFloat(item.peso_gramos)   // ✅ Dividir por 100
           : 0,
       }));
 
