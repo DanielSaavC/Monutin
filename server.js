@@ -195,7 +195,16 @@ try {
   }
 }
 // ====================================================
-
+try {
+  db.prepare("ALTER TABLE sensores ADD COLUMN peso REAL").run();
+  console.log("✅ Migración: Columna 'peso' añadida a tabla sensores.");
+} catch (e) {
+  if (e.message.includes("duplicate column name")) {
+    console.log("ℹ️ Migración: Columna 'peso' ya existe.");
+  } else {
+    console.error("❌ Error en migración de peso:", e.message);
+  }
+}
 // ... (resto de tu server.js)
 // ================== FUNCIONES AUXILIARES ==================
 const findUserByUsername = usuario =>
@@ -773,37 +782,59 @@ app.put("/api/notificaciones/:id/leida", (req, res) => {
 // ================== ENDPOINT SENSORES CON ALERTAS AUTOMÁTICAS ==================
 app.post("/api/sensores", async (req, res) => {
   try {
-    const { device, temperatura, humedad, ambtemp, objtemp } = req.body;
+    const { device, temperatura, humedad, ambtemp, objtemp, peso } = req.body;
 
-    console.log("📊 Datos recibidos del sensor:", { device, temperatura, humedad, ambtemp, objtemp });
+    console.log("📊 Datos recibidos del sensor:", { 
+      device, temperatura, humedad, ambtemp, objtemp, peso 
+    });
 
-    // 1. Guardar en la base de datos
+    // 1. Guardar en la base de datos (AHORA CON PESO)
     const stmt = db.prepare(`
-      INSERT INTO sensores (device, temperatura, humedad, ambtemp, objtemp)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO sensores (device, temperatura, humedad, ambtemp, objtemp, peso)
+      VALUES (?, ?, ?, ?, ?, ?)
     `);
-    const info = stmt.run(device, temperatura, humedad, ambtemp, objtemp);
+    const info = stmt.run(device, temperatura, humedad, ambtemp, objtemp, peso || 0);
 
-    // 2. 🚨 DETECTAR CONDICIONES CRÍTICAS
+    // 2. 🚨 DETECTAR CONDICIONES CRÍTICAS (incluyendo peso)
     let alertas = [];
     
+    // Temperatura externa
     if (temperatura > 37.5) {
       alertas.push(`⚠️ Temperatura externa alta: ${temperatura.toFixed(1)}°C`);
     }
     if (temperatura < 20) {
       alertas.push(`❄️ Temperatura externa baja: ${temperatura.toFixed(1)}°C`);
     }
+    
+    // Humedad
     if (humedad < 40) {
       alertas.push(`💧 Humedad baja: ${humedad.toFixed(1)}%`);
     }
     if (humedad > 70) {
       alertas.push(`💦 Humedad alta: ${humedad.toFixed(1)}%`);
     }
+    
+    // Temperatura del paciente
     if (objtemp > 37.5) {
       alertas.push(`🌡️ Temperatura del paciente alta: ${objtemp.toFixed(1)}°C`);
     }
     if (objtemp < 35) {
       alertas.push(`🧊 Temperatura del paciente baja: ${objtemp.toFixed(1)}°C`);
+    }
+    
+    // 🆕 ALERTAS DE PESO
+    if (peso !== undefined && peso !== null) {
+      const pesoGramos = peso / 100; // Convertir de centigramos a gramos
+      
+      if (pesoGramos > 0 && pesoGramos < 500) {
+        alertas.push(`⚠️ PESO CRÍTICO: ${pesoGramos.toFixed(0)}g - Peso muy bajo`);
+      }
+      if (pesoGramos > 6000) {
+        alertas.push(`⚖️ Peso elevado detectado: ${pesoGramos.toFixed(0)}g`);
+      }
+      if (pesoGramos < 0) {
+        alertas.push(`⚠️ Error en sensor de peso: Lectura negativa`);
+      }
     }
 
     // 3. Si hay alertas → Enviar notificaciones push
@@ -853,7 +884,6 @@ app.post("/api/sensores", async (req, res) => {
               console.log(`✅ Alerta enviada a ${row.nombre} ${row.apellidopaterno}`);
               return { success: true };
             } catch (err) {
-              // Si la suscripción expiró (410 Gone o 404), eliminarla
               if (err.statusCode === 410 || err.statusCode === 404) {
                 console.log(`🗑️ Eliminando suscripción inválida: ${row.endpoint}`);
                 db.prepare("DELETE FROM suscripciones_push WHERE endpoint = ?")
@@ -877,8 +907,9 @@ app.post("/api/sensores", async (req, res) => {
 
     // Respuesta al sensor
     res.json({ 
-      message: "✅ Datos guardados",
+      message: "✅ Datos guardados (con peso)",
       id: info.lastInsertRowid,
+      peso_recibido: peso ? `${(peso / 100).toFixed(0)}g` : 'N/A',
       alertas: alertas.length > 0 ? alertas : null
     });
 
@@ -888,11 +919,33 @@ app.post("/api/sensores", async (req, res) => {
   }
 });
 
+
 app.get("/api/sensores", (_, res) => {
   try {
-    const rows = db.prepare("SELECT * FROM sensores ORDER BY fecha DESC LIMIT 20").all();
-    res.json(rows);
-  } catch {
+    const rows = db.prepare(`
+      SELECT 
+        id, 
+        device, 
+        temperatura, 
+        humedad, 
+        ambtemp, 
+        objtemp, 
+        peso,
+        fecha 
+      FROM sensores 
+      ORDER BY fecha DESC 
+      LIMIT 50
+    `).all();
+    
+    // Formatear el peso para el frontend (de centigramos a gramos)
+    const formateado = rows.map(row => ({
+      ...row,
+      peso_gramos: row.peso ? (row.peso / 100).toFixed(0) : null
+    }));
+    
+    res.json(formateado);
+  } catch (err) {
+    console.error("❌ Error al consultar sensores:", err);
     res.status(500).json({ error: "Error al consultar sensores" });
   }
 });
