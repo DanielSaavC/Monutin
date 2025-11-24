@@ -24,7 +24,6 @@ export default function IncubadoraDetalle() {
   const [data, setData] = useState([]); // 🔹 Datos reales de sensores
   const [pesoActual, setPesoActual] = useState(null); // 🆕 Peso actual
 
-  // 🔹 Obtener lecturas reales desde Railway (CON PESO)
 
 useEffect(() => {
   const fetchSensores = async () => {

@@ -67,7 +67,7 @@ self.addEventListener("activate", (event) => {
 // =============================
 self.addEventListener("fetch", (event) => {
   // Ignorar peticiones al backend
-  if (event.request.url.includes("monutinbackend-production.up.railway.app")) {
+  if (event.request.url.includes("monutinbackend.onrender.com")) {
     return;
   }
 

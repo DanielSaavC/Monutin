@@ -27,7 +27,7 @@ export default function VerSeguimiento() {
     }
     axios
       .get(
-        `https://monutinbackend-production.up.railway.app/api/seguimiento/${usuario.id}`
+        `https://monutinbackend.onrender.com/api/seguimiento/${usuario.id}`
       )
       .then((res) => {
         const lista = res.data?.data || res.data;
@@ -44,7 +44,7 @@ export default function VerSeguimiento() {
     const fetchSensores = async () => {
       try {
         const res = await axios.get(
-          "https://monutinbackend-production.up.railway.app/api/sensores"
+          "https://monutinbackend.onrender.com/api/sensores"
         );
         setSensores(res.data || []);
       } catch (error) {
@@ -60,7 +60,7 @@ export default function VerSeguimiento() {
   const quitar = async (id) => {
     try {
       await axios.delete(
-        `https://monutinbackend-production.up.railway.app/api/seguimiento/${usuario.id}/${id}`
+        `https://monutinbackend.onrender.com/api/seguimiento/${usuario.id}/${id}`
       );
       setEquipos((prev) => prev.filter((eq) => eq.id !== id));
       alert("🗑️ Equipo eliminado del seguimiento.");
@@ -72,7 +72,7 @@ export default function VerSeguimiento() {
 
   // 🔹 Descargar ficha técnica (ya funcional)
   const descargarFicha = (id) => {
-    const url = `https://monutinbackend-production.up.railway.app/api/fichatecnica/${id}/pdf`;
+    const url = `https://monutinbackend.onrender.com/api/fichatecnica/${id}/pdf`;
     window.open(url, "_blank");
   };
 
@@ -190,7 +190,7 @@ export default function VerSeguimiento() {
                   className="btn-control verde"
                   onClick={() =>
                     window.open(
-                      `https://monutinbackend-production.up.railway.app/api/mantenimientos/pdf/${eq.id}`
+                      `https://monutinbackend.onrender.com/api/mantenimientos/pdf/${eq.id}`
                     )
                   }
                 >

@@ -64,7 +64,7 @@ export default function Header() {
   const obtenerNotificacionesBiomedico = async () => {
     try {
       const res = await axios.get(
-        `https://monutinbackend-production.up.railway.app/api/notificaciones?rol=biomedico`
+        `https://monutinbackend.onrender.com/api/notificaciones?rol=biomedico`
       );
       setNotificaciones(res.data);
     } catch (error) {
@@ -75,7 +75,7 @@ export default function Header() {
   const obtenerNotificacionesTecnico = async () => {
     try {
       const res = await axios.get(
-        `https://monutinbackend-production.up.railway.app/api/notificaciones_tecnico/${usuario.id}`
+        `https://monutinbackend.onrender.com/api/notificaciones_tecnico/${usuario.id}`
       );
       setNotificaciones(res.data);
     } catch (error) {
@@ -85,7 +85,7 @@ export default function Header() {
 
   const marcarLeida = async (id) => {
     await axios.put(
-      `https://monutinbackend-production.up.railway.app/api/notificaciones/${id}/leida`
+      `https://monutinbackend.onrender.com/api/notificaciones/${id}/leida`
     );
     if (usuario.tipo === "biomedico") obtenerNotificacionesBiomedico();
     if (usuario.tipo === "tecnico") obtenerNotificacionesTecnico();
@@ -281,7 +281,7 @@ export default function Header() {
                       onClick={async () => {
                         try {
                           const res = await axios.get(
-                            "https://monutinbackend-production.up.railway.app/api/tecnicos"
+                            "https://monutinbackend.onrender.com/api/tecnicos"
                           );
 
                           setNotificacionSeleccionada({
@@ -340,7 +340,7 @@ export default function Header() {
                         try {
                           // Guardar delegación
                           await axios.post(
-                            "https://monutinbackend-production.up.railway.app/api/delegar",
+                            "https://monutinbackend.onrender.com/api/delegar",
                             {
                               notificacion_id: notificacionSeleccionada.id,
                               tecnico_id:
@@ -351,7 +351,7 @@ export default function Header() {
 
                           // Notificar al técnico
                           await axios.post(
-                            "https://monutinbackend-production.up.railway.app/api/notificaciones",
+                            "https://monutinbackend.onrender.com/api/notificaciones",
                             {
                               mensaje:
                                 "Se te ha delegado un equipo para revisión: " +
