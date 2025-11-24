@@ -2,7 +2,7 @@
 // Sistema híbrido: Notificaciones locales + Push API
 
 const VAPID_PUBLIC_KEY = "BMN46G7i-9iyf2NeePT20JlN8Of4NMR3_r4SW4eMQUXDihuiq2hVNGah-hmAxQDVnBeTf4M7jSuXwl7SlDVH3Dc";
-const API_URL = "https://monutinbackend-production.up.railway.app";
+const API_URL = "https://monutinbackend.onrender.com";
 
 // Convertir clave VAPID a formato Uint8Array
 function urlBase64ToUint8Array(base64String) {

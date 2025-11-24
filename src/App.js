@@ -94,7 +94,7 @@ function App() {
           console.log("✅ Suscripción Push creada:", subscription);
 
           // Enviar suscripción al backend
-          await fetch("https://monutinbackend-production.up.railway.app/api/suscribir", {
+          await fetch("https://monutinbackend.onrender.com/api/suscribir", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(subscription),
