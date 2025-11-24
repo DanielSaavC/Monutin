@@ -13,7 +13,7 @@ function generarDato() {
 
 setInterval(async () => {
   const data = generarDato();
-  const res = await fetch("https://monutinbackend-production.up.railway.app/api/sensores", {
+  const res = await fetch("https://monutinbackend.onrender.com/api/sensores", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),

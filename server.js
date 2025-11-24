@@ -22,7 +22,7 @@ app.use(cors({
   origin: [
     "https://danielsaavc.github.io",
     "https://danielsaavc.github.io/Monutin",
-    "https://monutinbackend-production.up.railway.app"
+    "https://monutinbackend.onrender.com"
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type"]
