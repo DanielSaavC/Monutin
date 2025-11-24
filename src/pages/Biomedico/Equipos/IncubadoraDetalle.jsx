@@ -30,7 +30,7 @@ useEffect(() => {
   const fetchSensores = async () => {
     try {
       const res = await axios.get(
-        "https://monutinbackend-production.up.railway.app/api/sensores"
+        "https://monutinbackend.onrender.com/api/sensores"
       );
 
       const formatted = res.data.map((item) => ({
@@ -66,7 +66,7 @@ useEffect(() => {
   // 🔹 Obtener datos del equipo
   useEffect(() => {
     axios
-      .get("https://monutinbackend-production.up.railway.app/api/equipos")
+      .get("https://monutinbackend.onrender.com/api/equipos")
       .then((res) => {
         const encontrado = res.data.find((eq) => eq.id === parseInt(id));
         setEquipo(encontrado || null);
@@ -90,7 +90,7 @@ useEffect(() => {
 
     axios
       .get(
-        `https://monutinbackend-production.up.railway.app/api/seguimiento/${usuario.id}`
+        `https://monutinbackend.onrender.com/${usuario.id}`
       )
       .then((res) => {
         const lista = res.data?.data || res.data;
@@ -108,7 +108,7 @@ useEffect(() => {
       const aplicarTareRemoto = async () => {
       try {
         const res = await axios.post(
-          "https://monutinbackend-production.up.railway.app/api/tare"
+          "https://monutinbackend.onrender.com/api/tare"
         );
         
         if (res.data.success) {
@@ -131,7 +131,7 @@ useEffect(() => {
       if (enSeguimiento) {
         setEnSeguimiento(false);
         await axios.delete(
-          "https://monutinbackend-production.up.railway.app/api/seguimiento",
+          "https://monutinbackend.onrender.com/api/seguimiento",
           {
             data: { usuario_id: usuario.id, equipo_id: equipo.id },
           }
@@ -140,7 +140,7 @@ useEffect(() => {
       } else {
         setEnSeguimiento(true);
         await axios.post(
-          "https://monutinbackend-production.up.railway.app/api/seguimiento",
+          "https://monutinbackend.onrender.com/api/seguimiento",
           {
             usuario_id: usuario.id,
             equipo_id: equipo.id,
@@ -180,7 +180,7 @@ useEffect(() => {
 
   // 🔹 Descargar ficha técnica
   const descargarFicha = (id) => {
-    const url = `https://monutinbackend-production.up.railway.app/api/fichatecnica/${id}/pdf`;
+    const url = `https://monutinbackend.onrender.com/api/fichatecnica/${id}/pdf`;
     window.open(url, "_blank");
   };
 

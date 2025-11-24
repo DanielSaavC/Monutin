@@ -9,7 +9,7 @@ export default function Incubadoras() {
 
   useEffect(() => {
     axios
-      .get("https://monutinbackend-production.up.railway.app/api/equipos")
+      .get("https://monutinbackend.onrender.com/api/equipos")
       .then((res) => {
         // ✅ Palabras clave para detectar incubadoras
         const palabrasClave = [

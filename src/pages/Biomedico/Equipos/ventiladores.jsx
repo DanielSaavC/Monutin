@@ -9,7 +9,7 @@ export default function Ventiladores() {
 
   useEffect(() => {
     axios
-      .get("https://monutinbackend-production.up.railway.app/api/equipos")
+      .get("https://monutinbackend.onrender.com/api/equipos")
       .then((res) => {
         // ✅ Palabras clave relacionadas con ventiladores
         const palabrasClave = [

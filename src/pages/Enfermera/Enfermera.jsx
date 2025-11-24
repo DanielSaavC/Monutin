@@ -13,7 +13,7 @@ export default function Enfermera() {
 
   // ✅ Cargar equipos disponibles
   useEffect(() => {
-    axios.get("https://monutinbackend-production.up.railway.app/api/equipos")
+    axios.get("https://monutinbackend.onrender.com/api/equipos")
       .then(res => setEquipos(res.data))
       .catch(() => setEquipos([]));
   }, []);
@@ -41,7 +41,7 @@ const enviarReporte = async () => {
 
   try {
     await axios.post(
-      "https://monutinbackend-production.up.railway.app/api/reportes",
+      "https://monutinbackend.onrender.com/api/reportes",
       formData,
       {
         // 🔹 PASO 3: Cabecera correcta
@@ -74,7 +74,7 @@ const toBase64 = (file) => new Promise((resolve, reject) => {
   // ✅ Consultar reportes anteriores
   const cargarHistorial = async () => {
     const id = localStorage.getItem("id_usuario");
-    const res = await axios.get(`https://monutinbackend-production.up.railway.app/api/reportes/enfermera/${id}`);
+    const res = await axios.get(`https://monutinbackend.onrender.com/api/reportes/enfermera/${id}`);
     setHistorial(res.data);
     setVerHistorial(true);
   };

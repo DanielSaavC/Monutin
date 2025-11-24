@@ -33,7 +33,7 @@ export default function VentiladorDetalle() {
   // 🔹 Obtener datos del backend
   useEffect(() => {
     axios
-      .get("https://monutinbackend-production.up.railway.app/api/equipos")
+      .get("https://monutinbackend.onrender.comp/api/equipos")
       .then((res) => {
         const encontrado = res.data.find((eq) => eq.id === parseInt(id));
         setEquipo(encontrado || null);
@@ -74,7 +74,7 @@ export default function VentiladorDetalle() {
         setEnSeguimiento(false);
         localStorage.setItem("equipos_en_seguimiento", JSON.stringify(lista));
 
-        await axios.delete("https://monutinbackend-production.up.railway.app/api/seguimiento", {
+        await axios.delete("https://monutinbackend.onrender.com/api/seguimiento", {
           data: { usuario_id: usuario.id, equipo_id: equipo.id },
         });
 
@@ -95,7 +95,7 @@ export default function VentiladorDetalle() {
         localStorage.setItem("equipos_en_seguimiento", JSON.stringify(lista));
         setEnSeguimiento(true);
 
-        await axios.post("https://monutinbackend-production.up.railway.app/api/seguimiento", {
+        await axios.post("https://monutinbackend.onrender.com/api/seguimiento", {
           usuario_id: usuario.id,
           equipo_id: equipo.id,
         });
